@@ -18,6 +18,10 @@ public:
 
     s32 tryFindAddBufferSize(const char*) const;
 
+    const AreaGroupInfo* getAreaGroupInfo() const { return mAreaGroupInfos; };
+
+    s32 getAreaGroupCount() const { return mAreaGroupInfoCount; };
+
     template <s32 N>
     inline void setAreaGroupInfos(const AreaGroupInfo (&areaInfos)[N]) {
         mAreaGroupInfos = areaInfos;
