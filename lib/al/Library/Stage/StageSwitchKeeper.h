@@ -54,6 +54,8 @@ bool listenStageSwitchOn(IUseStageSwitch* stageSwitchHolder, const char* eventNa
                          const FunctorBase& actionOnOn);
 bool listenStageSwitchOnAppear(IUseStageSwitch* stageSwitchHolder,
                                const FunctorBase& actionOnAppear);
+bool listenStageSwitchOff(IUseStageSwitch* stageSwitchHolder, const char* eventName,
+                         const FunctorBase& actionOnOff);
 bool listenStageSwitchOnOff(IUseStageSwitch* stageSwitchHolder, const char* eventName,
                             const FunctorBase& actionOnOn, const FunctorBase& actionOnOff);
 bool listenStageSwitchOnOffStart(IUseStageSwitch* stageSwitchHolder, const FunctorBase& actionOnOn,

@@ -53,4 +53,5 @@ void makeMapPartsModelName(sead::BufferedSafeString*, sead::BufferedSafeString*,
                            const PlacementInfo& info);
 void makeMapPartsModelName(sead::BufferedSafeString*, sead::BufferedSafeString*,
                            const ActorInitInfo& info);
+void initActorPoseTFSV(LiveActor* actor);
 }  // namespace al
