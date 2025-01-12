@@ -6,13 +6,13 @@
 
 namespace sead {
 class Thread;
-}
+}  // namespace sead
 
 namespace al {
 struct ActorInitInfo;
+class ClippingJudge;
 struct ClippingActorInfo;
 class ClippingGroupHolder;
-class ClippingJudge;
 class LiveActor;
 
 class ClippingActorHolder {
