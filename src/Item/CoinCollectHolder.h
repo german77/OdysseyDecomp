@@ -1,6 +1,7 @@
 #pragma once
 
 #include <basis/seadTypes.h>
+#include <container/seadPtrArray.h>
 #include <math/seadVector.h>
 
 #include "Library/Scene/ISceneObj.h"
@@ -29,6 +30,11 @@ public:
     CoinCollect2D* tryFindAliveCoinCollect2D(const sead::Vector3f&, bool) const;
     CoinCollect2D* tryFindAliveCoinCollect2D(const sead::Vector3f&, f32, f32, bool) const;
     CoinCollectHintObj* tryFindExStageHintObjTrans(sead::Vector3f*, const char*);
+
+private:
+    sead::PtrArray<CoinCollect> mCollect;
+    sead::PtrArray<CoinCollect2D> mCollect2D;
+    sead::PtrArray<CoinCollectHintObj> mCollectHintObj;
 };
 
 namespace rs {
