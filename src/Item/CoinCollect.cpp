@@ -136,30 +136,30 @@ bool CoinCollect::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
         al::setNerve(this, &NrvCoinCollect.Blow);
         return true;
     }
-    if (!al::isNerve(this, &NrvCoinCollect.Wait) && !al::isNerve(this, &NrvCoinCollect.WaitAmiibo))
-        return false;
-
-    if (rs::isMsgCapAttack(message) && !al::isNerve(this, &NrvCoinCollect.Got) &&
-        !al::isNerve(this, &NrvCoinCollect.CountUp)) {
-        al::invalidateClipping(this);
-        al::setNerve(this, &NrvCoinCollect.Got);
-        return false;
-    }
-    if (rs::isMsgFishingItemGet(message) && !al::isNerve(this, &NrvCoinCollect.Got) &&
-        !al::isNerve(this, &NrvCoinCollect.CountUp)) {
-        al::invalidateClipping(this);
-        al::setNerve(this, &NrvCoinCollect.CountUp);
-        return true;
-    }
-    if (rs::isMsgFishingLineTouch(message)) {
-        mRotateCalculator->addFishingLineTouch();
-        return true;
-    }
-    if (rs::isMsgItemGetAll(message) && !al::isNerve(this, &NrvCoinCollect.Got) &&
-        !al::isNerve(this, &NrvCoinCollect.CountUp)) {
-        al::invalidateClipping(this);
-        al::setNerve(this, &NrvCoinCollect.Got);
-        return true;
+    
+    if (al::isNerve(this, &NrvCoinCollect.Wait) || al::isNerve(this, &NrvCoinCollect.WaitAmiibo)) {
+        if (rs::isMsgCapAttack(message) && !al::isNerve(this, &NrvCoinCollect.Got) &&
+            !al::isNerve(this, &NrvCoinCollect.CountUp)) {
+            al::invalidateClipping(this);
+            al::setNerve(this, &NrvCoinCollect.Got);
+            return false;
+        }
+        if (rs::isMsgFishingItemGet(message) && !al::isNerve(this, &NrvCoinCollect.Got) &&
+            !al::isNerve(this, &NrvCoinCollect.CountUp)) {
+            al::invalidateClipping(this);
+            al::setNerve(this, &NrvCoinCollect.CountUp);
+            return true;
+        }
+        if (rs::isMsgFishingLineTouch(message)) {
+            mRotateCalculator->addFishingLineTouch();
+            return true;
+        }
+        if (rs::isMsgItemGetAll(message) && !al::isNerve(this, &NrvCoinCollect.Got) &&
+            !al::isNerve(this, &NrvCoinCollect.CountUp)) {
+            al::invalidateClipping(this);
+            al::setNerve(this, &NrvCoinCollect.Got);
+            return true;
+        }
     }
     return false;
 }
