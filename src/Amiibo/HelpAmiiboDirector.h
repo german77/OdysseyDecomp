@@ -2,6 +2,7 @@
 
 #include <container/seadPtrArray.h>
 
+#include "Library/HostIO/HioNode.h"
 #include "Library/Audio/IUseAudioKeeper.h"
 #include "Library/HostIO/HioNode.h"
 #include "Library/Nerve/IUseNerve.h"
