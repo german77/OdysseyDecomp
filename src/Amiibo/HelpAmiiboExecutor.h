@@ -36,10 +36,10 @@ public:
     bool tryTouch(const al::NfpInfo& nfpInfo);
     void tryExecute();
 
-    bool isTouched() const { return mIsTouched; }
-
     HelpAmiiboDirector* getDirector() const { return mHelpAmiiboDirector; }
 
+    bool isTouched() const { return mIsTouched; }
+    
     al::LiveActor* getActor() const { return mHelpAmiiboActor; }
 
 private:
