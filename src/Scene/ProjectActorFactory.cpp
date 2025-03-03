@@ -34,6 +34,7 @@
 #include "Enemy/Togezo.h"
 #include "Enemy/Togezo2D.h"
 #include "Item/Coin.h"
+#include "Item/CoinRail.h"
 #include "Item/Coin2D.h"
 #include "Item/CoinBlow.h"
 #include "Item/CoinChameleon.h"
@@ -184,7 +185,7 @@ const al::NameToCreator<al::ActorCreatorFunction> sProjectActorFactoryEntries[] 
     {"CoinCollectHintObj", al::createActorFunction<CoinCollectHintObj>},
     {"CoinCollect2D", al::createActorFunction<CoinCollect2D>},
     {"CoinLead", nullptr},
-    {"CoinRail", nullptr},
+    {"CoinRail", al::createActorFunction<CoinRail>},
     {"CoinRing", nullptr},
     {"CoinStackGroup", nullptr},
     {"CrystalBreakable", nullptr},
