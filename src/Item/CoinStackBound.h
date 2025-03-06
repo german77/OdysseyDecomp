@@ -1,8 +1,8 @@
 #pragma once
 
 #include <basis/seadTypes.h>
-#include <math/seadVector.h>
 #include <math/seadQuat.h>
+#include <math/seadVector.h>
 
 #include "Library/LiveActor/LiveActor.h"
 
@@ -17,7 +17,7 @@ class WaterSurfaceFinder;
 class CoinStackBound : public al::LiveActor {
 public:
     CoinStackBound(char const* name);
-    
+
     void init(const al::ActorInitInfo& initInfo) override;
     bool receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
                     al::HitSensor* self) override;
@@ -30,7 +30,7 @@ public:
     void exeBounce();
     void exeVanish();
     void exeCollected();
-    
+
 private:
     void* _108;
     s32 _110;
@@ -38,14 +38,14 @@ private:
     sead::Vector3f vector2 = sead::Vector3f::zero;
     sead::Vector3f vector3 = sead::Vector3f::zero;
     sead::Quatf quat = sead::Quatf::unit;
-    s32 counter=0;
-    float lefloat=17.5f;
-    bool anotherbool=false;
-    float rotateAngle=30.0f;
-    al::FlashingTimer* mFlashingTimer=nullptr;
-    bool timerStuf=false;
+    s32 counter = 0;
+    float lefloat = 17.5f;
+    bool anotherbool = false;
+    float rotateAngle = 30.0f;
+    al::FlashingTimer* mFlashingTimer = nullptr;
+    bool timerStuf = false;
     sead::Matrix34f matrix;
-    bool someBools=false;
-    al::WaterSurfaceFinder* mWaterSurfaceFinder=nullptr;
-    bool nibool=true;
+    bool isOnGound = false;
+    al::WaterSurfaceFinder* mWaterSurfaceFinder = nullptr;
+    bool nibool = true;
 };

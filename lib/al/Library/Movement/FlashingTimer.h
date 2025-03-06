@@ -4,20 +4,19 @@
 
 namespace al {
 
-class FlashingTimer  {
+class FlashingTimer {
 public:
+    FlashingTimer(s32, s32, s32, s32);
+    void start(s32, s32, s32, s32);
+    void update();
+    bool isHurryStart() const;
 
-FlashingTimer(s32, s32, s32, s32);
-void start(s32, s32, s32, s32);
-void update();
-bool isHurryStart() const;
+    s32 getLastTime() const;
 
-s32 getLastTime() const;
-
-s32 getTime() const {return mTime;};
+    s32 getTime() const { return mTime; };
 
 private:
-    s32 mTime=-1;
+    s32 mTime = -1;
     s32 _4;
     s32 _8;
     s32 _c;
