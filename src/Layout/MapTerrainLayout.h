@@ -11,6 +11,8 @@ public:
     bool tryChangePrintWorld(s32 worldId);
     f32 getPaneSize() const;
 
+    MapData* getMapData() const { return mMapData; }
+
 private:
     MapData* mMapData = nullptr;
 };
