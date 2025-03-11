@@ -10,5 +10,5 @@ namespace rs {
 
 const char16* getWorldCoinCollectPictureFont(al::LayoutActor*, s32);
 const char16* getWorldCoinCollectPictureFont(al::LayoutActor*);
-
+bool trySetPaneSystemMessageIfExist(al::LayoutActor*, const char*, const char*, const char*);
 }  // namespace rs
