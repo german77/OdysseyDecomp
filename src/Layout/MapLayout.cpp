@@ -11,6 +11,7 @@
 #include "Library/Player/PlayerHolder.h"
 #include "Library/Player/PlayerUtil.h"
 #include "Library/Se/SeFunction.h"
+#include "Library/Base/StringUtil.h"
 
 #include "Layout/DecideIconLayout.h"
 #include "Layout/MapTerrainLayout.h"
@@ -18,6 +19,7 @@
 #include "System/GameDataFunction.h"
 #include "System/MapDataHolder.h"
 #include "Util/PlayerUtil.h"
+#include "Util/StageLayoutFunction.h"
 
 namespace {
 NERVE_IMPL(MapLayout, Appear)
@@ -47,6 +49,14 @@ NERVES_MAKE_STRUCT(MapLayout, Appear, HintInitWaitAmiibo, HintInitWaitNpc, HintI
                    HintDecideIconAppearMoonRock, HintDecideIconAppearAmiibo, HintDecideIconWait)
 }  // namespace
 
+static const char* sPicImage[8]=
+{"PicImage00","PicImage01","PicImage02","PicImage03","PicImage04","PicImage05","PicImage06","PicImage07"};
+static const char* sPanelNames[21]=
+{"TxtCaption00","TxtRegionCaption","TxtData01","TxtData02","TxtTitle01",
+"TxtContents01","TxtCaption01","TxtTitle02","TxtContents02","TxtCaption02","TxtTitle03"
+"TxtContents03","TxtCaption03","TxtTitle04","TxtContents04","TxtCaption04","TxtTitle05",
+"TxtContents05","TxtCaption05","TxtCaption06","TxtContents07"};
+
 MapLayout::MapLayout(const al::LayoutInitInfo&, const al::PlayerHolder*, s32)
     : al::LayoutActor("マップ") {}
 
@@ -54,11 +64,20 @@ void MapLayout::appear() {}
 
 void MapLayout::control() {
     if (al::isActive(mWaitEndMapLine))
-        updateLine(nullptr);
+        updateLine(mMapIconLayout->layout);
 }
 
 const char* MapLayout::getSceneObjName() const {
     return "マップレイアウト";
+}
+
+void setPanelName(al::LayoutActor *layoutActor, const char* message, s32 id){
+  al::setPaneString(layoutActor,"TxtWorld",GameDataFunction::tryGetWorldName(layoutActor,id),0);
+  al::setPaneString(layoutActor,"TxtRegion",GameDataFunction::tryGetRegionNameCurrent(layoutActor),0);
+  for(s32 i=0;i<21;i++){
+     al::StringTmp<64> stageMapMessage={"%s_%s",sPanelNames[i],message};
+    rs::trySetPaneSystemMessageIfExist(layoutActor,sPanelNames[i],"StageMapMessage",stageMapMessage.cstr());
+  }
 }
 
 void MapLayout::changePrintWorld(s32 worldId) {
@@ -67,7 +86,16 @@ void MapLayout::changePrintWorld(s32 worldId) {
     reset();
 }
 
-void MapLayout::loadTexture() {}
+void MapLayout::loadTexture() {
+  const char* worldDevelopName = GameDataFunction::getWorldDevelopName(this,mWorldId);
+  for(s32 i=0;i<8;i++){
+    al::StringTmp<128> texturePath={"ObjectData/TextureMapLayout%s",worldDevelopName};
+    al::StringTmp<128> textureFolder={"TextureMapLayout%s",worldDevelopName};
+    al::StringTmp<128> textureName={"%s%s",worldDevelopName,sPicImage[i]};
+    nn::ui2d::TextureInfo* textureInfo = al::createTextureInfo(texturePath.cstr(),textureFolder.cstr(),textureName.cstr());
+    al::setPaneTexture(this,sPicImage[i],textureInfo);
+  }
+}
 
 void MapLayout::reset() {
     mPanelLocalScale.y = 0.4f;
