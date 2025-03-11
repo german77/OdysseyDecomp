@@ -32,7 +32,6 @@ public:
     void control() override;
     const char* getSceneObjName() const override;
 
-    // sub_71001EFEA8
     void changePrintWorld(s32 worldId);
     void loadTexture();
     void reset();
@@ -86,8 +85,10 @@ private:
     DecideIconLayout* mDecideIconLayout = nullptr;
     MapTerrainLayout* mMapTerrainLayout = nullptr;
     TalkMessage* mTalkMessage = nullptr;
-    char filler[0xC8];
-    al::PlayerHolder* mPlayerHolder;
+    char filler[0x58];
+    MapIconLayout* mMapIconLayout = nullptr;
+    char filler2[0x68];
+    al::PlayerHolder* mPlayerHolder = nullptr;
     bool isPrintWorldChanged;
     bool help;
     sead::Vector2f mScrollPosition;
@@ -99,6 +100,7 @@ private:
     s32 currentFontType;
 };
 
+    void setPanelName(al::LayoutActor* layoutActor, const char* name, s32 id);
 void setPanelFont(f32 scale, s32* newType, al::LayoutActor* layoutActor, s32 currentType);
 
 namespace rs {
