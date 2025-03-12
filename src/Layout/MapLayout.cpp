@@ -1,8 +1,10 @@
 #include "Layout/MapLayout.h"
 
+#include "Library/Base/StringUtil.h"
 #include "Library/Layout/LayoutActionFunction.h"
 #include "Library/Layout/LayoutActorUtil.h"
 #include "Library/Layout/LayoutInitInfo.h"
+#include "Library/LiveActor/ActorPoseUtil.h"
 #include "Library/Math/MathUtil.h"
 #include "Library/Matrix/MatrixUtil.h"
 #include "Library/Nerve/NerveSetupUtil.h"
@@ -11,7 +13,6 @@
 #include "Library/Player/PlayerHolder.h"
 #include "Library/Player/PlayerUtil.h"
 #include "Library/Se/SeFunction.h"
-#include "Library/Base/StringUtil.h"
 
 #include "Layout/DecideIconLayout.h"
 #include "Layout/MapTerrainLayout.h"
@@ -49,13 +50,34 @@ NERVES_MAKE_STRUCT(MapLayout, Appear, HintInitWaitAmiibo, HintInitWaitNpc, HintI
                    HintDecideIconAppearMoonRock, HintDecideIconAppearAmiibo, HintDecideIconWait)
 }  // namespace
 
-static const char* sPicImage[8]=
-{"PicImage00","PicImage01","PicImage02","PicImage03","PicImage04","PicImage05","PicImage06","PicImage07"};
-static const char* sPanelNames[21]=
-{"TxtCaption00","TxtRegionCaption","TxtData01","TxtData02","TxtTitle01",
-"TxtContents01","TxtCaption01","TxtTitle02","TxtContents02","TxtCaption02","TxtTitle03"
-"TxtContents03","TxtCaption03","TxtTitle04","TxtContents04","TxtCaption04","TxtTitle05",
-"TxtContents05","TxtCaption05","TxtCaption06","TxtContents07"};
+static const char* sPicImage[8] = {"PicImage00", "PicImage01", "PicImage02", "PicImage03",
+                                   "PicImage04", "PicImage05", "PicImage06", "PicImage07"};
+
+static const char* sPanelNames[21] = {"TxtCaption00",
+                                      "TxtRegionCaption",
+                                      "TxtData01",
+                                      "TxtData02",
+                                      "TxtTitle01",
+                                      "TxtContents01",
+                                      "TxtCaption01",
+                                      "TxtTitle02",
+                                      "TxtContents02",
+                                      "TxtCaption02",
+                                      "TxtTitle03"
+                                      "TxtContents03",
+                                      "TxtCaption03",
+                                      "TxtTitle04",
+                                      "TxtContents04",
+                                      "TxtCaption04",
+                                      "TxtTitle05",
+                                      "TxtContents05",
+                                      "TxtCaption05",
+                                      "TxtCaption06",
+                                      "TxtContents07"};
+
+inline f32 modDegree(f32 value) {
+    return al::modf(value + 360.0f, 360.0f) + 0.0f;
+}
 
 MapLayout::MapLayout(const al::LayoutInitInfo&, const al::PlayerHolder*, s32)
     : al::LayoutActor("マップ") {}
@@ -71,13 +93,16 @@ const char* MapLayout::getSceneObjName() const {
     return "マップレイアウト";
 }
 
-void setPanelName(al::LayoutActor *layoutActor, const char* message, s32 id){
-  al::setPaneString(layoutActor,"TxtWorld",GameDataFunction::tryGetWorldName(layoutActor,id),0);
-  al::setPaneString(layoutActor,"TxtRegion",GameDataFunction::tryGetRegionNameCurrent(layoutActor),0);
-  for(s32 i=0;i<21;i++){
-     al::StringTmp<64> stageMapMessage={"%s_%s",sPanelNames[i],message};
-    rs::trySetPaneSystemMessageIfExist(layoutActor,sPanelNames[i],"StageMapMessage",stageMapMessage.cstr());
-  }
+void setPanelName(al::LayoutActor* layoutActor, const char* message, s32 id) {
+    al::setPaneString(layoutActor, "TxtWorld", GameDataFunction::tryGetWorldName(layoutActor, id),
+                      0);
+    al::setPaneString(layoutActor, "TxtRegion",
+                      GameDataFunction::tryGetRegionNameCurrent(layoutActor), 0);
+    for (s32 i = 0; i < 21; i++) {
+        al::StringTmp<64> stageMapMessage = {"%s_%s", sPanelNames[i], message};
+        rs::trySetPaneSystemMessageIfExist(layoutActor, sPanelNames[i], "StageMapMessage",
+                                           stageMapMessage.cstr());
+    }
 }
 
 void MapLayout::changePrintWorld(s32 worldId) {
@@ -87,14 +112,15 @@ void MapLayout::changePrintWorld(s32 worldId) {
 }
 
 void MapLayout::loadTexture() {
-  const char* worldDevelopName = GameDataFunction::getWorldDevelopName(this,mWorldId);
-  for(s32 i=0;i<8;i++){
-    al::StringTmp<128> texturePath={"ObjectData/TextureMapLayout%s",worldDevelopName};
-    al::StringTmp<128> textureFolder={"TextureMapLayout%s",worldDevelopName};
-    al::StringTmp<128> textureName={"%s%s",worldDevelopName,sPicImage[i]};
-    nn::ui2d::TextureInfo* textureInfo = al::createTextureInfo(texturePath.cstr(),textureFolder.cstr(),textureName.cstr());
-    al::setPaneTexture(this,sPicImage[i],textureInfo);
-  }
+    const char* worldDevelopName = GameDataFunction::getWorldDevelopName(this, mWorldId);
+    for (s32 i = 0; i < 8; i++) {
+        al::StringTmp<128> texturePath = {"ObjectData/TextureMapLayout%s", worldDevelopName};
+        al::StringTmp<128> textureFolder = {"TextureMapLayout%s", worldDevelopName};
+        al::StringTmp<128> textureName = {"%s%s", worldDevelopName, sPicImage[i]};
+        nn::ui2d::TextureInfo* textureInfo =
+            al::createTextureInfo(texturePath.cstr(), textureFolder.cstr(), textureName.cstr());
+        al::setPaneTexture(this, sPicImage[i], textureInfo);
+    }
 }
 
 void MapLayout::reset() {
@@ -118,6 +144,39 @@ void MapLayout::appearAmiiboHint() {}
 
 void MapLayout::end() {
     al::setNerve(this, &NrvMapLayout.End);
+}
+
+inline f32 getV(f32 w, const sead::Vector3f& a, const sead::Vector3f& b) {
+    return (w + b.x * a.x + b.y * a.y + b.z * a.z) * 1024.0f;
+}
+
+bool trySetBalloon(al::LayoutActor* layoutActor, const al::LiveActor* actor,
+                   const sead::Matrix44f& matrix) {
+    sead::Vector3f position = al::getTrans(actor);
+
+    sead::Vector3f position2 = al::getTrans(actor);
+    f32 ax =
+        getV(matrix(0, 3), {matrix(0, 0), matrix(0, 1), matrix(0, 2)}, position2) * 1024.0f * 0.4f +
+        0.0f;
+    f32 ay =
+        getV(matrix(1, 3), {matrix(1, 0), matrix(1, 1), matrix(1, 2)}, position2) * 1024.0f * 0.4f +
+        0.0f;
+    if ((ax < -382.0f || 394.0f < ax) || (ay < -394.0f || 382.0f < ay)) {
+        f32 fvar11 =
+            getV(matrix(0, 3), {matrix(0, 0), matrix(0, 1), matrix(0, 2)}, position) * 0.4f + 0.0f;
+        f32 fvar12 =
+            getV(matrix(1, 3), {matrix(1, 0), matrix(1, 1), matrix(1, 2)}, position) * 0.4f + 0.0f;
+
+        sead::Vector2f pos = {sead::Mathf::clamp(fvar11, -382.0f, 394.0f),
+                              sead::Mathf::clamp(fvar12, -394.0f, 382.0f)};
+
+        al::startFreezeAction(layoutActor, "Outside", 0.0f, "Icon");
+        f32 angle = modDegree(al::calcAngleDegree(sead::Vector2f::ey, pos * -0.4f));
+        f32 frameMax = al::getActionFrameMax(layoutActor, "State", "Balloon");
+        al::startFreezeAction(layoutActor, "State", angle * (frameMax / 360.0f), "Balloon");
+        return true;
+    }
+    return false;
 }
 
 void MapLayout::updatePlayerPosLayout() {}
@@ -157,10 +216,6 @@ void MapLayout::changeIn(bool isRightIn) {
     al::startAction(mWaitEndMapCursor, "ChangeIn", nullptr);
     al::startAction(this, isRightIn ? "RightIn" : "LeftIn", "Change");
     al::setNerve(this, &NrvMapLayout.ChangeIn);
-}
-
-inline f32 modDegree(f32 value) {
-    return al::modf(value + 360.0f, 360.0f) + 0.0f;
 }
 
 void MapLayout::updateLine(al::LayoutActor* layoutActor) {
@@ -295,7 +350,40 @@ const sead::Matrix44f& MapLayout::getProjMtx() const {
     return mMapTerrainLayout->getMapData()->projMatrix;
 }
 
-void MapLayout::updateIconLine(al::LayoutActor*, const sead::Vector3f&, const sead::Vector2f&) {}
+void MapLayout::updateIconLine(al::LayoutActor* layoutActor, const sead::Vector3f& vector3,
+                               const sead::Vector2f& vector2) {
+    MapData* mapData = mMapTerrainLayout->getMapData();
+    f32 scale = mPanelLocalScale.x;
+
+    sead::Vector2f panelV = {
+        scale *
+                (mapData->viewProjMatrix(3, 0) + vector3.x * mapData->viewProjMatrix(0, 0) +
+                 vector3.y * mapData->viewProjMatrix(1, 0) +
+                 vector3.z * mapData->viewProjMatrix(2, 0)) *
+                1024.0f +
+            scale * mScrollPosition.x,
+
+        scale *
+                (mapData->viewProjMatrix(3, 1) + vector3.x * mapData->viewProjMatrix(0, 1) +
+                 vector3.y * mapData->viewProjMatrix(1, 1) +
+                 vector3.z * mapData->viewProjMatrix(2, 1)) *
+                1024.0f +
+            scale * mScrollPosition.y};
+
+    sead::Vector2f panelV2 = {mPanelLocalScale.x * vector2.x + panelV.x,
+                              mPanelLocalScale.x * vector2.y + panelV.y};
+
+    f32 angle = al::calcAngleDegree((panelV - panelV2), sead::Vector2f::ex);
+    angle = (360.0f - modDegree(angle)) * (3.2f / 9.0f);
+    al::startFreezeAction(layoutActor, "State", angle, "Direct");
+
+    f32 size = (panelV - panelV2).length() / 20.0f;
+    al::startFreezeAction(layoutActor, "State", size, "Length");
+
+    sead::Vector3f newPosition = {(panelV.x + panelV2.x) * 0.5f, (panelV.y + panelV2.y) * 0.5f,
+                                  0.0f};
+    al::setLocalTrans(layoutActor, newPosition);
+}
 
 void MapLayout::focusIcon(const MapIconInfo*) {}
 
