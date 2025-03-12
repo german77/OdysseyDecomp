@@ -432,6 +432,57 @@ void MapLayout::exeHintPressDecide() {
         al::setNerve(this, &NrvMapLayout.End);
 }
 
-void MapLayout::exeEnd() {}
+void MapLayout::exeEnd() {
+    if (al::isFirstStep(this)) {
+        al::startAction(this, "End", nullptr);
+        al::startAction(mWaitEndMapPlayer, "End", nullptr);
+        al::startAction(mWaitEndMapCursor, "End", nullptr);
+        al::startAction(mWaitEndMapGuide, "End", nullptr);
 
-void MapLayout::exeChangeOut() {}
+        if (al::isActive(mWaitEndMapLine))
+            al::startAction(mWaitEndMapLine, "End", nullptr);
+
+        s32 size = arraySize;
+        for (s32 i = 0; i < size; i++) {
+            al::LayoutActor* layout = nullptr;
+            if (i < arraySize)
+                layout = array[i];
+            al::startAction(layout, "End", nullptr);
+        }
+        for (s32 i = 0; i < mMapIconInfoSize; i++)
+            if (mMapIconInfo[i].neat && al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
+                mMapIconInfo[i].neat = false;
+        al::startHitReaction(this, "マップクローズ", nullptr);
+    }
+    if (al::isActionEnd(this, nullptr)) {
+        s32 size = arraySize;
+        for (s32 i = 0; i < size; i++)
+            array[i]->kill();
+        mWaitEndMapPlayer->kill();
+        mWaitEndMapCursor->kill();
+        mWaitEndMapGuide->kill();
+        mWaitEndMapLine->kill();
+        if (help)
+            mWaitEndMapBg->kill();
+        help = true;
+        kill();
+    }
+}
+
+void MapLayout::exeChangeOut() {
+    if (al::isFirstStep(this)) {
+        for (s32 i = 0; i < mMapIconInfoSize; i++)
+            if (mMapIconInfo[i].neat && al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
+                mMapIconInfo[i].neat = false;
+    }
+    if (al::isActionEnd(this, "Change")) {
+        mWaitEndMapPlayer->kill();
+        mWaitEndMapCursor->kill();
+        mWaitEndMapGuide->kill();
+        mWaitEndMapLine->kill();
+        if (help)
+            mWaitEndMapBg->kill();
+        help = true;
+        kill();
+    }
+}
