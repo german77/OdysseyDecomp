@@ -14,7 +14,7 @@ class PlayerHolder;
 class SimpleLayoutAppearWaitEnd;
 }  // namespace al
 
-class MapIconInfo;
+struct MapIconInfo;
 class DecideIconLayout;
 class MapTerrainLayout;
 class TalkMessage;
@@ -23,6 +23,15 @@ enum IconType : u32;
 struct MapIconLayout {
     void* filler;
     al::SimpleLayoutAppearWaitEnd* layout = nullptr;
+};
+
+struct MapIconInfo {
+    MapIconLayout* iconLayout;
+    bool neat;
+    sead::Vector3f position;
+    s32 iconType;
+    const char* name;
+    f32 value;
 };
 
 class MapLayout : public al::LayoutActor, public al::ISceneObj {
@@ -88,7 +97,14 @@ private:
     TalkMessage* mTalkMessage = nullptr;
     char filler[0x58];
     MapIconLayout* mMapIconLayout = nullptr;
-    char filler2[0x68];
+    char filler3[0x38];
+    MapIconInfo* mMapIconInfo = nullptr;
+    s32 mMapIconInfoSize = 0;
+    char filler2[0x4];
+    s32 arraySize = 0;
+    char filler24[0x4];
+    al::LayoutActor** array = nullptr;
+    char filler4[0x10];
     al::PlayerHolder* mPlayerHolder = nullptr;
     bool isPrintWorldChanged;
     bool help;
