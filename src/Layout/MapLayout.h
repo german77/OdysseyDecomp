@@ -9,6 +9,7 @@
 namespace al {
 class IUseSceneObjHolder;
 class LayoutInitInfo;
+class LiveActor;
 class PlayerHolder;
 class SimpleLayoutAppearWaitEnd;
 }  // namespace al
@@ -100,7 +101,9 @@ private:
     s32 currentFontType;
 };
 
-    void setPanelName(al::LayoutActor* layoutActor, const char* name, s32 id);
+void setPanelName(al::LayoutActor* layoutActor, const char* name, s32 id);
+bool trySetBalloon(al::LayoutActor* layoutActor, const al::LiveActor* actor,
+                   const sead::Matrix44f& matrix);
 void setPanelFont(f32 scale, s32* newType, al::LayoutActor* layoutActor, s32 currentType);
 
 namespace rs {
