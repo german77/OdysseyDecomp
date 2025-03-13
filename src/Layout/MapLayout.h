@@ -1,5 +1,6 @@
 #pragma once
 
+#include <container/seadPtrArray.h>
 #include <math/seadMatrix.h>
 #include <math/seadVector.h>
 
@@ -20,8 +21,34 @@ class MapTerrainLayout;
 class TalkMessage;
 enum IconType : u32;
 
+enum class MapIconType : s32 {
+    None,
+    Flag,
+    FlagDisable,
+    Home,
+    HomeDisable,
+    Hint1,
+    Hint2,
+    Shop,
+    ShopSold,
+    Race,
+    Start,
+    Goal,
+    Scenario1,
+    ScenarioHome,
+    HintRock1,
+    HintRock2,
+    Luigi,
+    Poet,
+    Scenario2,
+};
+
 struct MapIconLayout {
-    void* filler;
+    MapIconLayout(s32 a, s32 b, al::SimpleLayoutAppearWaitEnd* c)
+        : fieldA(a), fieldB(b), layout(c) {}
+
+    s32 fieldA = 0;
+    s32 fieldB = 0;
     al::SimpleLayoutAppearWaitEnd* layout = nullptr;
 };
 
@@ -29,14 +56,21 @@ struct MapIconInfo {
     MapIconLayout* iconLayout;
     bool neat;
     sead::Vector3f position;
-    s32 iconType;
+    MapIconType iconType;
     const char* name;
     f32 value;
 };
 
+static_assert(sizeof(MapIconInfo) == 0x30);
+
+struct HintAmiibo {
+    sead::Vector3f position;
+    bool isValid;
+};
+
 class MapLayout : public al::LayoutActor, public al::ISceneObj {
 public:
-    MapLayout(const al::LayoutInitInfo&, const al::PlayerHolder*, s32);
+    MapLayout(const al::LayoutInitInfo&, const al::PlayerHolder*, s32 worldId);
 
     void appear() override;
     void control() override;
@@ -53,7 +87,7 @@ public:
     // sub_71001F1B04
     void updatePlayerPosLayout();
     void appearWithHint();
-    void appearMoonRockDemo(int);
+    void appearMoonRockDemo(s32);
     void appearCollectionList();
     bool isEnd() const;
     bool isEnableCheckpointWarp() const;
@@ -86,6 +120,8 @@ public:
     void exeEnd();
     void exeChangeOut();
 
+    MapTerrainLayout* getMapTerrainLayout() const { return mMapTerrainLayout; }
+
 private:
     al::SimpleLayoutAppearWaitEnd* mWaitEndMapBg = nullptr;
     al::SimpleLayoutAppearWaitEnd* mWaitEndMapCursor = nullptr;
@@ -95,26 +131,54 @@ private:
     DecideIconLayout* mDecideIconLayout = nullptr;
     MapTerrainLayout* mMapTerrainLayout = nullptr;
     TalkMessage* mTalkMessage = nullptr;
-    char filler[0x58];
+
+    void* pointers = nullptr;
+
+    s32 mCheckpointNumMaxInWorld = 0;
+    MapIconLayout* mapIconLayoutAnother = nullptr;
+    al::LayoutActor** hintDecideIconLayout = nullptr;
+
+    s32 mHintNumMax = 0;
+    MapIconLayout* pointersvc2 = nullptr;
+
+    s32 mCalcShopNum = 0;
+    MapIconLayout* mMapIconLayoutSomething = nullptr;
+
+    s32 mMiniGameNumMax = 0;
+    MapIconLayout* mNaaMapIconLayout = nullptr;
+    MapIconLayout* mNeeMapIconLayout = nullptr;
     MapIconLayout* mMapIconLayout = nullptr;
-    char filler3[0x38];
+
+    s32 mMainScenarioNumMax = 0;
+    al::LayoutActor** moonRockLayout = nullptr;
+
+    s32 mHintMoonRockNumMax = 0;
+    MapIconLayout* mapIconLayoutA = nullptr;
+    MapIconLayout* mapIconLayoutB = nullptr;
+    MapIconLayout* mapIconLayoutC = nullptr;
+    MapIconLayout* mapIconLayoutD = nullptr;
     MapIconInfo* mMapIconInfo = nullptr;
+
     s32 mMapIconInfoSize = 0;
-    char filler2[0x4];
-    s32 arraySize = 0;
-    char filler24[0x4];
-    al::LayoutActor** array = nullptr;
-    char filler4[0x10];
-    al::PlayerHolder* mPlayerHolder = nullptr;
-    bool isPrintWorldChanged;
-    bool help;
-    sead::Vector2f mScrollPosition;
-    sead::Vector2f minScrollPosition;
-    sead::Vector2f maxScrollPosition;
-    sead::Vector2f PanelSize;
-    sead::Vector2f mPanelLocalScale;
-    s32 mWorldId;
-    s32 currentFontType;
+    sead::PtrArray<al::LayoutActor> array;
+    sead::Vector3f mAAA = sead::Vector3f::zero;
+    const al::PlayerHolder* mPlayerHolder = nullptr;
+    bool isPrintWorldChanged = true;
+    bool help = true;
+    sead::Vector2f mScrollPosition = sead::Vector2f::zero;
+    sead::Vector2f minScrollPosition = {-2300.0f, -1200.0f};
+    sead::Vector2f maxScrollPosition = {2300.0f, 1200.0f};
+    sead::Vector2f PanelSize = {0.0f, 0.0f};
+    sead::Vector2f mPanelLocalScale = {0.0f, 0.0f};
+    s32 mWorldId = -1;
+    s32 currentFontType = 3;
+    s32 doesntexist;
+    u32 hintAmiiboSizer = 0;
+    HintAmiibo* hintAmiibo = nullptr;
+    s32 hintDecideIconAmiiboSize;
+    bool mIsFreezeAction;
+    bool mIsSomesomebool;
+    bool mIsSharila;
 };
 
 void setPanelName(al::LayoutActor* layoutActor, const char* name, s32 id);
@@ -125,16 +189,16 @@ void setPanelFont(f32 scale, s32* newType, al::LayoutActor* layoutActor, s32 cur
 namespace rs {
 void calcTransOnMap(sead::Vector2f*, const sead::Vector3f&, const sead::Matrix44f&,
                     const sead::Vector2f&, f32, f32);
-bool tryCalcMapNorthDir(sead::Vector3f*, const al::IUseSceneObjHolder*);
-const sead::Matrix44f& getMapViewProjMtx(const al::IUseSceneObjHolder*);
-const sead::Matrix44f& getMapProjMtx(const al::IUseSceneObjHolder*);
-void appearMapWithHint(const al::IUseSceneObjHolder*);
-void addAmiiboHintToMap(const al::IUseSceneObjHolder*);
-void appearMapWithAmiiboHint(const al::IUseSceneObjHolder*);
-void appearMapMoonRockDemo(const al::IUseSceneObjHolder*, s32);
-void endMap(const al::IUseSceneObjHolder*);
-bool isEndMap(const al::IUseSceneObjHolder*);
-bool isEnableCheckpointWarp(const al::IUseSceneObjHolder*);
+bool tryCalcMapNorthDir(sead::Vector3f*, const al::IUseSceneObjHolder* objHolder);
+const sead::Matrix44f& getMapViewProjMtx(const al::IUseSceneObjHolder* objHolder);
+const sead::Matrix44f& getMapProjMtx(const al::IUseSceneObjHolder* objHolder);
+void appearMapWithHint(const al::IUseSceneObjHolder* objHolder);
+void addAmiiboHintToMap(const al::IUseSceneObjHolder* objHolder);
+void appearMapWithAmiiboHint(const al::IUseSceneObjHolder* objHolder);
+void appearMapMoonRockDemo(const al::IUseSceneObjHolder* objHolder, s32);
+void endMap(const al::IUseSceneObjHolder* objHolder);
+bool isEndMap(const al::IUseSceneObjHolder* objHolder);
+bool isEnableCheckpointWarp(const al::IUseSceneObjHolder* objHolder);
 }  // namespace rs
 
 namespace StageMapFunction {
