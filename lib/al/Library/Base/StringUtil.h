@@ -12,8 +12,8 @@ const char* createConcatString(const char* start, const char* end);
 void createFileNameBySuffix(sead::BufferedSafeString*, const char*, const char*);
 void outputValueWithComma(char*, u32, u64, bool, bool);
 void extractString(char* out, const char* str, u32 len, u32 unused);
-void searchSubString(const char*, const char*);
-void searchSubString(const char*, const char*, s32);
+const char* searchSubString(const char*, const char*);
+const char* searchSubString(const char*, const char*, s32);
 const char* getSubStringUnmatched(const char**, const char*, const MatchStr&,
                                   void (*)(const char*, const char*, void*), void*);
 const char* getSubStringUnmatched(const char*, const MatchStr&);
