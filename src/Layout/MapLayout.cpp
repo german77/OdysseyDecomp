@@ -414,11 +414,56 @@ void MapLayout::exeAppear() {}
 
 void MapLayout::exeWait() {}
 
-void MapLayout::exeHintInitWait() {}
+void MapLayout::exeHintInitWait() {
+    if (al::isFirstStep(this))
+        al::showPaneRoot(this);
+        
+    if (al::isGreaterEqualStep(this, 30)){
+        if (al::isNerve(this, &NrvMapLayout.HintInitWaitNpc))
+            al::setNerve(this, &NrvMapLayout.HintAppearNpc);
+        else if (al::isNerve(this, &NrvMapLayout.HintInitWaitMoonRock))
+            al::setNerve(this, &NrvMapLayout.HintAppearMoonRock);
+        else if (al::isNerve(this, &NrvMapLayout.HintInitWaitAmiibo))
+            al::setNerve(this, &NrvMapLayout.HintAppearAmiibo);
+    }
+}
 
 void MapLayout::exeHintAppear() {}
 
-void MapLayout::exeHintDecideIconAppear() {}
+void MapLayout::exeHintDecideIconAppear() {
+    if (al::isFirstStep(this)) {
+        mDecideIconLayout->appear();
+        if (al::isNerve(this, &NrvMapLayout.HintDecideIconAppearMoonRock)) {
+            /*s32 moonRockNum = GameDataFunction::calcHintMoonRockNum(this);
+            if (0 < moonRockNum) {
+                do {
+                    al::LayoutActor* layout = MoonRockLayout[i];
+                    al::startAction(layout, "Wait", (char*)0x0);
+                    startNumberAction(this);
+                    moonRockNum--;
+                } while (moonRockNum != 0);
+            }*/
+        } else if (al::isNerve(this, &NrvMapLayout.HintDecideIconAppearNpc)) {
+            s32 i = GameDataFunction::calcHintNum(this);
+            /*al::LayoutActor* layout = NpcLayout[i];
+            al::startAction(layout, "Wait", nullptr);*/
+            startNumberAction();
+        } else if (al::isNerve(this, &NrvMapLayout.HintDecideIconAppearAmiibo)) {
+            s32 hintNum = GameDataFunction::calcHintNum(this);
+            /*if (0 < hintDecideIconAmiiboSize) {
+                do {
+                    al::LayoutActor* layout = amiiboLayout[i];
+                    al::startAction(layout, "Wait", nullptr);
+                    startNumberAction(this);
+                } while (lVar6 < hintDecideIconAmiiboSize);
+            }
+            hintDecideIconAmiiboSize = 0;*/
+        }
+    }
+    mDecideIconLayout->updateNerve();
+    if (mDecideIconLayout->isWait())
+        al::setNerve(this, &NrvMapLayout.HintDecideIconWait);
+}
 
 void MapLayout::exeHintDecideIconWait() {
     mDecideIconLayout->updateNerve();
