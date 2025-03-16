@@ -174,9 +174,11 @@ private:
     s32 mWorldId = -1;
     s32 currentFontType = 3;
     s32 doesntexist;
+    
     u32 hintAmiiboSizer = 0;
     HintAmiibo* hintAmiibo = nullptr;
     s32 hintDecideIconAmiiboSize;
+    
     bool mIsFreezeAction;
     bool mIsSomesomebool;
     bool mIsSharila;
