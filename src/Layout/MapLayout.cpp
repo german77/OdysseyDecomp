@@ -139,7 +139,6 @@ MapLayout::MapLayout(const al::LayoutInitInfo& initInfo, const al::PlayerHolder*
             .position = sead::Vector3f::zero,
             .iconType = MapIconType::Scenario2,
             .name = nullptr,
-            .value = 0,
         };
     }
     mMapIconInfo = iconInfo;
@@ -178,7 +177,6 @@ void MapLayout::appear() {
             .position = sead::Vector3f::zero,
             .iconType = MapIconType::Scenario2,
             .name = nullptr,
-            .value = 0,
         };
     }
 
@@ -358,7 +356,6 @@ void MapLayout::appearAmiiboHint() {
             .position = sead::Vector3f::zero,
             .iconType = MapIconType::Scenario2,
             .name = nullptr,
-            .value = 0,
         };
     }
     reset();
@@ -540,7 +537,6 @@ void MapLayout::appearWithHint() {
             .position = sead::Vector3f::zero,
             .iconType = MapIconType::Scenario2,
             .name = nullptr,
-            .value = 0,
         };
     }
     reset();
@@ -571,7 +567,6 @@ void MapLayout::appearMoonRockDemo(s32 sworldId) {
             .position = sead::Vector3f::zero,
             .iconType = MapIconType::Scenario2,
             .name = nullptr,
-            .value = 0,
         };
     }
     changePrintWorld(sworldId);
@@ -667,7 +662,21 @@ void MapLayout::updateLine(al::LayoutActor* layoutActor) {
 
 void MapLayout::appearParts(bool) {}
 
-void MapLayout::startNumberAction() {}
+void MapLayout::startNumberAction() {  
+  for(s32 i=0;i<mMapIconInfoSize;i++){
+      if (!mMapIconInfo[i].isActive) {
+      continue;
+      }
+        if (mMapIconInfo[i].iconType == MapIconType::Flag) {
+          al::startAction(mMapIconInfo[i].iconLayout->layout,"Off","OnOff");
+        }
+        else {
+          al::startAction(mMapIconInfo[i].iconLayout->layout,"On","OnOff");
+          al::WStringTmp<32> iconType={u"%d", mMapIconInfo[i].iconType};
+          al::setPaneString(mMapIconInfo[i].iconLayout->layout,"TxtNumber",iconType.cstr(),0);
+        }
+  }
+}
 
 void MapLayout::calcSeaOfTreeIconPos(sead::Vector3f* position) {
     *position = al::getPaneLocalTrans(mMapTerrainLayout, "UnclearPos");

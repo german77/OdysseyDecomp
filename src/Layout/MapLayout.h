@@ -55,6 +55,8 @@ struct MapIconLayout {
 struct MapIconInfo {
     MapIconLayout* iconLayout;
     bool isActive;
+    char a[3];
+    f32 value2;
     sead::Vector3f position;
     MapIconType iconType;
     const char* name;
