@@ -151,7 +151,7 @@ private:
     MapIconLayout* mMapIconLayout = nullptr;
 
     s32 mMainScenarioNumMax = 0;
-    al::LayoutActor** moonRockLayout = nullptr;
+    MapIconLayout* moonRockLayout = nullptr;
 
     s32 mHintMoonRockNumMax = 0;
     MapIconLayout* mapIconLayoutA = nullptr;

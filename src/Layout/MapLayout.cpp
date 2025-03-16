@@ -33,9 +33,9 @@ namespace {
 NERVE_IMPL(MapLayout, Appear)
 NERVE_IMPL_(MapLayout, AppearWithHint, Appear)
 NERVE_IMPL_(MapLayout, AppearMoonRockDemo, Appear)
-NERVE_IMPL_(MapLayout, HintAppearNpc, Appear)
-NERVE_IMPL_(MapLayout, HintAppearMoonRock, Appear)
-NERVE_IMPL_(MapLayout, HintAppearAmiibo, Appear)
+NERVE_IMPL_(MapLayout, HintAppearNpc, HintAppear)
+NERVE_IMPL_(MapLayout, HintAppearMoonRock, HintAppear)
+NERVE_IMPL_(MapLayout, HintAppearAmiibo, HintAppear)
 NERVE_IMPL_(MapLayout, ChangeIn, Appear)
 NERVE_IMPL(MapLayout, Wait)
 NERVE_IMPL_(MapLayout, HintInitWaitAmiibo, HintInitWait)
@@ -703,7 +703,7 @@ void MapLayout::calcSeaOfTreeIconPos(sead::Vector3f* position) {
 }
 
 const char* getIconName(const IconType iconType) {
-    if (iconType < 0x13)
+    if (iconType < IconType::MaxValue)
         return sIconType[(s32)iconType];
     return "";
 }
@@ -1111,7 +1111,38 @@ void MapLayout::exeHintInitWait() {
     }
 }
 
-void MapLayout::exeHintAppear() {}
+void MapLayout::exeHintAppear() {
+    if (al::isFirstStep(this)) {
+        if (al::isNerve(this, &NrvMapLayout.HintAppearNpc)) {
+        } else if (al::isNerve(this, &NrvMapLayout.HintAppearAmiibo)) {
+        } else if (al::isNerve(this, &NrvMapLayout.HintAppearMoonRock)) {
+            s32 rockNum = GameDataFunction::calcHintMoonRockNum(this);
+            for(s32 i=0;i< rockNum;i++){
+                    sead::Vector3f rockPosition = GameDataFunction::calcHintMoonRockTrans(this, i);
+                    for(s32 e=0;e< i;e++){
+                        sead::Vector3f diff=mMapIconInfo[e].position -rockPosition;
+                        if (diff.length() < 10.0f) {
+                            mMapIconInfo[e].action++;
+                            goto skip;
+                        }
+                    }
+                    calcMapTransAndAppear(&moonRockLayout[i], mMapIconInfo,rockPosition, IconType::HintRock1, false);
+                    al::startAction(moonRockLayout[i].layout, "HintNew", nullptr);
+                    skip:
+                      continue;
+            }
+        }
+        startNumberAction();
+    }
+    if (al::isGreaterEqualStep(this, 150)) {
+        if (al::isNerve(this, &NrvMapLayout.HintAppearNpc))
+            al::setNerve(this, &NrvMapLayout.HintDecideIconAppearNpc);
+        else if (al::isNerve(this, &NrvMapLayout.HintAppearAmiibo))
+            al::setNerve(this, &NrvMapLayout.HintDecideIconAppearAmiibo);
+        else if (al::isNerve(this, &NrvMapLayout.HintAppearMoonRock))
+            al::setNerve(this, &NrvMapLayout.HintDecideIconAppearMoonRock);
+    }
+}
 
 void MapLayout::exeHintDecideIconAppear() {
     if (al::isFirstStep(this)) {
@@ -1119,7 +1150,7 @@ void MapLayout::exeHintDecideIconAppear() {
         if (al::isNerve(this, &NrvMapLayout.HintDecideIconAppearMoonRock)) {
             s32 moonRockNum = GameDataFunction::calcHintMoonRockNum(this);
             for (s32 i = 0; i < moonRockNum; i++) {
-                al::startAction(moonRockLayout[i], "Wait", nullptr);
+                al::startAction(moonRockLayout[i].layout, "Wait", nullptr);
                 startNumberAction();
             }
         } else if (al::isNerve(this, &NrvMapLayout.HintDecideIconAppearNpc)) {
