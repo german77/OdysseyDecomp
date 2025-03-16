@@ -268,10 +268,73 @@ void MapLayout::reset() {
     mScrollPosition = sead::Vector2f::zero;
 }
 
-void MapLayout::moveFocusLayout(const sead::Vector3f&, const sead::Vector2f&) {}
+void MapLayout::moveFocusLayout(const sead::Vector3f& param_1, const sead::Vector2f& param_2) {
+  if (isPrintWorldChanged) {
+    MapData* mapdata = mMapTerrainLayout->getMapData();
+    f32 fVar8 = mapdata->viewProjMatrix.m[0][0];
+    f32 fVar11 = mapdata->viewProjMatrix.m[0][1];
+    f32 fVar12 = mapdata->viewProjMatrix.m[0][2];
+    f32 fVar14 = mapdata->viewProjMatrix.m[0][3];
+    f32 fVar9 = mapdata->viewProjMatrix.m[1][0];
+    f32 fVar13 = mapdata->viewProjMatrix.m[1][1];
+    f32 fVar6 = mapdata->viewProjMatrix.m[1][2];
+    f32 fVar10 = mapdata->viewProjMatrix.m[1][3];
+    f32 panelSize = mMapTerrainLayout->getPaneSize();
+    f32 xx = (fVar14 + param_1.x * fVar8 + param_1.y * fVar11 + param_1.z * fVar12) * panelSize * 0.5f;
+    f32 yy = (fVar10 + param_1.x * fVar9 + param_1.y * fVar13 + param_1.z * fVar6) * panelSize * 0.5f;
+   f32 fVar3 = 955.0;
+   bool bVar1;
+    if ((955.0 < yy) || (fVar3 = -985.0, yy < -985.0)) {
+      yy = fVar3;
+      bVar1 = true;
+    }
+    else {
+      bVar1 = false;
+    }
+    fVar3 = 985.0;
+    sead::Vector3f direction;
+    if (((985.0 < xx) || (fVar3 = -955.0, xx < -955.0)) ||
+       ( fVar3 = xx, bVar1)) {
+      direction = sead::Vector3f::zero;
+      sead::Vector2f position={-fVar3,-yy};
+      f32 angle = al::calcAngleDegree(sead::Vector2f::ey,position);
+      al::rotateVectorDegreeZ(&direction,modDegree(angle));
+      xx = fVar3;
+    }
+    mScrollPosition.x = (-xx - param_2.x) - direction.x * 2.5f;
+    mScrollPosition.y = (-yy - param_2.y) - direction.y * 2.5f;
+  }
+}
 
-void MapLayout::updateST() {
-    std::cos(0.0f);
+void MapLayout::updateST() {  
+  if (isPrintWorldChanged) {
+    al::setPaneLocalScale(this,"All",mPanelLocalScale);
+    sead::Vector2f position={mScrollPosition.x * mPanelLocalScale.x,
+    mScrollPosition.y * mPanelLocalScale.y};
+    al::setPaneLocalTrans(this,"All",position);
+    MapData* mapdata = mMapTerrainLayout->getMapData();
+    al::LiveActor* playerActor = al::tryGetPlayerActor(mPlayerHolder,0);
+    if (playerActor != nullptr) {
+      updatePlayerPosLayout();
+    }
+    for(s32 i=0;i<mMapIconInfoSize;i++){
+    }
+    setPanelFont(mPanelLocalScale.x,&currentFontType,this,currentFontType);
+    s32 size = array.size();
+    for(s32 i=0;i<size;i++){
+        if (al::isActive(array[i])) {
+          sead::Vector2f vector2 = {50.0f,50.0f};
+          if (i == 1){
+            vector2 = {-50.0f,50.0f};
+          }else if(i==4){
+            vector2 = {50.0f,0.0f};
+          }else{
+            vector2 = sead::Vector2f::zero;
+          }
+          updateIconLine(array[i],mAAA,vector2);
+        }
+  }
+  }
 }
 
 void MapLayout::addAmiiboHint() {
