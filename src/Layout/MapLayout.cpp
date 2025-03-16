@@ -352,7 +352,36 @@ void MapLayout::addAmiiboHint() {
     hintDecideIconAmiiboSize++;
 }
 
-void MapLayout::appearAmiiboHint() {}
+void MapLayout::appearAmiiboHint() {
+  if (-1 < mWorldId) {
+    for (s32 i = 0; i < mMapIconInfoSize; i++) {
+        mMapIconInfo[i] = {
+            .iconLayout = nullptr,
+            .neat = false,
+            .position = sead::Vector3f::zero,
+            .iconType = MapIconType::Scenario2,
+            .name = nullptr,
+            .value = 0,
+        };
+    }
+    reset();
+    mPanelLocalScale = {0.3f, 0.3f};
+    updateST();
+    al::LayoutActor::appear();
+    al::setNerve(this, &NrvMapLayout.HintInitWaitAmiibo);
+    al::startAction(this,"Appear",nullptr);
+    al::startAction(this,"LeftIn","Change");
+    al::setActionFrame(this,al::getActionFrameMax(this,"LeftIn","Change"),"Change");
+    mWaitEndMapBg->appear();
+    mIsFreezeAction = trySetBalloon(mWaitEndMapPlayer,al::getPlayerActor(mPlayerHolder,0),
+    mMapTerrainLayout->getMapData()->viewProjMatrix);
+    updatePlayerPosLayout();
+    mWaitEndMapPlayer->startWait();
+    mIsSomesomebool = true;
+    return;
+  }
+  al::setNerve(this, &NrvMapLayout.End);
+}
 
 void MapLayout::end() {
     al::setNerve(this, &NrvMapLayout.End);
@@ -505,9 +534,67 @@ void MapLayout::updatePlayerPosLayout() {
         al::startFreezeAction(mWaitEndMapPlayer, "Normal", 0.0f, "Icon");
 }
 
-void MapLayout::appearWithHint() {}
+void MapLayout::appearWithHint() {
+  if (-1 < mWorldId) {
+    for (s32 i = 0; i < mMapIconInfoSize; i++) {
+        mMapIconInfo[i] = {
+            .iconLayout = nullptr,
+            .neat = false,
+            .position = sead::Vector3f::zero,
+            .iconType = MapIconType::Scenario2,
+            .name = nullptr,
+            .value = 0,
+        };
+    }
+    reset();
+    mPanelLocalScale = {0.3f, 0.3f};
+    updateST();
+    al::LayoutActor::appear();
+    al::setNerve(this, &NrvMapLayout.HintInitWaitNpc);
+    al::startAction(this,"Appear",nullptr);
+    al::startAction(this,"LeftIn","Change");
+    al::setActionFrame(this,al::getActionFrameMax(this,"LeftIn","Change"),"Change");
+    mWaitEndMapBg->appear();
+    mIsFreezeAction = trySetBalloon(mWaitEndMapPlayer,al::getPlayerActor(mPlayerHolder,0),
+    mMapTerrainLayout->getMapData()->viewProjMatrix);
+    updatePlayerPosLayout();
+    mWaitEndMapPlayer->startWait();
+    mIsSomesomebool = true;
+    return;
+  }
+  al::setNerve(this, &NrvMapLayout.End);
+}
 
-void MapLayout::appearMoonRockDemo(s32) {}
+void MapLayout::appearMoonRockDemo(s32 sworldId) {
+  if (-1 < mWorldId) {
+    for (s32 i = 0; i < mMapIconInfoSize; i++) {
+        mMapIconInfo[i] = {
+            .iconLayout = nullptr,
+            .neat = false,
+            .position = sead::Vector3f::zero,
+            .iconType = MapIconType::Scenario2,
+            .name = nullptr,
+            .value = 0,
+        };
+    }
+    changePrintWorld(sworldId);
+    mPanelLocalScale = {0.3f, 0.3f};
+    updateST();
+    al::LayoutActor::appear();
+    al::setNerve(this, &NrvMapLayout.HintInitWaitMoonRock);
+    al::startAction(this,"Appear",nullptr);
+    al::startAction(this,"LeftIn","Change");
+    al::setActionFrame(this,al::getActionFrameMax(this,"LeftIn","Change"),"Change");
+    mWaitEndMapBg->appear();
+    mIsFreezeAction = trySetBalloon(mWaitEndMapPlayer,al::getPlayerActor(mPlayerHolder,0),
+    mMapTerrainLayout->getMapData()->viewProjMatrix);
+    updatePlayerPosLayout();
+    mWaitEndMapPlayer->startWait();
+    mIsSomesomebool = true;
+    return;
+  }
+  al::setNerve(this, &NrvMapLayout.End);
+}
 
 void MapLayout::appearCollectionList() {
     help = false;
