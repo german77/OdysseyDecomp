@@ -135,7 +135,7 @@ MapLayout::MapLayout(const al::LayoutInitInfo& initInfo, const al::PlayerHolder*
     for (s32 i = 0; i < mapIconSizeNumMax; i++) {
         iconInfo[i] = {
             .iconLayout = nullptr,
-            .neat = false,
+            .isActive = false,
             .position = sead::Vector3f::zero,
             .iconType = MapIconType::Scenario2,
             .name = nullptr,
@@ -174,7 +174,7 @@ void MapLayout::appear() {
     for (s32 i = 0; i < mMapIconInfoSize; i++) {
         mMapIconInfo[i] = {
             .iconLayout = nullptr,
-            .neat = false,
+            .isActive = false,
             .position = sead::Vector3f::zero,
             .iconType = MapIconType::Scenario2,
             .name = nullptr,
@@ -337,16 +337,15 @@ void MapLayout::updateST() {
   }
 }
 
-HintAmiibo& getHintAmiibo(s32 i,u32 b,HintAmiibo* hintAmiibo){
-    if(b>i)
-    return hintAmiibo[i];
+HintAmiibo& getHintAmiibo(s32 i,u32 maxSize,HintAmiibo* hintAmiibo){
+    if(maxSize>(u32)i)
+        return hintAmiibo[i];
     return hintAmiibo[0];
 }
 
 void MapLayout::addAmiiboHint() {
 getHintAmiibo(hintDecideIconAmiiboSize,hintAmiiboSizer,hintAmiibo).position=GameDataFunction::getLatestHintTrans(this);
 getHintAmiibo(hintDecideIconAmiiboSize,hintAmiiboSizer,hintAmiibo).isValid=GameDataFunction::checkLatestHintSeaOfTree(this);
-
 hintDecideIconAmiiboSize++;
 }
 
@@ -355,7 +354,7 @@ void MapLayout::appearAmiiboHint() {
     for (s32 i = 0; i < mMapIconInfoSize; i++) {
         mMapIconInfo[i] = {
             .iconLayout = nullptr,
-            .neat = false,
+            .isActive = false,
             .position = sead::Vector3f::zero,
             .iconType = MapIconType::Scenario2,
             .name = nullptr,
@@ -537,7 +536,7 @@ void MapLayout::appearWithHint() {
     for (s32 i = 0; i < mMapIconInfoSize; i++) {
         mMapIconInfo[i] = {
             .iconLayout = nullptr,
-            .neat = false,
+            .isActive = false,
             .position = sead::Vector3f::zero,
             .iconType = MapIconType::Scenario2,
             .name = nullptr,
@@ -568,7 +567,7 @@ void MapLayout::appearMoonRockDemo(s32 sworldId) {
     for (s32 i = 0; i < mMapIconInfoSize; i++) {
         mMapIconInfo[i] = {
             .iconLayout = nullptr,
-            .neat = false,
+            .isActive = false,
             .position = sead::Vector3f::zero,
             .iconType = MapIconType::Scenario2,
             .name = nullptr,
@@ -615,7 +614,23 @@ bool MapLayout::isEnableCheckpointWarp() const {
     return false;
 }
 
-void MapLayout::changeOut(bool) {}
+void MapLayout::changeOut(bool isLeftOut) {             
+  al::startAction(this,isLeftOut?"LeftOut":"RightOut","Change");
+  al::startAction(mWaitEndMapCursor,"ChangeOut",nullptr);
+  mWaitEndMapPlayer->kill();
+  mWaitEndMapGuide->kill();
+  s32 size = array.size();
+  for(s32 i=0;i<size;i++){
+      array[i]->kill();
+  }
+  for(s32 i=0;i<mMapIconInfoSize;i++){
+      if (mMapIconInfo[i].isActive &&
+      al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout)) {
+        mMapIconInfo[i].isActive = false;
+      }
+  }
+  al::setNerve(this,&ChangeOut);
+}
 
 void MapLayout::changeIn(bool isRightIn) {
     appearCollectionList();
@@ -1104,8 +1119,8 @@ void MapLayout::exeEnd() {
         for (s32 i = 0; i < size; i++)
             al::startAction(array[i], "End", nullptr);
         for (s32 i = 0; i < mMapIconInfoSize; i++)
-            if (mMapIconInfo[i].neat && al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
-                mMapIconInfo[i].neat = false;
+            if (mMapIconInfo[i].isActive && al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
+                mMapIconInfo[i].isActive = false;
         al::startHitReaction(this, "マップクローズ", nullptr);
     }
     if (al::isActionEnd(this, nullptr)) {
@@ -1126,8 +1141,8 @@ void MapLayout::exeEnd() {
 void MapLayout::exeChangeOut() {
     if (al::isFirstStep(this)) {
         for (s32 i = 0; i < mMapIconInfoSize; i++)
-            if (mMapIconInfo[i].neat && al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
-                mMapIconInfo[i].neat = false;
+            if (mMapIconInfo[i].isActive && al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
+                mMapIconInfo[i].isActive = false;
     }
     if (al::isActionEnd(this, "Change")) {
         mWaitEndMapPlayer->kill();
