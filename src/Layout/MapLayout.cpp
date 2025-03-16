@@ -54,7 +54,7 @@ NERVES_MAKE_NOSTRUCT(MapLayout, HintAppear, HintPressDecide, ChangeOut)
 NERVES_MAKE_STRUCT(MapLayout, Appear, HintInitWaitAmiibo, HintInitWaitNpc, HintInitWaitMoonRock,
                    End, ChangeIn, Wait, AppearWithHint, AppearMoonRockDemo, HintAppearNpc,
                    HintAppearMoonRock, HintAppearAmiibo, HintDecideIconAppearNpc,
-                   HintDecideIconAppearMoonRock, HintDecideIconAppearAmiibo, HintDecideIconWait)
+                   HintDecideIconAppearAmiibo, HintDecideIconAppearMoonRock, HintDecideIconWait)
 }  // namespace
 
 static const char* sPicImage[8] = {"PicImage00", "PicImage01", "PicImage02", "PicImage03",
@@ -1154,13 +1154,12 @@ void MapLayout::exeHintDecideIconAppear() {
                 startNumberAction();
             }
         } else if (al::isNerve(this, &NrvMapLayout.HintDecideIconAppearNpc)) {
-            s32 i = GameDataFunction::calcHintNum(this);
-            al::startAction(hintDecideIconLayout[i * 2 - 1], "Wait", nullptr);
+            al::startAction(hintDecideIconLayout[GameDataFunction::calcHintNum(this) - 1].layout, "Wait", nullptr);
             startNumberAction();
         } else if (al::isNerve(this, &NrvMapLayout.HintDecideIconAppearAmiibo)) {
             s32 hintNum = GameDataFunction::calcHintNum(this);
             for (s32 i = 0; i < hintDecideIconAmiiboSize; i++) {
-                al::startAction(hintDecideIconLayout[i + hintNum], "Wait", nullptr);
+                al::startAction(hintDecideIconLayout[hintNum+i].layout, "Wait", nullptr);
                 startNumberAction();
             }
             hintDecideIconAmiiboSize = 0;
