@@ -1114,22 +1114,64 @@ void MapLayout::exeHintInitWait() {
 void MapLayout::exeHintAppear() {
     if (al::isFirstStep(this)) {
         if (al::isNerve(this, &NrvMapLayout.HintAppearNpc)) {
+            s32 hintNum = GameDataFunction::calcHintNum(this);
+            if (!GameDataFunction::checkLatestHintSeaOfTree(this)) {
+                calcMapTransAndAppear(&hintDecideIconLayout[hintNum - 1], mMapIconInfo,
+                                      GameDataFunction::getLatestHintTrans(this), IconType::Hint1,
+                                      false);
+                al::startAction(hintDecideIconLayout[hintNum - 1].layout, "HintNew", nullptr);
+            } else {
+                sead::Vector3f position;
+                calcSeaOfTreeIconPos(&position);
+                setLocalTransAndAppear(&hintDecideIconLayout[hintNum - 1], mMapIconInfo, position,
+                                       IconType::Hint1, true);
+                al::startAction(hintDecideIconLayout[hintNum - 1].layout, "HintNew", nullptr);
+            }
         } else if (al::isNerve(this, &NrvMapLayout.HintAppearAmiibo)) {
-        } else if (al::isNerve(this, &NrvMapLayout.HintAppearMoonRock)) {
-            s32 rockNum = GameDataFunction::calcHintMoonRockNum(this);
-            for(s32 i=0;i< rockNum;i++){
-                    sead::Vector3f rockPosition = GameDataFunction::calcHintMoonRockTrans(this, i);
-                    for(s32 e=0;e< i;e++){
-                        sead::Vector3f diff=mMapIconInfo[e].position -rockPosition;
+            s32 hintNum = GameDataFunction::calcHintNum(this);
+            MapIconLayout* iconLayout = nullptr;
+            for (s32 i = 0; i < hintDecideIconAmiiboSize; i++) {
+                HintAmiibo& hintamiibo = getHintAmiibo(i, hintDecideIconAmiiboSize, hintAmiibo);
+                if (!hintamiibo.isValid) {
+                    for (s32 e = 0; e < i; e++) {
+                        sead::Vector3f diff = mMapIconInfo[e].position - hintamiibo.position;
                         if (diff.length() < 10.0f) {
                             mMapIconInfo[e].action++;
-                            goto skip;
+                            goto skip2;
                         }
                     }
-                    calcMapTransAndAppear(&moonRockLayout[i], mMapIconInfo,rockPosition, IconType::HintRock1, false);
-                    al::startAction(moonRockLayout[i].layout, "HintNew", nullptr);
-                    skip:
-                      continue;
+                    calcMapTransAndAppear(&hintDecideIconLayout[i], mMapIconInfo,
+                                          hintamiibo.position, IconType::Hint1, false);
+                    al::startAction(hintDecideIconLayout[i].layout, "HintNew", nullptr);
+                } else if (iconLayout == nullptr) {
+                    sead::Vector3f position = sead::Vector3f::zero;
+                    calcSeaOfTreeIconPos(&position);
+                    iconLayout = &hintDecideIconLayout[i];
+                    setLocalTransAndAppear(iconLayout, mMapIconInfo, position, IconType::Hint1,
+                                           true);
+                } else {
+                    mMapIconInfo[iconLayout->fieldA].action++;
+                }
+            skip2:
+                continue;
+            }
+
+        } else if (al::isNerve(this, &NrvMapLayout.HintAppearMoonRock)) {
+            s32 rockNum = GameDataFunction::calcHintMoonRockNum(this);
+            for (s32 i = 0; i < rockNum; i++) {
+                sead::Vector3f rockPosition = GameDataFunction::calcHintMoonRockTrans(this, i);
+                for (s32 e = 0; e < i; e++) {
+                    sead::Vector3f diff = mMapIconInfo[e].position - rockPosition;
+                    if (diff.length() < 10.0f) {
+                        mMapIconInfo[e].action++;
+                        goto skip;
+                    }
+                }
+                calcMapTransAndAppear(&moonRockLayout[i], mMapIconInfo, rockPosition,
+                                      IconType::HintRock1, false);
+                al::startAction(moonRockLayout[i].layout, "HintNew", nullptr);
+            skip:
+                continue;
             }
         }
         startNumberAction();
@@ -1154,12 +1196,13 @@ void MapLayout::exeHintDecideIconAppear() {
                 startNumberAction();
             }
         } else if (al::isNerve(this, &NrvMapLayout.HintDecideIconAppearNpc)) {
-            al::startAction(hintDecideIconLayout[GameDataFunction::calcHintNum(this) - 1].layout, "Wait", nullptr);
+            al::startAction(hintDecideIconLayout[GameDataFunction::calcHintNum(this) - 1].layout,
+                            "Wait", nullptr);
             startNumberAction();
         } else if (al::isNerve(this, &NrvMapLayout.HintDecideIconAppearAmiibo)) {
             s32 hintNum = GameDataFunction::calcHintNum(this);
             for (s32 i = 0; i < hintDecideIconAmiiboSize; i++) {
-                al::startAction(hintDecideIconLayout[hintNum+i].layout, "Wait", nullptr);
+                al::startAction(hintDecideIconLayout[hintNum + i].layout, "Wait", nullptr);
                 startNumberAction();
             }
             hintDecideIconAmiiboSize = 0;
@@ -1245,7 +1288,7 @@ void calcTransOnMap(sead::Vector2f* out, const sead::Vector3f& v1, const sead::M
 }
 
 bool tryCalcMapNorthDir(sead::Vector3f* direction, const al::IUseSceneObjHolder* objHolder) {
-    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder, SceneObjID_MapLayout);
+    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder);
     MapData* mapData = mapLayout->getMapTerrainLayout()->getMapData();
 
     if (mapData == nullptr)
@@ -1264,47 +1307,47 @@ bool tryCalcMapNorthDir(sead::Vector3f* direction, const al::IUseSceneObjHolder*
 }
 
 const sead::Matrix44f& getMapViewProjMtx(const al::IUseSceneObjHolder* objHolder) {
-    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder, SceneObjID_MapLayout);
+    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder);
     return mapLayout->getViewProjMtx();
 }
 
 const sead::Matrix44f& getMapProjMtx(const al::IUseSceneObjHolder* objHolder) {
-    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder, SceneObjID_MapLayout);
+    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder);
     return mapLayout->getProjMtx();
 }
 
 void appearMapWithHint(const al::IUseSceneObjHolder* objHolder) {
-    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder, SceneObjID_MapLayout);
+    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder);
     mapLayout->appearWithHint();
 }
 
 void addAmiiboHintToMap(const al::IUseSceneObjHolder* objHolder) {
-    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder, SceneObjID_MapLayout);
+    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder);
     mapLayout->addAmiiboHint();
 }
 
 void appearMapWithAmiiboHint(const al::IUseSceneObjHolder* objHolder) {
-    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder, SceneObjID_MapLayout);
+    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder);
     mapLayout->appearAmiiboHint();
 }
 
 void appearMapMoonRockDemo(const al::IUseSceneObjHolder* objHolder, s32 value) {
-    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder, SceneObjID_MapLayout);
+    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder);
     mapLayout->appearMoonRockDemo(value);
 }
 
 void endMap(const al::IUseSceneObjHolder* objHolder) {
-    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder, SceneObjID_MapLayout);
+    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder);
     mapLayout->end();
 }
 
 bool isEndMap(const al::IUseSceneObjHolder* objHolder) {
-    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder, SceneObjID_MapLayout);
+    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder);
     return mapLayout->isEnd();
 }
 
 bool isEnableCheckpointWarp(const al::IUseSceneObjHolder* objHolder) {
-    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder, SceneObjID_MapLayout);
+    MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder);
     return mapLayout->isEnableCheckpointWarp();
 }
 }  // namespace rs

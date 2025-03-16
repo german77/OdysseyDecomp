@@ -6,6 +6,7 @@
 
 #include "Library/Layout/LayoutActor.h"
 #include "Library/Scene/ISceneObj.h"
+#include "Scene/SceneObjFactory.h"
 
 namespace al {
 class IUseSceneObjHolder;
@@ -71,6 +72,8 @@ struct HintAmiibo {
 
 class MapLayout : public al::LayoutActor, public al::ISceneObj {
 public:
+    static constexpr s32 sSceneObjId = SceneObjID_MapLayout;
+
     MapLayout(const al::LayoutInitInfo&, const al::PlayerHolder*, s32 worldId);
 
     void appear() override;
@@ -174,9 +177,11 @@ private:
     s32 mWorldId = -1;
     s32 currentFontType = 3;
     s32 doesntexist;
+
     u32 hintAmiiboSizer = 0;
     HintAmiibo* hintAmiibo = nullptr;
     s32 hintDecideIconAmiiboSize;
+
     bool mIsFreezeAction;
     bool mIsSomesomebool;
     bool mIsSharila;
