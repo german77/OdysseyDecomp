@@ -98,11 +98,11 @@ MapLayout::MapLayout(const al::LayoutInitInfo& initInfo, const al::PlayerHolder*
     initNerve(&NrvMapLayout.Appear, 0);
     al::startAction(this, "Appear", nullptr);
 
-    HintAmiibo* hint = new HintAmiibo[3];
+    /*HintAmiibo* hint = new HintAmiibo[3];
     if (hint != nullptr) {
         hintAmiiboSizer = 3;
         hintAmiibo = hint;
-    }
+    }*/
 
     mWaitEndMapBg =
         new al::SimpleLayoutAppearWaitEnd("[マップ]背景", "MapBG", initInfo, nullptr, false);
@@ -337,19 +337,17 @@ void MapLayout::updateST() {
   }
 }
 
+HintAmiibo& getHintAmiibo(s32 i,u32 b,HintAmiibo* hintAmiibo){
+    if(b>i)
+    return hintAmiibo[i];
+    return hintAmiibo[0];
+}
+
 void MapLayout::addAmiiboHint() {
-    sead::Vector3f* position = &hintAmiibo[hintDecideIconAmiiboSize].position;
-    if (hintAmiiboSizer <= hintDecideIconAmiiboSize)
-        position = &hintAmiibo[0].position;
-    *position = GameDataFunction::getLatestHintTrans(this);
-    bool isValid = GameDataFunction::checkLatestHintSeaOfTree(this);
+getHintAmiibo(hintDecideIconAmiiboSize,hintAmiiboSizer,hintAmiibo).position=GameDataFunction::getLatestHintTrans(this);
+getHintAmiibo(hintDecideIconAmiiboSize,hintAmiiboSizer,hintAmiibo).isValid=GameDataFunction::checkLatestHintSeaOfTree(this);
 
-    HintAmiibo* hint = &hintAmiibo[hintDecideIconAmiiboSize];
-    if (hintAmiiboSizer <= hintDecideIconAmiiboSize)
-        hint = &hintAmiibo[0];
-    hint->isValid = isValid;
-
-    hintDecideIconAmiiboSize++;
+hintDecideIconAmiiboSize++;
 }
 
 void MapLayout::appearAmiiboHint() {
