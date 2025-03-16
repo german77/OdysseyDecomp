@@ -137,7 +137,7 @@ private:
 
     s32 mCheckpointNumMaxInWorld = 0;
     MapIconLayout* mapIconLayoutAnother = nullptr;
-    al::LayoutActor** hintDecideIconLayout = nullptr;
+    MapIconLayout* hintDecideIconLayout = nullptr;
 
     s32 mHintNumMax = 0;
     MapIconLayout* pointersvc2 = nullptr;
