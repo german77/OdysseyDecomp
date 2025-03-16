@@ -98,11 +98,11 @@ MapLayout::MapLayout(const al::LayoutInitInfo& initInfo, const al::PlayerHolder*
     initNerve(&NrvMapLayout.Appear, 0);
     al::startAction(this, "Appear", nullptr);
 
-    /*HintAmiibo* hint = new HintAmiibo[3];
+    HintAmiibo* hint = new HintAmiibo[3];
     if (hint != nullptr) {
         hintAmiiboSizer = 3;
         hintAmiibo = hint;
-    }*/
+    }
 
     mWaitEndMapBg =
         new al::SimpleLayoutAppearWaitEnd("[マップ]背景", "MapBG", initInfo, nullptr, false);
@@ -137,8 +137,7 @@ MapLayout::MapLayout(const al::LayoutInitInfo& initInfo, const al::PlayerHolder*
             .iconLayout = nullptr,
             .isActive = false,
             .position = sead::Vector3f::zero,
-            .iconType = MapIconType::Scenario2,
-            .name = nullptr,
+            .iconType = IconType::Scenario2,
         };
     }
     mMapIconInfo = iconInfo;
@@ -170,14 +169,15 @@ MapLayout::MapLayout(const al::LayoutInitInfo& initInfo, const al::PlayerHolder*
 }
 
 void MapLayout::appear() {
-    for (s32 i = 0; i < mMapIconInfoSize; i++) {
-        mMapIconInfo[i] = {
-            .iconLayout = nullptr,
-            .isActive = false,
-            .position = sead::Vector3f::zero,
-            .iconType = MapIconType::Scenario2,
-            .name = nullptr,
-        };
+    s32 size = mMapIconInfoSize;
+    for (s32 i = 0; i < size; i++) {
+        MapIconInfo& iconInfo = mMapIconInfo[i];
+        iconInfo.isActive = false;
+        iconInfo.iconType = IconType::MaxValue;
+        iconInfo.position = sead::Vector3f::zero;
+        iconInfo.action = 0;
+        iconInfo.position2 = sead::Vector2f::zero;
+        iconInfo.value = false;
     }
 
     if (isPrintWorldChanged) {
@@ -197,12 +197,12 @@ void MapLayout::appear() {
             position.set(al::getTrans(playerActor));
             al::AreaObj* areaObj =
                 al::tryFindAreaObj(playerActor, "InvalidateStageMapArea", position);
-            if (areaObj == nullptr) {
+            if (areaObj != nullptr) {
+                al::getLinksQT(nullptr, &position, *areaObj->getPlacementInfo(), "PlayerPoint");
+            } else {
                 mScrollPosition = sead::Vector2f::zero;
                 if (!GameDataFunction::isMainStage(this))
                     position.set(GameDataFunction::getStageMapPlayerPos(this));
-            } else {
-                al::getLinksQT(nullptr, &position, *areaObj->getPlacementInfo(), "PlayerPoint");
             }
         }
         moveFocusLayout(position, sead::Vector2f::zero);
@@ -267,114 +267,122 @@ void MapLayout::reset() {
 }
 
 void MapLayout::moveFocusLayout(const sead::Vector3f& param_1, const sead::Vector2f& param_2) {
-  if (isPrintWorldChanged) {
-    MapData* mapdata = mMapTerrainLayout->getMapData();
-    f32 fVar8 = mapdata->viewProjMatrix.m[0][0];
-    f32 fVar11 = mapdata->viewProjMatrix.m[0][1];
-    f32 fVar12 = mapdata->viewProjMatrix.m[0][2];
-    f32 fVar14 = mapdata->viewProjMatrix.m[0][3];
-    f32 fVar9 = mapdata->viewProjMatrix.m[1][0];
-    f32 fVar13 = mapdata->viewProjMatrix.m[1][1];
-    f32 fVar6 = mapdata->viewProjMatrix.m[1][2];
-    f32 fVar10 = mapdata->viewProjMatrix.m[1][3];
-    f32 panelSize = mMapTerrainLayout->getPaneSize();
-    f32 xx = (fVar14 + param_1.x * fVar8 + param_1.y * fVar11 + param_1.z * fVar12) * panelSize * 0.5f;
-    f32 yy = (fVar10 + param_1.x * fVar9 + param_1.y * fVar13 + param_1.z * fVar6) * panelSize * 0.5f;
-   f32 fVar3 = 955.0;
-   bool bVar1;
-    if ((955.0 < yy) || (fVar3 = -985.0, yy < -985.0)) {
-      yy = fVar3;
-      bVar1 = true;
-    }
-    else {
-      bVar1 = false;
-    }
-    fVar3 = 985.0;
-    sead::Vector3f direction;
-    if (((985.0 < xx) || (fVar3 = -955.0, xx < -955.0)) ||
-       ( fVar3 = xx, bVar1)) {
-      direction = sead::Vector3f::zero;
-      sead::Vector2f position={-fVar3,-yy};
-      f32 angle = al::calcAngleDegree(sead::Vector2f::ey,position);
-      al::rotateVectorDegreeZ(&direction,modDegree(angle));
-      xx = fVar3;
-    }
-    mScrollPosition.x = (-xx - param_2.x) - direction.x * 2.5f;
-    mScrollPosition.y = (-yy - param_2.y) - direction.y * 2.5f;
-  }
-}
-
-void MapLayout::updateST() {  
-  if (isPrintWorldChanged) {
-    al::setPaneLocalScale(this,"All",mPanelLocalScale);
-    sead::Vector2f position={mScrollPosition.x * mPanelLocalScale.x,
-    mScrollPosition.y * mPanelLocalScale.y};
-    al::setPaneLocalTrans(this,"All",position);
-    MapData* mapdata = mMapTerrainLayout->getMapData();
-    al::LiveActor* playerActor = al::tryGetPlayerActor(mPlayerHolder,0);
-    if (playerActor != nullptr) {
-      updatePlayerPosLayout();
-    }
-    for(s32 i=0;i<mMapIconInfoSize;i++){
-    }
-    setPanelFont(mPanelLocalScale.x,&currentFontType,this,currentFontType);
-    s32 size = array.size();
-    for(s32 i=0;i<size;i++){
-        if (al::isActive(array[i])) {
-          sead::Vector2f vector2 = {50.0f,50.0f};
-          if (i == 1){
-            vector2 = {-50.0f,50.0f};
-          }else if(i==4){
-            vector2 = {50.0f,0.0f};
-          }else{
-            vector2 = sead::Vector2f::zero;
-          }
-          updateIconLine(array[i],mAAA,vector2);
+    if (isPrintWorldChanged) {
+        MapData* mapdata = mMapTerrainLayout->getMapData();
+        f32 fVar8 = mapdata->viewProjMatrix.m[0][0];
+        f32 fVar11 = mapdata->viewProjMatrix.m[0][1];
+        f32 fVar12 = mapdata->viewProjMatrix.m[0][2];
+        f32 fVar14 = mapdata->viewProjMatrix.m[0][3];
+        f32 fVar9 = mapdata->viewProjMatrix.m[1][0];
+        f32 fVar13 = mapdata->viewProjMatrix.m[1][1];
+        f32 fVar6 = mapdata->viewProjMatrix.m[1][2];
+        f32 fVar10 = mapdata->viewProjMatrix.m[1][3];
+        f32 panelSize = mMapTerrainLayout->getPaneSize();
+        f32 xx = (fVar14 + param_1.x * fVar8 + param_1.y * fVar11 + param_1.z * fVar12) *
+                 panelSize * 0.5f;
+        f32 yy = (fVar10 + param_1.x * fVar9 + param_1.y * fVar13 + param_1.z * fVar6) * panelSize *
+                 0.5f;
+        f32 fVar3 = 955.0;
+        bool bVar1;
+        if ((955.0 < yy) || (fVar3 = -985.0, yy < -985.0)) {
+            yy = fVar3;
+            bVar1 = true;
+        } else {
+            bVar1 = false;
         }
-  }
-  }
+        fVar3 = 985.0;
+        sead::Vector3f direction;
+        if (((985.0 < xx) || (fVar3 = -955.0, xx < -955.0)) || (fVar3 = xx, bVar1)) {
+            direction = sead::Vector3f::zero;
+            sead::Vector2f position = {-fVar3, -yy};
+            f32 angle = al::calcAngleDegree(sead::Vector2f::ey, position);
+            al::rotateVectorDegreeZ(&direction, modDegree(angle));
+            xx = fVar3;
+        }
+        mScrollPosition.x = (-xx - param_2.x) - direction.x * 2.5f;
+        mScrollPosition.y = (-yy - param_2.y) - direction.y * 2.5f;
+    }
 }
 
-HintAmiibo& getHintAmiibo(s32 i,u32 maxSize,HintAmiibo* hintAmiibo){
-    if(maxSize>(u32)i)
+void MapLayout::updateST() {
+    if (isPrintWorldChanged) {
+        al::setPaneLocalScale(this, "All", mPanelLocalScale);
+        sead::Vector2f position = {mScrollPosition.x * mPanelLocalScale.x,
+                                   mScrollPosition.y * mPanelLocalScale.y};
+        al::setPaneLocalTrans(this, "All", position);
+        MapData* mapdata = mMapTerrainLayout->getMapData();
+        al::LiveActor* playerActor = al::tryGetPlayerActor(mPlayerHolder, 0);
+        if (playerActor != nullptr)
+            updatePlayerPosLayout();
+        for (s32 i = 0; i < mMapIconInfoSize; i++) {
+        }
+        setPanelFont(mPanelLocalScale.x, &currentFontType, this, currentFontType);
+        s32 size = array.size();
+        for (s32 i = 0; i < size; i++) {
+            if (al::isActive(array[i])) {
+                sead::Vector2f vector2 = {50.0f, 50.0f};
+                if (i == 1)
+                    vector2 = {-50.0f, 50.0f};
+                else if (i == 4)
+                    vector2 = {50.0f, 0.0f};
+                else
+                    vector2 = sead::Vector2f::zero;
+                updateIconLine(array[i], mAAA, vector2);
+            }
+        }
+    }
+}
+
+HintAmiibo& getHintAmiibo(s32 i, u32 maxSize, HintAmiibo* hintAmiibo) {
+    if (maxSize > (u32)i)
         return hintAmiibo[i];
     return hintAmiibo[0];
 }
 
 void MapLayout::addAmiiboHint() {
-getHintAmiibo(hintDecideIconAmiiboSize,hintAmiiboSizer,hintAmiibo).position=GameDataFunction::getLatestHintTrans(this);
-getHintAmiibo(hintDecideIconAmiiboSize,hintAmiiboSizer,hintAmiibo).isValid=GameDataFunction::checkLatestHintSeaOfTree(this);
-hintDecideIconAmiiboSize++;
+    getHintAmiibo(hintDecideIconAmiiboSize, hintAmiiboSizer, hintAmiibo).position =
+        GameDataFunction::getLatestHintTrans(this);
+    getHintAmiibo(hintDecideIconAmiiboSize, hintAmiiboSizer, hintAmiibo).isValid =
+        GameDataFunction::checkLatestHintSeaOfTree(this);
+    hintDecideIconAmiiboSize++;
 }
 
 void MapLayout::appearAmiiboHint() {
-  if (-1 < mWorldId) {
-    for (s32 i = 0; i < mMapIconInfoSize; i++) {
-        mMapIconInfo[i] = {
-            .iconLayout = nullptr,
-            .isActive = false,
-            .position = sead::Vector3f::zero,
-            .iconType = MapIconType::Scenario2,
-            .name = nullptr,
-        };
+    if (-1 < mWorldId) {
+        s32 size = mMapIconInfoSize;
+        for (s32 i = 0; i < size; i++) {
+            MapIconInfo& iconInfo = mMapIconInfo[i];
+            iconInfo.isActive = false;
+            iconInfo.iconType = IconType::MaxValue;
+            iconInfo.position = sead::Vector3f::zero;
+            iconInfo.action = 0;
+            iconInfo.position2 = sead::Vector2f::zero;
+            iconInfo.value = false;
+        }
+        f32 map = mMapTerrainLayout->getPaneSize();
+        mPanelLocalScale.y = 0.4f;
+        mPanelLocalScale.x = 0.4f;
+        mMapTerrainLayout->getPaneSize();
+        mScrollPosition = sead::Vector2f::zero;
+        PanelSize = {map * 0.4f, map * 0.4f};
+        mPanelLocalScale.y = 0.3f;
+        mPanelLocalScale.x = 0.3f;
+        updateST();
+        al::LayoutActor::appear();
+        al::setNerve(this, &NrvMapLayout.HintInitWaitAmiibo);
+        al::startAction(this, "Appear", nullptr);
+        al::startAction(this, "LeftIn", "Change");
+        al::setActionFrame(this, al::getActionFrameMax(this, "LeftIn", "Change"), "Change");
+        mWaitEndMapBg->appear();
+        MapData* mapData = mMapTerrainLayout->getMapData();
+        mIsFreezeAction = trySetBalloon(mWaitEndMapPlayer, al::getPlayerActor(mPlayerHolder, 0),
+                                        mapData->viewProjMatrix);
+        updatePlayerPosLayout();
+        mWaitEndMapPlayer->startWait();
+        mIsSomesomebool = true;
+        return;
     }
-    reset();
-    mPanelLocalScale = {0.3f, 0.3f};
-    updateST();
-    al::LayoutActor::appear();
-    al::setNerve(this, &NrvMapLayout.HintInitWaitAmiibo);
-    al::startAction(this,"Appear",nullptr);
-    al::startAction(this,"LeftIn","Change");
-    al::setActionFrame(this,al::getActionFrameMax(this,"LeftIn","Change"),"Change");
-    mWaitEndMapBg->appear();
-    mIsFreezeAction = trySetBalloon(mWaitEndMapPlayer,al::getPlayerActor(mPlayerHolder,0),
-    mMapTerrainLayout->getMapData()->viewProjMatrix);
-    updatePlayerPosLayout();
-    mWaitEndMapPlayer->startWait();
-    mIsSomesomebool = true;
-    return;
-  }
-  al::setNerve(this, &NrvMapLayout.End);
+    al::setNerve(this, &NrvMapLayout.End);
 }
 
 void MapLayout::end() {
@@ -529,63 +537,77 @@ void MapLayout::updatePlayerPosLayout() {
 }
 
 void MapLayout::appearWithHint() {
-  if (-1 < mWorldId) {
-    for (s32 i = 0; i < mMapIconInfoSize; i++) {
-        mMapIconInfo[i] = {
-            .iconLayout = nullptr,
-            .isActive = false,
-            .position = sead::Vector3f::zero,
-            .iconType = MapIconType::Scenario2,
-            .name = nullptr,
-        };
+    if (-1 < mWorldId) {
+        s32 size = mMapIconInfoSize;
+        for (s32 i = 0; i < size; i++) {
+            MapIconInfo& iconInfo = mMapIconInfo[i];
+            iconInfo.isActive = false;
+            iconInfo.iconType = IconType::MaxValue;
+            iconInfo.position = sead::Vector3f::zero;
+            iconInfo.action = 0;
+            iconInfo.position2 = sead::Vector2f::zero;
+            iconInfo.value = false;
+        }
+        f32 map = mMapTerrainLayout->getPaneSize();
+        mPanelLocalScale.y = 0.4f;
+        mPanelLocalScale.x = 0.4f;
+        mMapTerrainLayout->getPaneSize();
+        mScrollPosition = sead::Vector2f::zero;
+        PanelSize = {map * 0.4f, map * 0.4f};
+        mPanelLocalScale.y = 0.3f;
+        mPanelLocalScale.x = 0.3f;
+        updateST();
+        al::LayoutActor::appear();
+        al::setNerve(this, &NrvMapLayout.HintInitWaitNpc);
+        al::startAction(this, "Appear", nullptr);
+        al::startAction(this, "LeftIn", "Change");
+        al::setActionFrame(this, al::getActionFrameMax(this, "LeftIn", "Change"), "Change");
+        mWaitEndMapBg->appear();
+        MapData* mapData = mMapTerrainLayout->getMapData();
+        mIsFreezeAction = trySetBalloon(mWaitEndMapPlayer, al::getPlayerActor(mPlayerHolder, 0),
+                                        mapData->viewProjMatrix);
+        updatePlayerPosLayout();
+        mWaitEndMapPlayer->startWait();
+        mIsSomesomebool = true;
+        return;
     }
-    reset();
-    mPanelLocalScale = {0.3f, 0.3f};
-    updateST();
-    al::LayoutActor::appear();
-    al::setNerve(this, &NrvMapLayout.HintInitWaitNpc);
-    al::startAction(this,"Appear",nullptr);
-    al::startAction(this,"LeftIn","Change");
-    al::setActionFrame(this,al::getActionFrameMax(this,"LeftIn","Change"),"Change");
-    mWaitEndMapBg->appear();
-    mIsFreezeAction = trySetBalloon(mWaitEndMapPlayer,al::getPlayerActor(mPlayerHolder,0),
-    mMapTerrainLayout->getMapData()->viewProjMatrix);
-    updatePlayerPosLayout();
-    mWaitEndMapPlayer->startWait();
-    mIsSomesomebool = true;
-    return;
-  }
-  al::setNerve(this, &NrvMapLayout.End);
+    al::setNerve(this, &NrvMapLayout.End);
 }
 
 void MapLayout::appearMoonRockDemo(s32 sworldId) {
-  if (-1 < mWorldId) {
-    for (s32 i = 0; i < mMapIconInfoSize; i++) {
-        mMapIconInfo[i] = {
-            .iconLayout = nullptr,
-            .isActive = false,
-            .position = sead::Vector3f::zero,
-            .iconType = MapIconType::Scenario2,
-            .name = nullptr,
-        };
+    s32 size = mMapIconInfoSize;
+    for (s32 i = 0; i < size; i++) {
+        MapIconInfo& iconInfo = mMapIconInfo[i];
+        iconInfo.isActive = false;
+        iconInfo.iconType = IconType::MaxValue;
+        iconInfo.position = sead::Vector3f::zero;
+        iconInfo.action = 0;
+        iconInfo.position2 = sead::Vector2f::zero;
+        iconInfo.value = false;
     }
     changePrintWorld(sworldId);
-    mPanelLocalScale = {0.3f, 0.3f};
+    f32 map = mMapTerrainLayout->getPaneSize();
+    mPanelLocalScale.y = 0.4f;
+    mPanelLocalScale.x = 0.4f;
+    mMapTerrainLayout->getPaneSize();
+    mScrollPosition = sead::Vector2f::zero;
+    mPanelLocalScale.y = 0.3f;
+    mPanelLocalScale.x = 0.3f;
+    PanelSize = {map * 0.3f, map * 0.3f};
     updateST();
     al::LayoutActor::appear();
     al::setNerve(this, &NrvMapLayout.HintInitWaitMoonRock);
-    al::startAction(this,"Appear",nullptr);
-    al::startAction(this,"LeftIn","Change");
-    al::setActionFrame(this,al::getActionFrameMax(this,"LeftIn","Change"),"Change");
+    al::startAction(this, "Appear", nullptr);
+    al::startAction(this, "LeftIn", "Change");
+    al::setActionFrame(this, al::getActionFrameMax(this, "LeftIn", "Change"), "Change");
     mWaitEndMapBg->appear();
-    mIsFreezeAction = trySetBalloon(mWaitEndMapPlayer,al::getPlayerActor(mPlayerHolder,0),
-    mMapTerrainLayout->getMapData()->viewProjMatrix);
+    MapData* mapData = mMapTerrainLayout->getMapData();
+    mIsFreezeAction = trySetBalloon(mWaitEndMapPlayer, al::getPlayerActor(mPlayerHolder, 0),
+                                    mapData->viewProjMatrix);
     updatePlayerPosLayout();
     mWaitEndMapPlayer->startWait();
     mIsSomesomebool = true;
     return;
-  }
-  al::setNerve(this, &NrvMapLayout.End);
 }
 
 void MapLayout::appearCollectionList() {
@@ -609,22 +631,18 @@ bool MapLayout::isEnableCheckpointWarp() const {
     return false;
 }
 
-void MapLayout::changeOut(bool isLeftOut) {             
-  al::startAction(this,isLeftOut?"LeftOut":"RightOut","Change");
-  al::startAction(mWaitEndMapCursor,"ChangeOut",nullptr);
-  mWaitEndMapPlayer->kill();
-  mWaitEndMapGuide->kill();
-  s32 size = array.size();
-  for(s32 i=0;i<size;i++){
-      array[i]->kill();
-  }
-  for(s32 i=0;i<mMapIconInfoSize;i++){
-      if (mMapIconInfo[i].isActive &&
-      al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout)) {
-        mMapIconInfo[i].isActive = false;
-      }
-  }
-  al::setNerve(this,&ChangeOut);
+void MapLayout::changeOut(bool isLeftOut) {
+    al::startAction(this, isLeftOut ? "LeftOut" : "RightOut", "Change");
+    al::startAction(mWaitEndMapCursor, "ChangeOut", nullptr);
+    mWaitEndMapPlayer->kill();
+    mWaitEndMapGuide->kill();
+    s32 size = array.size();
+    for (s32 i = 0; i < size; i++)
+        array[i]->kill();
+    for (s32 i = 0; i < mMapIconInfoSize; i++)
+        if (mMapIconInfo[i].isActive && al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
+            mMapIconInfo[i].isActive = false;
+    al::setNerve(this, &ChangeOut);
 }
 
 void MapLayout::changeIn(bool isRightIn) {
@@ -662,20 +680,18 @@ void MapLayout::updateLine(al::LayoutActor* layoutActor) {
 
 void MapLayout::appearParts(bool) {}
 
-void MapLayout::startNumberAction() {  
-  for(s32 i=0;i<mMapIconInfoSize;i++){
-      if (!mMapIconInfo[i].isActive) {
-      continue;
-      }
-        if (mMapIconInfo[i].iconType == MapIconType::Flag) {
-          al::startAction(mMapIconInfo[i].iconLayout->layout,"Off","OnOff");
+void MapLayout::startNumberAction() {
+    for (s32 i = 0; i < mMapIconInfoSize; i++) {
+        if (!mMapIconInfo[i].isActive)
+            continue;
+        if (mMapIconInfo[i].action == 1) {
+            al::startAction(mMapIconInfo[i].iconLayout->layout, "Off", "OnOff");
+        } else {
+            al::startAction(mMapIconInfo[i].iconLayout->layout, "On", "OnOff");
+            al::WStringTmp<32> iconType = {u"%d", mMapIconInfo[i].action};
+            al::setPaneString(mMapIconInfo[i].iconLayout->layout, "TxtNumber", iconType.cstr(), 0);
         }
-        else {
-          al::startAction(mMapIconInfo[i].iconLayout->layout,"On","OnOff");
-          al::WStringTmp<32> iconType={u"%d", mMapIconInfo[i].iconType};
-          al::setPaneString(mMapIconInfo[i].iconLayout->layout,"TxtNumber",iconType.cstr(),0);
-        }
-  }
+    }
 }
 
 void MapLayout::calcSeaOfTreeIconPos(sead::Vector3f* position) {
@@ -686,8 +702,30 @@ void MapLayout::calcSeaOfTreeIconPos(sead::Vector3f* position) {
     position->y += mScrollPosition.y * mPanelLocalScale.y;
 }
 
-void MapLayout::setLocalTransAndAppear(MapIconLayout*, MapIconInfo*, const sead::Vector3f&,
-                                       IconType, bool) {}
+const char* getIconName(const IconType iconType) {
+    if (iconType < 0x13)
+        return sIconType[(s32)iconType];
+    return "";
+}
+
+void MapLayout::setLocalTransAndAppear(MapIconLayout* iconLayout, MapIconInfo* iconInfo,
+                                       const sead::Vector3f& position, IconType iconType,
+                                       bool isbool) {
+    if (iconType == 0xe || iconType == 0x5) {
+        al::startAction(iconLayout->layout, "HintNew", "Main");
+        al::setLocalTrans(iconLayout->layout, position);
+    } else {
+        al::setLocalTrans(iconLayout->layout, position);
+    }
+    al::startAction(iconLayout->layout, getIconName(iconType), "Icon");
+    iconInfo[iconLayout->fieldA].isActive = true;
+    iconInfo[iconLayout->fieldA].position = sead::Vector3f::zero;
+    iconInfo[iconLayout->fieldA].iconType = iconType;
+    iconInfo[iconLayout->fieldA].action = 1;
+    iconInfo[iconLayout->fieldA].position2 = sead::Vector2f::zero;
+    iconInfo[iconLayout->fieldA].value = isbool;
+    iconLayout->layout->appear();
+}
 
 void MapLayout::calcMapTransAndAppear(MapIconLayout*, MapIconInfo*, const sead::Vector3f&, IconType,
                                       bool) {}
@@ -823,7 +861,7 @@ void MapLayout::focusIcon(const MapIconInfo* mapIconInfo) {
     al::startAction(mWaitEndMapCursor, "Select", nullptr);
 
     switch (mapIconInfo->iconType) {
-    case MapIconType::Flag: {
+    case IconType::Flag: {
         const char* checkpointObjId =
             GameDataFunction::getCheckpointObjIdInWorld(this, mapIconInfo->iconLayout->fieldB);
         const char* subStrA = al::searchSubString(checkpointObjId, "(");
@@ -856,7 +894,7 @@ void MapLayout::focusIcon(const MapIconInfo* mapIconInfo) {
     }
     default:
         break;
-    case MapIconType::FlagDisable:
+    case IconType::FlagDisable:
         rs::trySetPaneSystemMessageIfExist(mWaitEndMapGuide, "TxtFlagName", "GlossaryObject",
                                            "Home");
         al::setPaneSystemMessage(mWaitEndMapGuide, "TxtGuide", "StageMap", "CheckpointGuide");
@@ -864,7 +902,7 @@ void MapLayout::focusIcon(const MapIconInfo* mapIconInfo) {
         al::startAction(mWaitEndMapGuide, "On", "OnOff");
         break;
 
-    case MapIconType::ShopSold:
+    case IconType::ShopSold:
         if (al::isEqualSubString("ShopSoldout", "TitleYukimaruRace")) {
             rs::trySetPaneSystemMessageIfExist(mWaitEndMapGuide, "TxtFlagName", "StageMap",
                                                "TitleYukimaruRace");
@@ -875,7 +913,7 @@ void MapLayout::focusIcon(const MapIconInfo* mapIconInfo) {
         mWaitEndMapGuide->appear();
         al::startAction(mWaitEndMapGuide, "Off", "OnOff");
         break;
-    case MapIconType::HintRock2:
+    case IconType::HintRock2:
         if (al::isEqualSubString("Cap", "TitleYukimaruRace")) {
             rs::trySetPaneSystemMessageIfExist(mWaitEndMapGuide, "TxtFlagName", "StageMap",
                                                "TitleYukimaruRace");
@@ -885,7 +923,7 @@ void MapLayout::focusIcon(const MapIconInfo* mapIconInfo) {
         mWaitEndMapGuide->appear();
         al::startAction(mWaitEndMapGuide, "Off", "OnOff");
         break;
-    case MapIconType::Luigi:
+    case IconType::Luigi:
         if (al::isEqualSubString("TimeBalloon", "TitleYukimaruRace")) {
             rs::trySetPaneSystemMessageIfExist(mWaitEndMapGuide, "TxtFlagName", "StageMap",
                                                "TitleYukimaruRace");
@@ -896,7 +934,7 @@ void MapLayout::focusIcon(const MapIconInfo* mapIconInfo) {
         mWaitEndMapGuide->appear();
         al::startAction(mWaitEndMapGuide, "Off", "OnOff");
         break;
-    case MapIconType::Poet:
+    case IconType::Poet:
         if (al::isEqualSubString("Poetter", "TitleYukimaruRace")) {
             rs::trySetPaneSystemMessageIfExist(mWaitEndMapGuide, "TxtFlagName", "StageMap",
                                                "TitleYukimaruRace");
@@ -907,7 +945,7 @@ void MapLayout::focusIcon(const MapIconInfo* mapIconInfo) {
         mWaitEndMapGuide->appear();
         al::startAction(mWaitEndMapGuide, "Off", "OnOff");
         break;
-    case MapIconType::Scenario2:
+    case IconType::Scenario2:
         if (al::isEqualSubString("MoonRock", "TitleYukimaruRace")) {
             rs::trySetPaneSystemMessageIfExist(mWaitEndMapGuide, "TxtFlagName", "StageMap",
                                                "TitleYukimaruRace");
@@ -1128,7 +1166,8 @@ void MapLayout::exeEnd() {
         for (s32 i = 0; i < size; i++)
             al::startAction(array[i], "End", nullptr);
         for (s32 i = 0; i < mMapIconInfoSize; i++)
-            if (mMapIconInfo[i].isActive && al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
+            if (mMapIconInfo[i].isActive &&
+                al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
                 mMapIconInfo[i].isActive = false;
         al::startHitReaction(this, "マップクローズ", nullptr);
     }
@@ -1150,7 +1189,8 @@ void MapLayout::exeEnd() {
 void MapLayout::exeChangeOut() {
     if (al::isFirstStep(this)) {
         for (s32 i = 0; i < mMapIconInfoSize; i++)
-            if (mMapIconInfo[i].isActive && al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
+            if (mMapIconInfo[i].isActive &&
+                al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
                 mMapIconInfo[i].isActive = false;
     }
     if (al::isActionEnd(this, "Change")) {

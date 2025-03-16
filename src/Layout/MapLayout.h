@@ -19,9 +19,8 @@ struct MapIconInfo;
 class DecideIconLayout;
 class MapTerrainLayout;
 class TalkMessage;
-enum IconType : u32;
 
-enum class MapIconType : s32 {
+enum IconType : u32 {
     None,
     Flag,
     FlagDisable,
@@ -41,6 +40,7 @@ enum class MapIconType : s32 {
     Luigi,
     Poet,
     Scenario2,
+    MaxValue = 0x13,
 };
 
 struct MapIconLayout {
@@ -55,12 +55,11 @@ struct MapIconLayout {
 struct MapIconInfo {
     MapIconLayout* iconLayout;
     bool isActive;
-    char a[3];
-    f32 value2;
+    IconType iconType;
     sead::Vector3f position;
-    MapIconType iconType;
-    const char* name;
-    f32 value;
+    s32 action;
+    sead::Vector2f position2;
+    bool value;
 };
 
 static_assert(sizeof(MapIconInfo) == 0x30);
