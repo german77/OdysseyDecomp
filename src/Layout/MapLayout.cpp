@@ -1114,7 +1114,50 @@ void MapLayout::exeHintInitWait() {
 void MapLayout::exeHintAppear() {
     if (al::isFirstStep(this)) {
         if (al::isNerve(this, &NrvMapLayout.HintAppearNpc)) {
+          s32 hintNum = GameDataFunction::calcHintNum(this);
+          if (!GameDataFunction::checkLatestHintSeaOfTree(this)) {
+            calcMapTransAndAppear
+                      (&hintDecideIconLayout[hintNum-1],mMapIconInfo,
+                      GameDataFunction::getLatestHintTrans(this),IconType::Hint1,false);
+            al::startAction(hintDecideIconLayout[hintNum-1].layout,"HintNew",nullptr);
+          }
+          else {
+            sead::Vector3f position;
+            calcSeaOfTreeIconPos(&position);
+            setLocalTransAndAppear(&hintDecideIconLayout[hintNum-1], mMapIconInfo, position, IconType::Hint1,true);
+            al::startAction(hintDecideIconLayout[hintNum-1].layout,"HintNew",nullptr);
+          }
         } else if (al::isNerve(this, &NrvMapLayout.HintAppearAmiibo)) {
+        
+        
+        s32 hintNum = GameDataFunction::calcHintNum(this);
+        MapIconLayout* iconLayout=nullptr;
+        for(s32 i=0;i<hintDecideIconAmiiboSize;i++){
+            HintAmiibo& hintamiibo= getHintAmiibo(i, hintDecideIconAmiiboSize, hintAmiibo);
+            if (!hintamiibo.isValid) {
+              for(s32 e=0;e< i;e++){
+                  sead::Vector3f diff=mMapIconInfo[e].position -hintamiibo.position;
+                  if (diff.length() < 10.0f) {
+                      mMapIconInfo[e].action++;
+                      goto skip2;
+                  }
+              }
+              calcMapTransAndAppear
+                        (&hintDecideIconLayout[i],mMapIconInfo,hintamiibo.position,IconType::Hint1,false);
+              al::startAction(hintDecideIconLayout[i].layout,"HintNew",nullptr);
+            }
+            else if (iconLayout == nullptr) {
+              sead::Vector3f position=sead::Vector3f::zero;
+              calcSeaOfTreeIconPos(&position);
+              iconLayout=&hintDecideIconLayout[i];
+              setLocalTransAndAppear(iconLayout, mMapIconInfo, position, IconType::Hint1,true);
+            }
+            else {
+              mMapIconInfo[iconLayout->fieldA].action++;
+            }
+           skip2: continue;
+        }        
+        
         } else if (al::isNerve(this, &NrvMapLayout.HintAppearMoonRock)) {
             s32 rockNum = GameDataFunction::calcHintMoonRockNum(this);
             for(s32 i=0;i< rockNum;i++){
