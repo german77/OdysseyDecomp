@@ -7,6 +7,9 @@ namespace al {
 class Graph {
 public:
     class Edge;
+    class PosVertex;
+    class PosEdge;
+    struct VertexInfo;
 
     class Vertex {
     public:
@@ -61,6 +64,8 @@ public:
     bool tryAppendEdge(Edge* edge);
     void appendEdge(s32 indexVertex1, s32 indexVertex2, f32 weight);
     bool tryAppendEdge(s32 indexVertex1, s32 indexVertex2, f32 weight);
+
+    const sead::PtrArray<Vertex>& getVertices() const { return mVertices; }
 
 private:
     sead::PtrArray<Vertex> mVertices;
