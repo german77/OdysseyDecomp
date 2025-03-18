@@ -8,7 +8,6 @@
 
 namespace al {
 class ByamlIter;
-class LiveActor;
 
 class JointSpringController : public JointControllerBase {
 public:
@@ -33,7 +32,9 @@ public:
     const char* getCtrlTypeName() const;
 
 private:
-    char* filler[0xe0];
+    char filler[0xe0];
 };
+
+static_assert(sizeof(JointSpringController) == 0x108);
 
 }  // namespace al
