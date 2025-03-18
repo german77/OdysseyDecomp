@@ -30,3 +30,5 @@ private:
     al::RailRider* mRailRider = nullptr;
     bool mIsJump = false;
 };
+
+static_assert(sizeof(RabbitGraphRailKeeper) == 0x120);

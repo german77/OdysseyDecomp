@@ -33,4 +33,6 @@ private:
     char filler[0x10];
 };
 
+static_assert(sizeof(JointControllerBase) == 0x28);
+
 }  // namespace al
