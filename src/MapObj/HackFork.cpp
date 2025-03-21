@@ -32,7 +32,7 @@ NERVES_MAKE_STRUCT(HackFork, Wait, HackStartWait, Damping, HackStart, HackWait, 
                    HackShoot);
 }  // namespace
 
-HackFork::HackFork(const char* name) : al::LiveActor(name) {}
+HackFork::HackFork(const char* name) : al::LiveActor(name),vptr(&inputArray[0]) {}
 
 void HackFork::init(const al::ActorInitInfo& initInfo) {}
 
