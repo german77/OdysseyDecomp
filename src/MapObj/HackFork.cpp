@@ -17,6 +17,7 @@
 #include "Scene/GuidePosInfoHolder.h"
 #include "Util/Hack.h"
 #include "Util/NpcEventFlowUtil.h"
+#include "Util/PlayerUtil.h"
 #include "Util/SensorMsgFunction.h"
 
 namespace {
@@ -32,7 +33,7 @@ NERVES_MAKE_STRUCT(HackFork, Wait, HackStartWait, Damping, HackStart, HackWait, 
                    HackShoot);
 }  // namespace
 
-HackFork::HackFork(const char* name) : al::LiveActor(name),vptr(&inputArray[0]) {}
+HackFork::HackFork(const char* name) : al::LiveActor(name), vptr(&inputArray[0]) {}
 
 void HackFork::init(const al::ActorInitInfo& initInfo) {}
 
@@ -59,9 +60,52 @@ void HackFork::initAfterPlacement() {
     }
 }
 
-void HackFork::tryTouch(float, char const*) {}
+bool HackFork::tryTouch(float force, char const* reaction) {
+    if (delay != 0) {
+        delay = 30;
+        return false;
+    }
 
-void HackFork::resetCapMtx(al::HitSensor*) {}
+    if (isNerveHackable()) {
+        touchForce = force;
+        delay = 30;
+        al::setNerve(this, &NrvHackFork.Damping);
+        al::startHitReaction(this, reaction);
+        return true;
+    }
+    return false;
+}
+
+void HackFork::resetCapMtx(al::HitSensor* sensor) {
+    calcHackDir(sensor);
+    sead::Matrix34f mtx = *al::getJointMtxPtr(this, mJointName);
+    al::normalize(&mtx);
+
+    sead::Matrix34f mat;
+    mat.setMul(mtx, matrix3);
+
+    sead::Vector3f beto;
+    sead::Vector3f vecy;
+    if (isSensor)
+        vecy.set({0.0f, 1.0f, 0.0f});
+    else
+        vecy = -hack;
+
+    al::verticalizeVec(&vecy, beto, vecy);
+
+    if (!al::tryNormalizeOrZero(&vecy)) {
+        matrix4 = matrix3;
+    } else {
+        sead::Matrix34f nike;
+        nike.setInverse(mat);
+        sead::Quatf saul;
+        al::makeQuatRotationRate(&saul, sead::Vector3f::ez, vecy, 1.0f);
+        sead::Matrix34f pina;
+        pina.setInverse(mtx);
+        matrix4.setMul(mat, pina);
+    }
+    updateCapMtx();
+}
 
 bool HackFork::isNerveHackable() const {
     return al::isNerve(this, &NrvHackFork.Wait) || al::isNerve(this, &NrvHackFork.Damping);
@@ -112,11 +156,32 @@ void HackFork::shoot() {
 
 void HackFork::control() {}
 
-void HackFork::calcAnim() {}
+void HackFork::calcAnim() {
+    al::LiveActor::calcAnim();
+    if (isHack())
+        updateCapMtx();
+}
 
-void HackFork::updateCapMtx() {}
+void HackFork::updateCapMtx() {
+    sead::Matrix34f mtx = *al::getJointMtxPtr(this, mJointName);
+    al::normalize(&mtx);
+    matrix1.setMul(mtx, matrix4);
+}
 
-void HackFork::calcHackDir(al::HitSensor*) {}
+void HackFork::calcHackDir(al::HitSensor* sensor) {
+    if (isSensor)
+        hack.set({0.0f, -1.0f, 0.0f});
+    else
+        hack = rs::getPlayerPos(this) - al::getSensorPos(sensor);
+
+    sead::Vector3f frontDir;
+    al::calcFrontDir(&frontDir, this);
+    al::verticalizeVec(&hack, frontDir, hack);
+    if (!al::tryNormalizeOrZero(&hack))
+        al::calcUpDir(&hack, this);
+
+    quat.inverse(&quat2);
+}
 
 void HackFork::exeWait() {
     if (al::isFirstStep(this)) {
