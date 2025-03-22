@@ -3,6 +3,8 @@
 #include "Library/Camera/CameraTicket.h"
 #include "Library/Camera/CameraUtil.h"
 #include "Library/Collision/PartsConnector.h"
+#include "Library/Controller/PadRumbleFunction.h"
+#include "Library/Joint/JointLocalAxisRotator.h"
 #include "Library/LiveActor/ActorActionFunction.h"
 #include "Library/LiveActor/ActorClippingFunction.h"
 #include "Library/LiveActor/ActorModelFunction.h"
@@ -11,8 +13,6 @@
 #include "Library/Math/MathUtil.h"
 #include "Library/Nerve/NerveSetupUtil.h"
 #include "Library/Nerve/NerveUtil.h"
-#include "Library/Joint/JointLocalAxisRotator.h"
-#include "Library/Controller/PadRumbleFunction.h"
 #include "Library/Se/SeFunction.h"
 
 #include "Player/IUsePlayerHack.h"
@@ -135,39 +135,50 @@ void HackFork::checkSwing() {
     }
 }
 
-bool HackFork::trySwingJump() {  
-  if (rs::isTriggerHackSwing(mPlayerHack)) {
-    isHackSwing = true;
-    hackDelay = 0;
-  }
-  else {
-    if (!isHackSwing||++hackDelay > 10 ) {
-      return false;
+bool HackFork::trySwingJump() {
+    if (rs::isTriggerHackSwing(mPlayerHack)) {
+        isHackSwing = true;
+        hackDelay = 0;
+    } else {
+        if (!isHackSwing || ++hackDelay > 10)
+            return false;
     }
-  }
 
-  if (isSensor) {
-    newJump.set({0.0f,-1.0f,0.0f});
-  }
-  else {
-    sead::Vector3f tmpF=hack;
-    tmpF.rotate(quat*quat2);
-    al::tryNormalizeOrDirZ(&tmpF);
-    newJump.set(tmpF);
-  }
-  isJump = newJump.dot(upDir) < 0.0f;
-  
-  damping = 22.5f;
-  sead::Vector3f frontDir;
-  al::calcFrontDir(&frontDir,this);
-  bendAndTwist(newJump,frontDir);
-  isShoot = true;
-  al::setNerve(this, &NrvHackFork.HackShoot);
-  return true;
+    if (isSensor) {
+        newJump.set({0.0f, -1.0f, 0.0f});
+    } else {
+        sead::Vector3f tmpF = hack;
+        tmpF.rotate(quat * quat2);
+        al::tryNormalizeOrDirZ(&tmpF);
+        newJump.set(tmpF);
+    }
+    isJump = newJump.dot(upDir) < 0.0f;
+
+    damping = 22.5f;
+    sead::Vector3f frontDir;
+    al::calcFrontDir(&frontDir, this);
+    bendAndTwist(newJump, frontDir);
+    isShoot = true;
+    al::setNerve(this, &NrvHackFork.HackShoot);
+    return true;
 }
 
-bool HackFork::updateInput(sead::Vector3f*, sead::Vector3f) {
-return true;
+bool HackFork::updateInput(sead::Vector3f* out, sead::Vector3f in) {
+    sead::Vector3f incpy = in;
+    sead::Vector3f lookdir;
+    al::calcCameraLookDir(&lookdir, this, 0);
+
+    sead::Mathf::cos(0.7853982f);
+    if (in.dot(sead::Vector3f::ey) < 0.7071068f && 0.0f < in.dot(lookdir))
+        incpy = -in;
+
+    sead::Vector3f moveDir = {0.0f, 0.0f, 0.0f};
+    bool isgood = rs::calcHackerMoveDir(&moveDir, mPlayerHack, incpy);
+    *out = moveDir;
+
+    if (!al::tryNormalizeOrZero(out))
+        al::calcUpDir(out, this);
+    return isgood;
 }
 
 f32 HackFork::getJumpRange() const {
@@ -175,17 +186,14 @@ f32 HackFork::getJumpRange() const {
 }
 
 void HackFork::bendAndTwist(const sead::Vector3f& param_1, const sead::Vector3f& param_2) {
-  damping = sead::Mathf::clampMax(damping + 1.0f,22.5f);
-  touchForce = 0.0f;
-  
-  leJump.setCross(param_2,param_1);
-  if (!al::tryNormalizeOrZero(&leJump)) {
-    al::calcSideDir(&leJump,this);
-  }
-  for(s32 i=0;i<ptrArray.size();i++){
-      ptrArray[i]->setVector28(leJump);
-  }
+    damping = sead::Mathf::clampMax(damping + 1.0f, 22.5f);
+    touchForce = 0.0f;
 
+    leJump.setCross(param_2, param_1);
+    if (!al::tryNormalizeOrZero(&leJump))
+        al::calcSideDir(&leJump, this);
+    for (s32 i = 0; i < ptrArray.size(); i++)
+        ptrArray[i]->setVector28(leJump);
 }
 
 void HackFork::shoot() {
@@ -291,71 +299,64 @@ void HackFork::exeHackStart() {
     }
 }
 
-void HackFork::exeHackWait() {  
-  controlSpring();
-  inputB = 0;
-  inputC = 0;
-  sead::Vector3f input;
-  al::calcFrontDir(&input,this);
-  sead::Vector3f input2;
-  if (!trySwingJump() &&updateInput(&input,input2)) {
-    f32 dot = sead::Mathf::abs(input.dot(upDir));
-    f32 cos = sead::Mathf::cos(isLongJump?3.1415927f:0.78539819f);
-    if (cos < dot) {
-      newJump=input;
-      isJump = newJump.dot(upDir) < 0.0f;
-      al::setNerve(this, &NrvHackFork.HackBend);
+void HackFork::exeHackWait() {
+    controlSpring();
+    inputB = 0;
+    inputC = 0;
+    sead::Vector3f frontDir;
+    al::calcFrontDir(&frontDir, this);
+    sead::Vector3f input;
+    if (!trySwingJump() && updateInput(&input, frontDir) &&
+        sead::Mathf::abs(input.dot(upDir)) >
+            sead::Mathf::cos(isLongJump ? 3.1415927f : 0.78539819f)) {
+        newJump.set(input);
+        isJump = newJump.dot(upDir) < 0.0f;
+        al::setNerve(this, &NrvHackFork.HackBend);
     }
-  }
 }
 
 void HackFork::exeHackBend() {
-    if (al::isFirstStep(this)) {
-    isSheep = false;
-  }
-  
-  if (!al::isLessEqualStep(this,15) || !trySwingJump()) {
-    sead::Vector3f frontDir;
-    al::calcFrontDir(&frontDir,this);
-    
-    sead::Vector3f input;
-    sead::Vector3f input2;
-    bool isInput=updateInput(&input,input2);
-    if (!isInput || rs::isTriggerHackSwing(mPlayerHack)) {
-      if (isSheep == false) {
-        al::setNerve(this, &NrvHackFork.HackWait);
-      }
-      else {
-        if (isInput) {
-          airVel = 60;
-          isShoot = true;
+    if (al::isFirstStep(this))
+        isSheep = false;
+
+    if (!al::isLessEqualStep(this, 15) || !trySwingJump()) {
+        sead::Vector3f frontDir;
+        al::calcFrontDir(&frontDir, this);
+
+        sead::Vector3f input;
+        bool isInput = updateInput(&input, frontDir);
+        if (!isInput || rs::isTriggerHackSwing(mPlayerHack)) {
+            if (isSheep == false) {
+                al::setNerve(this, &NrvHackFork.HackWait);
+            } else {
+                if (isInput) {
+                    airVel = 60;
+                    isShoot = true;
+                }
+                al::setNerve(this, &NrvHackFork.HackShoot);
+            }
         }
-        al::setNerve(this, &NrvHackFork.HackShoot);
-      }
+        sead::Vector3f oldJump = newJump;
+        f32 jumpDir = isJump ? -1.0f : 1.0f;
+
+        f32 angle = sead::Mathf::clamp((jumpDir * upDir).dot(input), -1.0f, 1.0f);
+        if (sead::Mathf::rad2deg(acosf(angle)) < (isLongJump ? 180.0f : 45.0f))
+            newJump = newJump * 0.5f + input * 0.5f;
+        al::normalize(&newJump);
+        f32 oldDamping = damping;
+        bendAndTwist(newJump, frontDir);
+        f32 rumbleVolume = (damping - oldDamping) * 0.5f + (newJump - oldJump).length() * 3.3f;
+        if (!al::isNearZero(rumbleVolume, 0.001f)) {
+            al::holdSe(this, "PgBendLv");
+            sead::Vector3f jointPos;
+            al::calcJointPos(&jointPos, this, "Stick03");
+            al::PadRumbleParam param =
+                al::PadRumbleParam(0.0f, 1300.0f, rumbleVolume, rumbleVolume);
+            alPadRumbleFunction::startPadRumbleWithParam(this, jointPos, "パルス（中）", param, -1);
+        }
+        if (4.5 <= damping)
+            isSheep = true;
     }
-    f32 jumpDir = isJump?-1.0f:1.0f;
-    sead::Vector3f oldJump=newJump;
-    
-    f32 angle = sead::Mathf::clamp((jumpDir*upDir).dot(input),-1.0f,1.0f);
-    if (sead::Mathf::rad2deg(acosf(angle)) < (isLongJump?180.0f:45.0f)) {
-      newJump = newJump * 0.5f + input * 0.5f;
-    }
-    al::normalize(&newJump);
-    f32 oldDamping=damping;
-    bendAndTwist(newJump,frontDir);
-    sead::Vector3f nani = newJump - oldJump;
-    f32 rumbleVolume=(damping - oldDamping) * 0.5f +nani.length() * 3.3f;
-    if (!al::isNearZero(rumbleVolume,0.001f)) {
-      al::holdSe(this,"PgBendLv");
-      sead::Vector3f jointPos;
-      al::calcJointPos(&jointPos,this,"Stick03");
-      al::PadRumbleParam param=al::PadRumbleParam( 0.0f,  1300.0f,  rumbleVolume, rumbleVolume);
-      alPadRumbleFunction::startPadRumbleWithParam(this,jointPos,"パルス（中）", param,-1);
-    }
-    if (4.5 <= damping) {
-      isSheep = true;
-    }
-  }
 }
 
 void HackFork::exeHackShoot() {

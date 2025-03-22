@@ -91,7 +91,7 @@ private:
     sead::Quatf quat2 = sead::Quatf::unit;
     sead::Vector3f hack = {0.0f, 0.0f, 0.0f};
     sead::Vector3f newJump = {0.0f, 0.0f, 0.0f};
-    sead::Vector3f upDir={0.0f, 0.0f, 0.0f};
+    sead::Vector3f upDir = {0.0f, 0.0f, 0.0f};
     sead::Quatf quat = sead::Quatf::unit;
     sead::Quatf quat3 = sead::Quatf::unit;
     bool isJump = false;

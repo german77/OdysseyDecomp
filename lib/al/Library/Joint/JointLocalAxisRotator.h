@@ -8,18 +8,19 @@
 
 namespace al {
 
-class JointLocalAxisRotator: public JointControllerBase{
+class JointLocalAxisRotator : public JointControllerBase {
 public:
-  JointLocalAxisRotator(const float*,const sead::Vector3f&, bool);
-  
-  void calcJointCallback(s32, sead::Matrix34f*);
-  const char* getCtrlTypeName() const;
+    JointLocalAxisRotator(const float*, const sead::Vector3f&, bool);
 
-  void setVector28(const sead::Vector3f& v){_28.set(v);}
+    void calcJointCallback(s32, sead::Matrix34f*);
+    const char* getCtrlTypeName() const;
+
+    void setVector28(const sead::Vector3f& v) { _28.set(v); }
+
 private:
-  sead::Vector3f _28;
-  f32* _38;
-  bool _40;
+    sead::Vector3f _28;
+    f32* _38;
+    bool _40;
 };
 
 }  // namespace al
