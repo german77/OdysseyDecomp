@@ -7,6 +7,7 @@
 #include "Library/Joint/JointLocalAxisRotator.h"
 #include "Library/LiveActor/ActorActionFunction.h"
 #include "Library/LiveActor/ActorClippingFunction.h"
+#include "Library/LiveActor/ActorFlagFunction.h"
 #include "Library/LiveActor/ActorModelFunction.h"
 #include "Library/LiveActor/ActorPoseUtil.h"
 #include "Library/LiveActor/ActorSensorUtil.h"
@@ -51,7 +52,27 @@ void HackFork::attackSensor(al::HitSensor* self, al::HitSensor* other) {
 bool HackFork::receiveMsg(const al::SensorMsg* message, al::HitSensor* other, al::HitSensor* self) {
 }
 
-void HackFork::initBasicPoseInfo() {}
+void HackFork::initBasicPoseInfo() {
+    al::calcUpDir(&upDir, this);
+
+    quat.set(al::getQuat(this));
+
+    sead::Vector3f frontDir;
+    al::calcFrontDir(&frontDir, this);
+
+    sead::Quatf tmpq;
+    sead::QuatCalcCommon<f32>::setAxisAngle(tmpq, frontDir, 180.0f);
+    quat3 = tmpq * quat;
+
+    sead::Vector3f even;
+    al::calcFrontDir(&even, this);
+    if (sead::Mathf::abs(even.y) > 0.5f) {
+        al::invalidateShadow(this);
+        isSensor = false;
+    } else {
+        isSensor = true;
+    }
+}
 
 void HackFork::initAfterPlacement() {
     if (mMtxConnector != nullptr) {
