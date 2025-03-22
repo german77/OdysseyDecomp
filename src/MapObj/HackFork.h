@@ -14,6 +14,7 @@ class CameraTargetBase;
 class CameraTicket;
 class EventFlowExecutor;
 class HitSensor;
+class JointLocalAxisRotator;
 class MtxConnector;
 class SensorMsg;
 }  // namespace al
@@ -40,8 +41,8 @@ public:
     bool isHack() const;
     void controlSpring();
     void checkSwing();
-    void trySwingJump();
-    void updateInput(sead::Vector3f*, sead::Vector3f);
+    bool trySwingJump();
+    bool updateInput(sead::Vector3f*, sead::Vector3f);
     f32 getJumpRange() const;
 
     void bendAndTwist(const sead::Vector3f&, const sead::Vector3f&);
@@ -74,10 +75,10 @@ private:
     sead::Vector3f leJump = sead::Vector3f::ez;
     f32 damping = 0.0f;
     s32 lol2;
-    sead::PtrArray<int> ptrArray;
+    sead::PtrArray<al::JointLocalAxisRotator> ptrArray;
     f32 touchForce = 0.0f;
     bool isHackSwing = false;
-    s32 hackDelay = 0;
+    u32 hackDelay = 0;
     bool isShoot = false;
     bool isSheep = false;
     sead::Vector3f* vptr = nullptr;
@@ -90,7 +91,7 @@ private:
     sead::Quatf quat2 = sead::Quatf::unit;
     sead::Vector3f hack = {0.0f, 0.0f, 0.0f};
     sead::Vector3f newJump = {0.0f, 0.0f, 0.0f};
-    sead::Vector3f newDir{0.0f, 0.0f, 0.0f};
+    sead::Vector3f upDir={0.0f, 0.0f, 0.0f};
     sead::Quatf quat = sead::Quatf::unit;
     sead::Quatf quat3 = sead::Quatf::unit;
     bool isJump = false;
