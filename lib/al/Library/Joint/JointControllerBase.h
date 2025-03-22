@@ -5,17 +5,17 @@
 
 namespace al {
 
-class JointControllerBase{
+class JointControllerBase {
 public:
-JointControllerBase(s32);
-void appendJointId(s32);
-bool findNextId(s32*, s32) const;
-bool isExistId(s32) const;
+    JointControllerBase(s32);
+    void appendJointId(s32);
+    bool findNextId(s32*, s32) const;
+    bool isExistId(s32) const;
 
 private:
-  void* callback;
-  sead::PtrArray<s32> _8;
-  char filler[0x10];
+    void* callback;
+    sead::PtrArray<s32> _8;
+    char filler[0x10];
 };
 
 }  // namespace al
