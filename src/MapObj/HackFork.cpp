@@ -4,7 +4,9 @@
 #include "Library/Camera/CameraUtil.h"
 #include "Library/Collision/PartsConnector.h"
 #include "Library/Controller/PadRumbleFunction.h"
+#include "Library/Event/EventFlowUtil.h"
 #include "Library/Joint/JointLocalAxisRotator.h"
+#include "Library/Layout/LayoutActorUtil.h"
 #include "Library/LiveActor/ActorActionFunction.h"
 #include "Library/LiveActor/ActorClippingFunction.h"
 #include "Library/LiveActor/ActorFlagFunction.h"
@@ -50,6 +52,141 @@ void HackFork::attackSensor(al::HitSensor* self, al::HitSensor* other) {
 }
 
 bool HackFork::receiveMsg(const al::SensorMsg* message, al::HitSensor* other, al::HitSensor* self) {
+    if (rs::isMsgEnableMapCheckPointWarp(message))
+        return false;
+
+    if (rs::isMsgMotorcycleDashAttack(message)) {
+        if (delay != 0) {
+            delay = 30;
+            return false;
+        }
+        if (al::isNerve(this, &NrvHackFork.Wait) || al::isNerve(this, &NrvHackFork.Damping)) {
+            touchForce = 5.0f;
+            delay = 30;
+            al::setNerve(this, &NrvHackFork.Damping);
+            al::startHitReaction(this, "タッチ（強）");
+            return true;
+        }
+        return false;
+    }
+    if (al::isMsgPlayerObjTouch(message) || al::isMsgKickStoneAttackReflect(message) ||
+        rs::isMsgRadishReflect(message) || rs::isMsgSeedReflect(message)) {
+        if (delay != 0) {
+            delay = 30;
+            return false;
+        }
+        if (al::isNerve(this, &NrvHackFork.Wait) || al::isNerve(this, &NrvHackFork.Damping)) {
+            touchForce = 2.0f;
+            delay = 30;
+            al::setNerve(this, &NrvHackFork.Damping);
+            al::startHitReaction(this, "タッチ（弱）");
+            return true;
+        }
+        return false;
+    }
+    if (rs::isMsgHammerBrosHammerHackAttack(message) || al::isMsgPlayerFireBallAttack(message)) {
+        if (delay == 0) {
+            if (al::isNerve(this, &NrvHackFork.Wait) || al::isNerve(this, &NrvHackFork.Damping)) {
+                touchForce = 2.0f;
+                delay = 30;
+                al::setNerve(this, &NrvHackFork.Damping);
+                al::startHitReaction(this, "タッチ（弱）");
+            }
+        } else {
+            delay = 30;
+        }
+        rs::requestHitReactionToAttacker(message, self, other);
+        return true;
+    }
+    if (rs::tryReceiveMsgInitCapTargetAndSetCapTargetInfo(message, mCapTargetInfo)) {
+        resetCapMtx(self);
+        return true;
+    }
+    if (rs::isMsgPlayerDisregardTargetMarker(message)) {
+        if (mEventFlowExecutor != nullptr)
+            return al::isActive(mEventFlowExecutor);
+        return false;
+    }
+    if (rs::isMsgTargetMarkerPosition(message)) {
+        sead::Vector3f position = al::getSensorPos(this, "Stick05") + 50.0f * sead::Vector3f::ey;
+        rs::setMsgTargetMarkerPosition(message, position);
+        return true;
+    }
+    if (al::isNerve(this, &NrvHackFork.Wait) || al::isNerve(this, &NrvHackFork.Damping)) {
+        if (rs::isMsgCapEnableLockOn(message))
+            return true;
+        if (rs::isMsgStartHack(message)) {
+            al::invalidateClipping(this);
+            mPlayerHack = rs::startHack(self, other, nullptr);
+            rs::startHackStartDemo(mPlayerHack, this);
+            damping2 = 0.0f;
+            damping = 0.0f;
+            touchForce = 0.0f;
+            resetCapMtx(self);
+            rs::setRouteHeadGuidePosPtr(this, &leControl);
+            al::setNerve(this, &NrvHackFork.HackStartWait);
+            al::startHitReaction(this, "ひょうい開始");
+            return true;
+        }
+        if (rs::isMsgCapCancelLockOn(message))
+            return true;
+    }
+    if (al::isNerve(this, &NrvHackFork.HackStartWait) ||
+        al::isNerve(this, &NrvHackFork.HackStart) || al::isNerve(this, &NrvHackFork.HackWait) ||
+        al::isNerve(this, &NrvHackFork.HackBend) || al::isNerve(this, &NrvHackFork.HackShoot)) {
+        if (rs::isMsgHackerDamageAndCancel(message)) {
+            if (al::isSensorName(self, "Body"))
+                return rs::requestDamage(mPlayerHack);
+            return false;
+        }
+        if (rs::isMsgHackSyncDamageVisibility(message)) {
+            rs::syncDamageVisibility(this, mPlayerHack);
+            return true;
+        }
+
+        if (rs::receiveMsgRequestTransferHack(message, mPlayerHack, other))
+            return true;
+        if (rs::isMsgCancelHack(message)) {
+            rs::tryEndHackStartDemo(mPlayerHack, this);
+            if (isSensor) {
+                rs::endHack(&mPlayerHack);
+                rs::resetRouteHeadGuidePosPtr(this);
+                al::tryStartAction(this, "HackEnd");
+                al::setNerve(this, &NrvHackFork.Damping);
+                return true;
+            }
+
+            if (zeMessage) {
+                sead::Vector3f upDir;
+                al::calcUpDir(&upDir, this);
+                rs::endHackDir(&mPlayerHack, upDir);
+            } else {
+                sead::Vector3f sasa;
+                if (al::isNearZero(newJump, 0.001f))
+                    sasa.set(-hack);
+                else
+                    sasa.set(newJump);
+                sasa.y = 0.0f;
+                al::tryNormalizeOrDirZ(&sasa);
+                sead::Quatf kiki;
+                al::makeQuatUpFront(&kiki, sead::Vector3f::ey, sasa);
+                rs::endHackTargetQuat(&mPlayerHack, kiki, sasa);
+            }
+            rs::resetRouteHeadGuidePosPtr(this);
+            al::tryStartAction(this, "HackEnd");
+            al::setNerve(this, &NrvHackFork.Damping);
+            return true;
+        }
+
+        if (rs::isMsgHackMarioDemo(message) || rs::isMsgHackMarioDead(message)) {
+            rs::endHack(&mPlayerHack);
+            rs::resetRouteHeadGuidePosPtr(this);
+            al::tryStartAction(this, "HackEnd");
+            al::setNerve(this, &NrvHackFork.Damping);
+            return true;
+        }
+    }
+    return false;
 }
 
 void HackFork::initBasicPoseInfo() {
