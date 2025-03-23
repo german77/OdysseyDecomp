@@ -19,6 +19,10 @@ public:
     void makeLockOnMtx(sead::Matrix34f*) const;
     void calcLockOnFollowTargetScale(sead::Vector3f*) const;
 
+    void setMatrix18(const sead::Matrix34f& mtx) { _18 = mtx; }
+
 private:
-    void* filler[16];
+    void* filler[3];
+    sead::Matrix34f _18;
+    void* filler2[7];
 };

@@ -5,23 +5,33 @@
 #include "Library/Collision/PartsConnector.h"
 #include "Library/Controller/PadRumbleFunction.h"
 #include "Library/Event/EventFlowUtil.h"
+#include "Library/Joint/JointControllerKeeper.h"
 #include "Library/Joint/JointLocalAxisRotator.h"
 #include "Library/Layout/LayoutActorUtil.h"
 #include "Library/LiveActor/ActorActionFunction.h"
+#include "Library/LiveActor/ActorAnimFunction.h"
 #include "Library/LiveActor/ActorClippingFunction.h"
 #include "Library/LiveActor/ActorFlagFunction.h"
+#include "Library/LiveActor/ActorInitUtil.h"
 #include "Library/LiveActor/ActorModelFunction.h"
 #include "Library/LiveActor/ActorPoseUtil.h"
+#include "Library/LiveActor/ActorResourceFunction.h"
 #include "Library/LiveActor/ActorSensorUtil.h"
 #include "Library/Math/MathUtil.h"
 #include "Library/Nerve/NerveSetupUtil.h"
 #include "Library/Nerve/NerveUtil.h"
+#include "Library/Placement/PlacementFunction.h"
+#include "Library/Play/Camera/ActorMatrixCameraTarget.h"
 #include "Library/Se/SeFunction.h"
+#include "Library/Yaml/ByamlUtil.h"
 
+#include "Player/CapTargetInfo.h"
 #include "Player/IUsePlayerHack.h"
 #include "Player/PlayerHackStartShaderCtrl.h"
 #include "Scene/GuidePosInfoHolder.h"
+#include "System/GameDataUtil.h"
 #include "Util/Hack.h"
+#include "Util/NpcAnimUtil.h"
 #include "Util/NpcEventFlowUtil.h"
 #include "Util/PlayerUtil.h"
 #include "Util/SensorMsgFunction.h"
@@ -39,9 +49,84 @@ NERVES_MAKE_STRUCT(HackFork, Wait, HackStartWait, Damping, HackStart, HackWait, 
                    HackShoot);
 }  // namespace
 
-HackFork::HackFork(const char* name) : al::LiveActor(name), vptr(&inputArray[0]) {}
+PlayerHackStartShaderParam sPlayerHackStartShaderParam(true, 100.0f, 10, 20);
 
-void HackFork::init(const al::ActorInitInfo& initInfo) {}
+HackFork::HackFork(const char* name) : al::LiveActor(name) {}
+
+void HackFork::init(const al::ActorInitInfo& initInfo) {
+    const char* modelName = nullptr;
+    if (alPlacementFunction::tryGetModelName(&modelName, initInfo))
+        al::initActorWithArchiveName(this, initInfo, modelName, nullptr);
+    else
+        al::initActor(this, initInfo);
+
+    al::calcSideDir(&leJump, this);
+    al::initJointControllerKeeper(this, 10);
+    ptrArray.allocBuffer(5, nullptr);
+
+    ptrArray.pushBack(al::initJointLocalAxisRotator(this, leJump, &damping, "Stick01", false));
+    al::initJointLocalXRotator(this, &damping2, "Stick01");
+    ptrArray.pushBack(al::initJointLocalAxisRotator(this, leJump, &damping, "Stick02", false));
+    al::initJointLocalXRotator(this, &damping2, "Stick02");
+    ptrArray.pushBack(al::initJointLocalAxisRotator(this, leJump, &damping, "Stick03", false));
+    al::initJointLocalXRotator(this, &damping2, "Stick03");
+    ptrArray.pushBack(al::initJointLocalAxisRotator(this, leJump, &damping, "Stick04", false));
+    al::initJointLocalXRotator(this, &damping2, "Stick04");
+    ptrArray.pushBack(al::initJointLocalAxisRotator(this, leJump, &damping, "Stick05", false));
+    al::initJointLocalXRotator(this, &damping2, "Stick05");
+
+    al::initNerve(this, &NrvHackFork.Wait, 0);
+    al::tryGetArg(&isLongJump, initInfo, "LimitterFree");
+    bool isCamera = false;
+    bool isArg = al::tryGetArg(&isCamera, initInfo, "Camera");
+    if (isCamera && isArg)
+        mCameraTicket = al::initObjectCamera(this, initInfo, nullptr, nullptr);
+
+    mMatrixCameraTarget = al::createActorMatrixCameraTarget(this, &matrix5);
+    if (!al::isEqualString(modelName, "HackBoard")) {
+        zeControl = {0.0f, 0.0f, 100.0f};
+        zeMessage = true;
+    }
+
+    bool isballon = false;
+    bool isBArg = al::tryGetArg(&isballon, initInfo, "Balloon");
+    if (isballon && isBArg && !rs::isSequenceTimeBalloonOrRace(this)) {
+        mEventFlowExecutor = rs::initEventFlow(this, initInfo, nullptr, nullptr);
+        rs::startEventFlow(mEventFlowExecutor, "Init");
+    }
+    if (al::isMtpAnimExist(this)) {
+        rs::setNpcMaterialAnimFromPlacementInfo(this, initInfo);
+        al::tryStartMclAnimIfExist(this, al::getPlayingMtpAnimName(this));
+    }
+    mMtxConnector = al::tryCreateMtxConnector(this, initInfo);
+    makeActorAlive();
+    mCapTargetInfo = rs::createCapTargetInfo(this, nullptr);
+
+    al::ByamlIter iter(al::getModelResourceYaml(this, "InitHackCap", nullptr));
+    mJointName = al::tryGetByamlKeyStringOrNULL(iter, "JointName");
+    sead::Vector3f localTrans = {0.0f, 0.0f, 0.0f};
+    al::tryGetByamlV3f(&localTrans, iter, "LocalTrans");
+    sead::Vector3f localRotate = {0.0f, 0.0f, 0.0f};
+    al::tryGetByamlV3f(&localRotate, iter, "LocalRotate");
+
+    sead::Matrix34f tmp;
+    tmp.makeR(localRotate);
+
+    localTrans *= al::getScaleY(this);
+
+    matrix3.makeSR(localTrans, {0.0f, 0.0f, 0.0f});
+    matrix3 = tmp * matrix3;
+
+    sead::Matrix34f jointMtx = *al::getJointMtxPtr(this, mJointName);
+    al::normalize(&jointMtx);
+    matrix2.setInverse(jointMtx);
+
+    mCapTargetInfo->setMatrix18(matrix1);
+    quat3.inverse(&quat2);
+
+    initBasicPoseInfo();
+    mHackStartShaderCtrl = new PlayerHackStartShaderCtrl(this, &sPlayerHackStartShaderParam);
+}
 
 void HackFork::attackSensor(al::HitSensor* self, al::HitSensor* other) {
     if (al::isSensorName(self, "Push") && !al::sendMsgPush(other, self) && !isSensor) {
@@ -131,9 +216,7 @@ bool HackFork::receiveMsg(const al::SensorMsg* message, al::HitSensor* other, al
         if (rs::isMsgCapCancelLockOn(message))
             return true;
     }
-    if (al::isNerve(this, &NrvHackFork.HackStartWait) ||
-        al::isNerve(this, &NrvHackFork.HackStart) || al::isNerve(this, &NrvHackFork.HackWait) ||
-        al::isNerve(this, &NrvHackFork.HackBend) || al::isNerve(this, &NrvHackFork.HackShoot)) {
+    if (isHack()) {
         if (rs::isMsgHackerDamageAndCancel(message)) {
             if (al::isSensorName(self, "Body"))
                 return rs::requestDamage(mPlayerHack);
@@ -298,7 +381,9 @@ bool HackFork::trySwingJump() {
         isHackSwing = true;
         hackDelay = 0;
     } else {
-        if (!isHackSwing || ++hackDelay > 10)
+        bool ish = isHackSwing;
+        hackDelay++;
+        if (!ish || 10 < hackDelay)
             return false;
     }
 
@@ -307,6 +392,7 @@ bool HackFork::trySwingJump() {
     } else {
         sead::Vector3f tmpF = hack;
         tmpF.rotate(quat * quat2);
+        tmpF.y = 0;
         al::tryNormalizeOrDirZ(&tmpF);
         newJump.set(tmpF);
     }
@@ -332,7 +418,15 @@ bool HackFork::updateInput(sead::Vector3f* out, sead::Vector3f in) {
 
     sead::Vector3f moveDir = {0.0f, 0.0f, 0.0f};
     bool isgood = rs::calcHackerMoveDir(&moveDir, mPlayerHack, incpy);
-    *out = moveDir;
+   
+    inputBuffer.forcePushBack(moveDir);
+
+    *out = {0.0f,0.0f,0.0f};
+    
+    for(s32 i=0;i<inputBuffer.size();i++){
+        *out +=inputBuffer[i];
+    }
+    
 
     if (!al::tryNormalizeOrZero(out))
         al::calcUpDir(out, this);
@@ -343,11 +437,11 @@ f32 HackFork::getJumpRange() const {
     return isLongJump ? 180.0f : 45.0f;
 }
 
-void HackFork::bendAndTwist(const sead::Vector3f& param_1, const sead::Vector3f& param_2) {
+void HackFork::bendAndTwist(const sead::Vector3f& initInfo, const sead::Vector3f& param_2) {
     damping = sead::Mathf::clampMax(damping + 1.0f, 22.5f);
     touchForce = 0.0f;
 
-    leJump.setCross(param_2, param_1);
+    leJump.setCross(param_2, initInfo);
     if (!al::tryNormalizeOrZero(&leJump))
         al::calcSideDir(&leJump, this);
     for (s32 i = 0; i < ptrArray.size(); i++)
@@ -366,7 +460,59 @@ void HackFork::shoot() {
     al::tryStartAction(this, "HackEnd");
 }
 
-void HackFork::control() {}
+void HackFork::control() {
+    mHackStartShaderCtrl->update();
+    if (mMtxConnector != nullptr) {
+        al::connectPoseQT(this, mMtxConnector);
+        initBasicPoseInfo();
+    }
+    if (!isHack()) {
+        if (mCameraTicket != nullptr && al::isActiveCamera(mCameraTicket))
+            al::endCamera(this, mCameraTicket, -1, false);
+        if (al::isActiveCameraTarget(mMatrixCameraTarget))
+            al::resetCameraTarget(this, mMatrixCameraTarget);
+    }
+    if (delay != 0)
+        delay--;
+    if (isHack()) {
+        sead::Vector3f upDir;
+        if (isSensor == false) {
+            sead::Vector3f upDir;
+            al::calcUpDir(&upDir, this);
+            upDir.y = 0.0;
+            al::tryNormalizeOrDirZ(&upDir);
+            sead::Vector3f holt;
+            holt.setCross(upDir, sead::Vector3f::ey);
+            if (0.0 <= holt.dot(al::getCameraPos(this, 0) - al::getTrans(this))) {
+                upDir = -upDir;
+                holt = -holt;
+            }
+            matrix5.setBase(0, holt);
+            matrix5.setBase(1, sead::Vector3f::ey);
+            matrix5.setBase(2, upDir);
+        } else {
+            al::calcFrontDir(&upDir, this);
+            upDir.y = 0.0f;
+            al::tryNormalizeOrDirZ(&upDir);
+            sead::Vector3f holt;
+            holt.setCross(upDir, sead::Vector3f::ey);
+            matrix5.setBase(0, holt);
+            matrix5.setBase(1, sead::Vector3f::ey);
+            matrix5.setBase(2, -upDir);
+            upDir.x = -upDir.x;
+            upDir.y = -upDir.y;
+        }
+
+        zeControl.rotate(al::getQuat(this));
+        if (isSensor != false) {
+            al::calcFrontDir(&upDir, this);
+            zeControl += upDir * 100.0f;
+        }
+        matrix5.setBase(3, zeControl + al::getTrans(this));
+        al::calcJointPos(&leControl, this, "Stick05");
+        leControl.y = sead::Mathf::max(leControl.y, al::getTrans(this).y) + 100.0f;
+    }
+}
 
 void HackFork::calcAnim() {
     al::LiveActor::calcAnim();
@@ -410,7 +556,7 @@ void HackFork::exeHackStartWait() {
             al::startCamera(this, mCameraTicket, -1);
             al::requestStopCameraVerticalAbsorb(this);
         }
-        al::setCameraTarget(this, mCameraTargetBase);
+        al::setCameraTarget(this, mMatrixCameraTarget);
         isHackSwing = false;
         hackDelay = 0;
         isShoot = false;
@@ -459,8 +605,7 @@ void HackFork::exeHackStart() {
 
 void HackFork::exeHackWait() {
     controlSpring();
-    inputB = 0;
-    inputC = 0;
+    inputBuffer.clear();
     sead::Vector3f frontDir;
     al::calcFrontDir(&frontDir, this);
     sead::Vector3f input;
