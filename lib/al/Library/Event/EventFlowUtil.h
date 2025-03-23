@@ -1,5 +1,9 @@
 #pragma once
 
+#include <basis/seadTypes.h>
+#include <math/seadVector.h>
+#include <prim/seadSafeString.h>
+
 namespace al {
 class EventFlowNode;
 class EventFlowEventData;

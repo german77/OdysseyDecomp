@@ -5,12 +5,13 @@
 #include <math/seadMatrix.h>
 #include <math/seadQuat.h>
 #include <math/seadVector.h>
+#include <container/seadRingBuffer.h>
 
 #include "Library/LiveActor/LiveActor.h"
 
 namespace al {
 class ActorInitInfo;
-class CameraTargetBase;
+class ActorMatrixCameraTarget;
 class CameraTicket;
 class EventFlowExecutor;
 class HitSensor;
@@ -67,26 +68,20 @@ private:
     sead::Matrix34f matrix3 = sead::Matrix34<float>::ident;
     sead::Matrix34f matrix4 = sead::Matrix34<float>::ident;
     al::CameraTicket* mCameraTicket = nullptr;
-    al::CameraTargetBase* mCameraTargetBase = nullptr;
+    al::ActorMatrixCameraTarget* mMatrixCameraTarget = nullptr;
     sead::Matrix34f matrix5 = sead::Matrix34<float>::ident;
     sead::Vector3f zeControl = {0.0f, 0.0f, 0.0f};
     bool zeMessage = false;
     f32 damping2 = 0.0f;
     sead::Vector3f leJump = sead::Vector3f::ez;
     f32 damping = 0.0f;
-    s32 lol2;
     sead::PtrArray<al::JointLocalAxisRotator> ptrArray;
     f32 touchForce = 0.0f;
     bool isHackSwing = false;
     u32 hackDelay = 0;
     bool isShoot = false;
     bool isSheep = false;
-    sead::Vector3f* vptr = nullptr;
-    s32 inputA = 10;
-    s32 inputB = 0;
-    s32 inputC = 0;
-    sead::Vector3f inputArray[10];
-    char llol3[4];
+    sead::FixedRingBuffer<sead::Vector3f, 10> inputBuffer;
     bool isSensor = false;
     sead::Quatf quat2 = sead::Quatf::unit;
     sead::Vector3f hack = {0.0f, 0.0f, 0.0f};
