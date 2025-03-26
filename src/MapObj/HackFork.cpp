@@ -408,18 +408,16 @@ bool HackFork::trySwingJump() {
 }
 
 bool HackFork::updateInput(sead::Vector3f* out, sead::Vector3f in) {
-    sead::Vector3f incpy = in;
     sead::Vector3f lookdir;
     al::calcCameraLookDir(&lookdir, this, 0);
 
-    sead::Mathf::cos(0.7853982f);
-    if (in.dot(sead::Vector3f::ey) < 0.7071068f && 0.0f < in.dot(lookdir))
-        incpy = -in;
+    if (in.dot(sead::Vector3f::ey) < sead::Mathf::cos(sead::Mathf::pi()/4.0f) && in.dot(lookdir)> 0.0f)
+        in = -in;
 
     sead::Vector3f moveDir = {0.0f, 0.0f, 0.0f};
-    bool isgood = rs::calcHackerMoveDir(&moveDir, mPlayerHack, incpy);
+    bool isgood = rs::calcHackerMoveDir(&moveDir, mPlayerHack, in);
    
-    inputBuffer.forcePushBack(moveDir);
+      inputBuffer.forcePushBack(moveDir);
 
     *out = {0.0f,0.0f,0.0f};
     
