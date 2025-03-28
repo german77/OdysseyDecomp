@@ -64,16 +64,12 @@ void HackFork::init(const al::ActorInitInfo& initInfo) {
     al::initJointControllerKeeper(this, 10);
     ptrArray.allocBuffer(5, nullptr);
 
-    ptrArray.pushBack(al::initJointLocalAxisRotator(this, leJump, &damping, "Stick01", false));
-    al::initJointLocalXRotator(this, &damping2, "Stick01");
-    ptrArray.pushBack(al::initJointLocalAxisRotator(this, leJump, &damping, "Stick02", false));
-    al::initJointLocalXRotator(this, &damping2, "Stick02");
-    ptrArray.pushBack(al::initJointLocalAxisRotator(this, leJump, &damping, "Stick03", false));
-    al::initJointLocalXRotator(this, &damping2, "Stick03");
-    ptrArray.pushBack(al::initJointLocalAxisRotator(this, leJump, &damping, "Stick04", false));
-    al::initJointLocalXRotator(this, &damping2, "Stick04");
-    ptrArray.pushBack(al::initJointLocalAxisRotator(this, leJump, &damping, "Stick05", false));
-    al::initJointLocalXRotator(this, &damping2, "Stick05");
+    const char* jointNames[5] = {"Stick01", "Stick02", "Stick03", "Stick04",
+                                   "Stick05"};
+    for(s32 i=0;i<5;i++){
+    ptrArray.pushBack(al::initJointLocalAxisRotator(this, leJump, &damping, jointNames[i], false));
+    al::initJointLocalXRotator(this, &damping2, jointNames[i]);
+    }
 
     al::initNerve(this, &NrvHackFork.Wait, 0);
     al::tryGetArg(&isLongJump, initInfo, "LimitterFree");
@@ -108,20 +104,21 @@ void HackFork::init(const al::ActorInitInfo& initInfo) {
     al::tryGetByamlV3f(&localTrans, iter, "LocalTrans");
     sead::Vector3f localRotate = {0.0f, 0.0f, 0.0f};
     al::tryGetByamlV3f(&localRotate, iter, "LocalRotate");
-
-    sead::Matrix34f tmp;
-    tmp.makeR(localRotate);
-
-    localTrans *= al::getScaleY(this);
-
-    matrix3.makeSR(localTrans, {0.0f, 0.0f, 0.0f});
-    matrix3 = tmp * matrix3;
-
+    
+    sead::Matrix34f rotationMatrix;
+    rotationMatrix.makeR(localRotate*0.01745329f); 
+    
+    sead::Matrix34f translationMatrix;
+    translationMatrix.makeRT({0.0f, 0.0f, 0.0f},localTrans*al::getScaleY(this));
+    
+    matrix3=rotationMatrix*translationMatrix;
+    
+    
     sead::Matrix34f jointMtx = *al::getJointMtxPtr(this, mJointName);
     al::normalize(&jointMtx);
     matrix2.setInverse(jointMtx);
 
-    mCapTargetInfo->setMatrix18(matrix1);
+    mCapTargetInfo->setMatrix18(&matrix1);
     quat3.inverse(&quat2);
 
     initBasicPoseInfo();
