@@ -139,8 +139,8 @@ void Rabbit::init(const al::ActorInitInfo& initInfo) {
     mShadowDropLength = al::getShadowMaskDropLength(this, "Hip");
 
     auto asd = RabbitFunctor(this, &Rabbit::appearReset);
-    if (!al::listenStageSwitchOnOff(this, "SwitchRabbitAppear", RabbitFunctor(this, nullptr),
-                                    RabbitFunctor(this, &Rabbit::resetParam))) {
+    if (!al::listenStageSwitchOnOff(this, "SwitchRabbitAppear", RabbitFunctor(this, &Rabbit::resetParam),
+                                    RabbitFunctor(this, &Rabbit::kill))) {
         al::initNerve(this, &NrvRabbit.StandbyWait, 0);
     } else {
         mEnemyStateReset = new EnemyStateReset(this, initInfo, nullptr);
