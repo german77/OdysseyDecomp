@@ -38,5 +38,4 @@ private:
 };
 
 static_assert(sizeof(ResourceSystem) == 0xc8);
-
 }  // namespace al

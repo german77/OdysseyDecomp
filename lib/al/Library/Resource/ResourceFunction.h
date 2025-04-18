@@ -2,7 +2,10 @@
 
 #include <prim/seadSafeString.h>
 
-// this probably isnt a good spot
+namespace sead {
+class Heap;
+}
+
 namespace al {
 
 class Resource;
@@ -10,7 +13,7 @@ class SeadAudioPlayer;
 class ActorResourceHolder;
 class ActorResource;
 
-void addResourceCategory(const sead::SafeString&, s32, sead::Heap*);
+Resource* addResourceCategory(const sead::SafeString&, s32, sead::Heap*);
 bool isEmptyCategoryResource(const sead::SafeString&);
 void createCategoryResourceAll(const sead::SafeString&);
 void removeResourceCategory(const sead::SafeString&);
