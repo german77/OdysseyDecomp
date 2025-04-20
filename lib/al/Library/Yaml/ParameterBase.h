@@ -11,33 +11,39 @@ class ParameterObj;
 class ParameterList;
 
 SEAD_ENUM(YamlParamType,
-    Invalid,
-    Bool,
-    F32,
-    S32,
-    U32,
-    V2f,
-    V2s32,
-    V3f,
-    V4f,
-    Q4f,
-    C4f,
-    StringRef,
-    String32,
-    String64,
-    String128,
-    String256,
-    String512,
-    String1024,
-    String2048,
-    String4096,
+    Invalid ,
+    Bool ,
+    F32 ,
+    S32 ,
+    U32 ,
+    V2f ,
+    V2s32 ,
+    V3f ,
+    V4f ,
+    Q4f ,
+    C4f ,
+    StringRef ,
+    String32 ,
+    String64 ,
+    String128 ,
+    String256 ,
+    String512 ,
+    String1024 ,
+    String2048 ,
+    String4096
 );
 
 #define PARAM_TYPE_DEF(Name, Type)                                                                 \
     class Parameter##Name : public Parameter<Type> {                                               \
     public:                                                                                        \
+        Parameter##Name(const sead::SafeString& a, const sead::SafeString& b,                      \
+                        const sead::SafeString& c, ParameterObj* d, bool e)                        \
+            : Parameter(a, b, c, d, e) {}                                                          \
+        Parameter##Name(const sead::SafeString& a, const sead::SafeString& b,                      \
+                        const sead::SafeString& c, ParameterList* d, bool e)                       \
+            : Parameter(a, b, c, d, e) {}                                                          \
         const char* getParamTypeStr() const override {                                             \
-            return getParamType().text();                                                          \
+            return YamlParamType::text(YamlParamType::Name);                                       \
         }                                                                                          \
                                                                                                    \
         YamlParamType getParamType() const override {                                              \
@@ -47,11 +53,13 @@ SEAD_ENUM(YamlParamType,
 
 class ParameterBase {
 public:
-    ParameterBase(const sead::SafeString&, const sead::SafeString&, const sead::SafeString&,
-                  ParameterObj*, bool);
+    ParameterBase(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
+                  ParameterObj* d, bool e) {
+        initializeListNode(a, b, c, d, e);
+    }
 
-    ParameterBase(const sead::SafeString&, const sead::SafeString&, const sead::SafeString&,
-                  ParameterList*, bool);
+    ParameterBase(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
+                  ParameterList* d, bool e);
 
     virtual const char* getParamTypeStr() const = 0;
     virtual YamlParamType getParamType() const = 0;
@@ -94,14 +102,26 @@ private:
 template <typename T>
 class Parameter : public ParameterBase {
 public:
-    const void* ptr() const { return mValue; };
+    Parameter(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
+              ParameterObj* d, bool e)
+        : ParameterBase(a, b, c, d, e) {}
 
-    void* ptr() { return mValue; };
+    Parameter(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
+              ParameterList* d, bool e)
+        : ParameterBase(a, b, c, d, e) {}
 
-    s32 getParamSize() const { return sizeof(T); }
+    const void* ptr() const override { return &mValue; };
+
+    void* ptr() override { return &mValue; };
+
+    const T& getValue() { return mValue; }
+
+    void setValue(const T& value) { mValue = value; }
+
+    s32 getParamSize() const override { return sizeof(T); }
 
 private:
-    T* mValue;
+    T mValue;
 };
 
 PARAM_TYPE_DEF(Bool, bool)
