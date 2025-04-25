@@ -1,5 +1,9 @@
 #include "Sequence/E3Sequence.h"
 
+#include <common/aglDrawContext.h>
+#include <common/aglRenderBuffer.h>
+#include <gfx/seadViewport.h>
+
 #include "Library/Controller/InputFunction.h"
 #include "Library/Layout/LayoutActorUtil.h"
 #include "Library/Layout/LayoutUtil.h"
@@ -9,9 +13,12 @@
 #include "Library/Play/Layout/SimpleLayoutAppearWaitEnd.h"
 #include "Library/Play/Layout/WipeHolder.h"
 #include "Library/Scene/Scene.h"
+#include "Library/Screen/ScreenFunction.h"
+#include "Library/System/GameSystemInfo.h"
 
 #include "Scene/StageScene.h"
 #include "Sequence/GameSequenceInfo.h"
+#include "System/GameDataFunction.h"
 #include "System/GameDataHolder.h"
 #include "System/SaveDataAccessFunction.h"
 #include "Util/StageInputFunction.h"
@@ -37,8 +44,8 @@ NERVE_IMPL(E3Sequence, Miss)
 NERVE_IMPL(E3Sequence, MissCoinSub)
 NERVE_IMPL(E3Sequence, MissEnd)
 
-NERVES_MAKE_NOSTRUCT(E3Sequence, LoadStationedResource, SoftReset, InitSystem, LoadWorldResource,
-                     LoadWorldResourceWithBoot)
+// NERVES_MAKE_NOSTRUCT(E3Sequence, LoadStationedResource, SoftReset, InitSystem, LoadWorldResource,
+//                      LoadWorldResourceWithBoot)
 NERVES_MAKE_STRUCT(E3Sequence, PlayStage, EndCard, StageSelect, Title, LoadStage, DestroyToReboot,
                    DestroyToReset, DestroyToMiss, Destroy, DestroyToReload, Miss,
                    DestroyToRebootEnd, MissCoinSub, MissEnd)
@@ -58,7 +65,19 @@ void E3Sequence::init(const al::SequenceInitInfo&) {}
 
 void E3Sequence::initSystem() {}
 
-void E3Sequence::deleteScene() {}
+void E3Sequence::deleteScene() {
+    if (mCurrentScene) {
+        mCurrentScene->~Scene();  // Calls second destructor?
+        mCurrentScene = nullptr;
+        if (GameDataFunction::isPlayDemoWorldWarp(mGameDataHolder) ||
+            GameDataFunction::isPlayDemoWorldWarpHole(mGameDataHolder) ||
+            al::isNerve(this, &NrvE3Sequence.DestroyToReboot)) {
+            al::destroySceneHeap(true);
+            return;
+        }
+        al::destroySceneHeap(false);
+    }
+}
 
 void E3Sequence::update() {
     ControllerAppletFunction::tryReconnectGamePad(mGamePadSystem);
@@ -71,9 +90,9 @@ void E3Sequence::update() {
     SaveDataAccessFunction::updateSaveDataAccess(mGameDataHolder, false);
     al::executeUpdate(mLayoutKit);
 
-    al::Scene* scene = getCurrentScene();
+    al::SceneCreator* sceneCreator = getSceneCreator();
 
-    if (scene && mWipeHolder->isOpenEnd())
+    if (sceneCreator && mWipeHolder->isOpenEnd())
         rs::endWipeOpen(mGameDataHolder);
     else
         rs::startWipeOpen(mGameDataHolder);
@@ -81,33 +100,31 @@ void E3Sequence::update() {
     E3SequenceData* sequenceData = mSequenceData;
     s32 controllerPort = al::getMainControllerPort();
 
-    if (!al::isPadHoldZR(controllerPort) || !al::isPadHoldPlus(controllerPort)) {
-        sequenceData->_18 = 0;
-        if (sequenceData->_0)
-            goto LAB_710050bc9c;
-    } else {
-        if (!sequenceData->_0)
-            sequenceData->_18++;
-        if (sequenceData->_18 < 0xb5) {
-            if (sequenceData->_0)
-                goto LAB_710050bc9c;
+    if (al::isPadHoldZR(controllerPort) && al::isPadHoldPlus(controllerPort)) {
+        if (!sequenceData->useSpecialControls)
+            sequenceData->specialControlsDelay++;
+        if (sequenceData->specialControlsDelay >= 181) {
+            if (!sequenceData->useSpecialControls)
+                sequenceData->useSpecialControls = true;
         }
-        if (!sequenceData->_0)
-            sequenceData->_0 = true;
-    LAB_710050bc9c:
+    } else {
+        sequenceData->specialControlsDelay = 0;
+    }
+
+    if (sequenceData->useSpecialControls) {
         if ((al::isPadTriggerZR(controllerPort) || al::isPadHoldZR(controllerPort)) &&
             al::isPadTriggerB(controllerPort)) {
-            sequenceData->_c = sequenceData->_4 * 0xe10 + -300;
+            sequenceData->seconds = sequenceData->hours * 3600 + -300;
         }
 
         if ((al::isPadTriggerZR(controllerPort) || al::isPadHoldZR(controllerPort)) &&
-            al::isPadTriggerA(controllerPort) && sequenceData->_4 < 0xf) {
-            sequenceData->_4++;
+            al::isPadTriggerA(controllerPort) && sequenceData->hours < 0xf) {
+            sequenceData->hours++;
         }
 
         if ((al::isPadTriggerZR(controllerPort) || al::isPadHoldZR(controllerPort)) &&
-            al::isPadTriggerY(controllerPort) && 0 < sequenceData->_4) {
-            sequenceData->_4--;
+            al::isPadTriggerY(controllerPort) && 0 < sequenceData->hours) {
+            sequenceData->hours--;
         }
 
         if ((al::isPadTriggerZR(controllerPort) || al::isPadHoldZR(controllerPort)) &&
@@ -117,26 +134,26 @@ void E3Sequence::update() {
 
         if ((al::isPadTriggerR(controllerPort) || al::isPadHoldR(controllerPort)) &&
             al::isPadTriggerA(controllerPort)) {
-            if (sequenceData->_8 == 5)
-                sequenceData->_8 = 10;
-            else if (299 >= sequenceData->_8)
-                sequenceData->_8 += 10;
+            if (sequenceData->minutes == 5)
+                sequenceData->minutes = 10;
+            else if (299 >= sequenceData->minutes)
+                sequenceData->minutes += 10;
         }
 
         if ((al::isPadTriggerR(controllerPort) || al::isPadHoldR(controllerPort)) &&
             al::isPadTriggerY(controllerPort)) {
-            if (sequenceData->_8 >= 11)
-                sequenceData->_8 -= 10;
-            else if (sequenceData->_8 == 10)
-                sequenceData->_8 = 5;
+            if (sequenceData->minutes >= 11)
+                sequenceData->minutes -= 10;
+            else if (sequenceData->minutes == 10)
+                sequenceData->minutes = 5;
         }
         if ((al::isPadTriggerR(controllerPort) || al::isPadHoldR(controllerPort)) &&
             al::isPadTriggerX(controllerPort)) {
             sequenceData->_2 = !sequenceData->_2;
         }
         if ((al::isPadTriggerZR(controllerPort) || al::isPadHoldZR(controllerPort)) &&
-            al::isPadTriggerPlus(controllerPort) && sequenceData->_18 == 0) {
-            sequenceData->_0 = false;
+            al::isPadTriggerPlus(controllerPort) && sequenceData->specialControlsDelay == 0) {
+            sequenceData->useSpecialControls = false;
         }
     }
 
@@ -144,35 +161,40 @@ void E3Sequence::update() {
         sequenceData = this->mSequenceData;
         controllerPort = al::getMainControllerPort();
         if (sequenceData->_1 != false)
-            sequenceData->_c++;
+            sequenceData->seconds++;
         if (sequenceData->_2 != false) {
             if (!al::isPadHoldAny(controllerPort))
-                sequenceData->_10++;
+                sequenceData->playTime++;
             else
-                sequenceData->_10 = 0;
+                sequenceData->playTime = 0;
         }
+
         sequenceData = this->mSequenceData;
-        if (al::isLessStep(this, 30)) {
+        if (!al::isLessStep(this, 30)) {
+            if (sequenceData->seconds != sequenceData->hours * 3600 &&
+                sequenceData->seconds - sequenceData->hours * 3600 >= 0) {
+                sequenceData = this->mSequenceData;
+                sequenceData->seconds = 0;
+                sequenceData->playTime = 0;
+                al::setNerve(this, &NrvE3Sequence.EndCard);
+                return;
+            }
             sequenceData = this->mSequenceData;
-            if (!al::isLessStep(this, 30) && sequenceData->_10 != sequenceData->_8 * 60 &&
-                sequenceData->_10 + sequenceData->_8 * -60 >= 0) {
-                sequenceData->_c = 0;
-                sequenceData->_10 = 0;
+            if (!al::isLessStep(this, 30) && sequenceData->playTime != sequenceData->minutes * 60 &&
+                sequenceData->playTime - sequenceData->minutes * 60 >= 0) {
+                sequenceData = this->mSequenceData;
+                sequenceData->seconds = 0;
+                sequenceData->playTime = 0;
                 al::setNerve(this, &NrvE3Sequence.EndCard);
                 return;
             }
         } else {
             sequenceData = this->mSequenceData;
-            if (sequenceData->_c != sequenceData->_4 * 3600 &&
-                sequenceData->_c + controllerPort * -3600 >= 0) {
-                sequenceData->_c = 0;
-                sequenceData->_10 = 0;
-                al::setNerve(this, &NrvE3Sequence.EndCard);
-                return;
-            } else if (!al::isLessStep(this, 30) && sequenceData->_10 != sequenceData->_8 * 60 &&
-                       sequenceData->_10 + sequenceData->_8 * -60 >= 0) {
-                sequenceData->_c = 0;
-                sequenceData->_10 = 0;
+            if (!al::isLessStep(this, 30) && sequenceData->playTime != sequenceData->minutes * 60 &&
+                sequenceData->playTime - sequenceData->minutes * 60 >= 0) {
+                sequenceData = this->mSequenceData;
+                sequenceData->seconds = 0;
+                sequenceData->playTime = 0;
                 al::setNerve(this, &NrvE3Sequence.EndCard);
                 return;
             }
@@ -183,20 +205,20 @@ void E3Sequence::update() {
         sequenceData = this->mSequenceData;
         s32 controllerPort = al::getMainControllerPort();
         if (sequenceData->_1 != false)
-            sequenceData->_c++;
+            sequenceData->seconds++;
         if (sequenceData->_2 != false) {
             if (!al::isPadHoldAny(controllerPort))
-                sequenceData->_10++;
+                sequenceData->playTime++;
             else
-                sequenceData->_10 = 0;
+                sequenceData->playTime = 0;
         }
         sequenceData = this->mSequenceData;
-        if (!al::isLessStep(this, 30) && sequenceData->_10 != sequenceData->_8 * 60 &&
-            sequenceData->_10 + sequenceData->_8 * -60 < 0) {
+        if (!al::isLessStep(this, 30) && sequenceData->playTime != sequenceData->minutes * 60 &&
+            sequenceData->playTime - sequenceData->minutes * 60 >= 0) {
             mE3StageSelect->end();
             sequenceData = this->mSequenceData;
-            sequenceData->_c = 0;
-            sequenceData->_10 = 0;
+            sequenceData->seconds = 0;
+            sequenceData->playTime = 0;
             al::setNerve(this, &NrvE3Sequence.Title);
         }
     }
@@ -209,21 +231,41 @@ bool E3Sequence::isEnableSave() const {
             if (!al::isNerve(this, &NrvE3Sequence.PlayStage))
                 return SaveDataAccessFunction::isEnableSave(mGameDataHolder);
 
-            // Needs stageScene
-            // if (getCurrentScene()->isEnableSave()){
-            return SaveDataAccessFunction::isEnableSave(mGameDataHolder);
-            //}
+            // Bad Object?
+            if (((StageScene*)getSceneCreator())->isEnableSave())
+                return SaveDataAccessFunction::isEnableSave(mGameDataHolder);
         }
         return false;
     }
     return !al::isActive(mCounterMiss);
 }
 
-void E3Sequence::drawMain() const {}
+void E3Sequence::drawMain() const {
+    al::Sequence::drawMain();
+    al::DrawSystemInfo* drawInfo = getDrawInfo();
+    agl::DrawContext* drawContext = drawInfo->drawContext;
+    agl::RenderBuffer* rendererBuffer =
+        drawInfo->isDocked ? drawInfo->dockedRenderBuffer : drawInfo->handheldRenderBuffer;
+    mScreenCaptureExecutor->tryCaptureAndDraw(drawContext, rendererBuffer, 0);
+
+    sead::Viewport viewport(*rendererBuffer);
+    viewport.apply(drawContext, *rendererBuffer);
+    rendererBuffer->bind(drawContext);
+
+    al::setRenderBuffer(mLayoutKit, rendererBuffer);
+    al::executeDraw(mLayoutKit, "２Ｄベース（メイン画面）");
+    al::executeDraw(mLayoutKit, "２Ｄオーバー（メイン画面）");
+}
 
 void E3Sequence::updateDestroy() {}
 
-bool E3Sequence::isAbleReset() {}
+bool E3Sequence::isAbleReset() {
+    if (al::isNerve(this, &NrvE3Sequence.PlayStage) ||
+        al::isNerve(this, &NrvE3Sequence.StageSelect)) {
+        return true;
+    }
+    return al::isNerve(this, &NrvE3Sequence.Title) && al::isGreaterStep(this, 60);
+}
 
 al::Scene* E3Sequence::getCurrentScene() const {
     return mCurrentScene;

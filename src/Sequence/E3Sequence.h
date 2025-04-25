@@ -10,6 +10,7 @@ class Scene;
 class GamePadSystem;
 class SimpleLayoutAppearWaitEnd;
 class LayoutKit;
+class ScreenCaptureExecutor;
 class WipeHolder;
 }  // namespace al
 
@@ -17,15 +18,15 @@ class GameDataHolder;
 class SimpleAudioUser;
 
 struct E3SequenceData {
-    bool _0 = false;
+    bool useSpecialControls = false;
     bool _1 = true;
     bool _2 = true;
-    s32 _4 = 10;
-    s32 _8 = 0x78;
-    s32 _c = 0;
-    s32 _10 = 0;
+    s32 hours = 10;
+    s32 minutes = 0x78;
+    s32 seconds = 0;
+    s32 playTime = 0;
     s32 _14 = 0;
-    s32 _18 = 0;
+    s32 specialControlsDelay = 0;
 };
 
 class E3Sequence : public al::Sequence {
@@ -64,11 +65,18 @@ private:
     GameDataHolder* mGameDataHolder;
     al::GamePadSystem* mGamePadSystem;
     al::LayoutKit* mLayoutKit;
+    char filler1[0xa8];
+    al::ScreenCaptureExecutor* mScreenCaptureExecutor;
     al::WipeHolder* mWipeHolder;
+    char filler2[0x10];
     al::SimpleLayoutAppearWaitEnd* mCounterMiss;
+    char filler3[0x8];
+    al::SimpleLayoutAppearWaitEnd* mE3TitleMenu;
     al::SimpleLayoutAppearWaitEnd* mE3StageSelect;
     al::SimpleLayoutAppearWaitEnd* mE3Tank;
 
+    char filler4[0x160];
     SimpleAudioUser* mSimpleAudioUser;
+    char filler5[0x8];
     E3SequenceData* mSequenceData;
 };
