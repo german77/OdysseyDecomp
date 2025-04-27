@@ -10,7 +10,7 @@ class ParameterObj;
 class ParameterArray {
 public:
     ParameterArray();
-    bool tryGetParam(const ByamlIter&);
+    void tryGetParam(const ByamlIter&);
     bool isEqual(const ParameterArray&) const;
     void copy(const ParameterArray&);
     void copyLerp(const ParameterArray&, const ParameterArray&, f32);
@@ -18,14 +18,16 @@ public:
     void clearObj();
     void removeObj(ParameterObj*);
     bool isExistObj(ParameterObj*);
+    
+ParameterObj* getFirstObj()const{return mFirstObj;}
 
-    s32 getKeyHash() { return mKeyHash; }
+    s32 getSize() const{ return mSize; }
 
 private:
-    ParameterObj* mFirstParam;
-    ParameterArray* mNext;
+    ParameterObj* mFirstObj = nullptr;
+    ParameterArray* mNext = nullptr;
     sead::FixedSafeString<0x40> mParamObjKey;
-    s32 mKeyHash;
+    s32 mSize = 0;
 };
 
 }  // namespace al

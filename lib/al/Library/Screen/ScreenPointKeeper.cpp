@@ -10,9 +10,9 @@
 #include "Library/Screen/ScreenPointTarget.h"
 #include "Library/Yaml/ByamlIter.h"
 #include "Library/Yaml/ParameterArray.h"
+#include "Library/Yaml/ParameterBase.h"
 #include "Library/Yaml/ParameterList.h"
 #include "Library/Yaml/ParameterObj.h"
-#include "Library/Yaml/ParameterBase.h"
 
 namespace al {
 
@@ -27,11 +27,12 @@ ScreenPointKeeper::ScreenPointKeeper() {
     mParameterIo = new ParameterIo();
     mParameterArray = new ParameterArray();
     mParameterObj = new ParameterObj();
-    
-    ParameterBase*  parameter= new ParameterBase("AddTargetNum","AddTargetNum","Min=0, Max=10",mParameterObj,true);
-    mTargetNum=parameter;
-    //mTargetNum->setValue(0);
-    
+
+    ParameterBase* parameter =
+        new ParameterBase("AddTargetNum", "AddTargetNum", "Min=0, Max=10", mParameterObj, true);
+    mTargetNum = parameter;
+    // mTargetNum->setValue(0);
+
     mParameterIo->addObj(mParameterObj, "Options");
     mParameterIo->addArray(mParameterArray, "Targets");
 }
@@ -43,23 +44,22 @@ void ScreenPointKeeper::initByYaml(LiveActor* actor, const Resource* resource,
 
     if (tryGetActorInitFileIter(&iter, resource, "InitScreenPoint", name)) {
         mParameterIo->tryGetParam(iter);
-        // This feels really wrong using a hash as size?
-        s32 hash = mParameterArray->getKeyHash();
-        
-        if (hash != 0) { 
-            initArray(mTargetNum->getValue()+hash);
-            if (hash < 1) {
+        s32 size = mParameterArray->getSize();
+
+        if (size != 0) {
+            initArray(mTargetNum->getValue() + size);
+            if (size < 1) {
                 mParameterIo->tryGetParam(iter);
                 return;
             }
 
-            for (s32 i = 0; i < hash; i++) {
+            for (s32 i = 0; i < size; i++) {
                 addTarget(actor, initInfo, "Tmp", 0.0f, getTransPtr(actor), nullptr,
                           sead::Vector3f::zero);
             }
 
             mParameterIo->tryGetParam(iter);
-            for (s32 i = 0; i < hash; i++)
+            for (s32 i = 0; i < size; i++)
                 mScreenPointTargets[i]->setFollowMtxPtrByJointName(actor);
         }
     }

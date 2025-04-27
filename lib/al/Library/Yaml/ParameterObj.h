@@ -19,6 +19,12 @@ public:
     void copyLerp(const ParameterObj&, const ParameterObj&, f32);
     void findParameter(const char*) const;
 
+    ParameterObj* getNext() const { return mNext; }
+
+    void setNext(ParameterObj* obj) { mNext = obj; }
+    
+    void setParamObjKey(const sead::SafeString& objKey) { mParamObjKey= objKey;}
+
 private:
     ParameterBase* mFirstParam;
     ParameterBase* mLastParam;
