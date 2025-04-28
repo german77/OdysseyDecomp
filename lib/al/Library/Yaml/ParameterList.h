@@ -18,18 +18,24 @@ public:
     void addParam(ParameterBase*);
     void clearList(void);
     void clearObj(void);
-    void isExistObj(ParameterObj*);
+    bool isExistObj(ParameterObj*);
     void removeList(ParameterList*);
     void removeObj(ParameterObj*);
     void tryGetParam(const ByamlIter&);
 
+    ParameterList* getNext() const { return mNext; }
+
+    void setNext(ParameterList* list) { mNext = list; }
+
+    void setKey(const sead::SafeString& key) { mKey = key; }
+
 private:
-    ParameterBase* mRootParamNode;
-    ParameterObj* mRootObjNode;
-    ParameterList* mRootListNode;
-    ParameterArray* mRootArrayNode;
-    ParameterList* mNext;
-    sead::FixedSafeString<0x40> mNodeKey;
+    ParameterBase* mRootParamNode = nullptr;
+    ParameterObj* mRootObjNode = nullptr;
+    ParameterList* mRootListNode = nullptr;
+    ParameterArray* mRootArrayNode = nullptr;
+    ParameterList* mNext = nullptr;
+    sead::FixedSafeString<0x40> mKey;
 };
 
 class ParameterIo : public ParameterList {};

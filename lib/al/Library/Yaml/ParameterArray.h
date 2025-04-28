@@ -10,23 +10,29 @@ class ParameterObj;
 class ParameterArray {
 public:
     ParameterArray();
-    void tryGetParam(const ByamlIter&);
-    bool isEqual(const ParameterArray&) const;
-    void copy(const ParameterArray&);
-    void copyLerp(const ParameterArray&, const ParameterArray&, f32);
-    void addObj(ParameterObj*);
+    void tryGetParam(const ByamlIter& iter);
+    bool isEqual(const ParameterArray& array) const;
+    void copy(const ParameterArray& array);
+    void copyLerp(const ParameterArray& arrayA, const ParameterArray& arrayB, f32 rate);
+    void addObj(ParameterObj* obj);
     void clearObj();
-    void removeObj(ParameterObj*);
-    bool isExistObj(ParameterObj*);
-    
-ParameterObj* getFirstObj()const{return mFirstObj;}
+    void removeObj(ParameterObj* obj);
+    bool isExistObj(ParameterObj* obj);
 
-    s32 getSize() const{ return mSize; }
+    ParameterObj* getRootObjNode() const { return mRootObjNode; }
+
+    ParameterArray* getNext() const { return mNext; }
+
+    void setNext(ParameterArray* array) { mNext = array; }
+
+    void setKey(const sead::SafeString& key) { mKey = key; }
+    
+    s32 getSize() const { return mSize; }
 
 private:
-    ParameterObj* mFirstObj = nullptr;
+    ParameterObj* mRootObjNode = nullptr;
     ParameterArray* mNext = nullptr;
-    sead::FixedSafeString<0x40> mParamObjKey;
+    sead::FixedSafeString<0x40> mKey;
     s32 mSize = 0;
 };
 

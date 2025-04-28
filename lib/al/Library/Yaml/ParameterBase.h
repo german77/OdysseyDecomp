@@ -9,13 +9,8 @@ class ParameterList;
 
 class ParameterBase {
 public:
-    ParameterBase(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
-                  ParameterObj* d, bool e) {
-        initialize("default", "parameter", "", e);
-        mValue = 0;
-        initializeListNode(a, b, c, d, e);
-        mValue = 0;
-    }
+    ParameterBase(const sead::SafeString&, const sead::SafeString&, const sead::SafeString&,
+                  ParameterObj* d, bool e) {}
 
     ParameterBase(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
                   ParameterList* d, bool e) {
@@ -36,6 +31,10 @@ public:
                     bool);
     u32 calcHash(sead::SafeString const&);
     void tryGetParam(ByamlIter const&);
+
+    ParameterBase* getNext() const { return mNext; }
+
+    void setNext(ParameterBase* param) { mNext = param; }
 
     s32 getValue() const { return mValue; }
 
