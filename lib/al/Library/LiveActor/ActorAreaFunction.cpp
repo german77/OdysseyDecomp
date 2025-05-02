@@ -183,6 +183,77 @@ bool isInAreaObj(const LiveActor* actor, const char* name) {
     return isInAreaObj(actor, name, getTrans(actor));
 }
 
+inline ResultFlag isInAreaObjPlayerOneImpl(const PlayerHolder* holder, const char* name) {
+    s32 playerNum = getPlayerNumMax(holder);
+    for (s32 i = 0; i < playerNum; i++) {
+        LiveActor* playerActor = getPlayerActor(holder, i);
+        ResultFlag flag = ResultFlag::InvalidState;
+        if (!isDead(playerActor) && isAreaTarget(playerActor)) {
+            if (isInAreaObj(playerActor, name, getTrans(playerActor)))
+                flag = ResultFlag::True;
+            else
+                flag = ResultFlag::False;
+        }
+        if (evaluate(flag))
+            return flag;
+    }
+    return ResultFlag::NotFound;
+}
+
+bool isInAreaObjPlayerOne(const PlayerHolder* holder, const char* name) {
+    return isInAreaObjPlayerOneImpl(holder, name) != ResultFlag::NotFound;
+}
+
+inline ResultFlag isInAreaObjPlayerAllImpl(const PlayerHolder* holder, const char* name) {
+    s32 playerNum = getPlayerNumMax(holder);
+    ResultFlag data = ResultFlag::False;
+    for (s32 i = 0; i < playerNum; i++) {
+        LiveActor* playerActor = getPlayerActor(holder, i);
+        ResultFlag flag = ResultFlag::InvalidState;
+        if (!isDead(playerActor) && isAreaTarget(playerActor)) {
+            if (!isInAreaObj(playerActor, name, getTrans(playerActor))) {
+                data = ResultFlag::False;
+                flag = ResultFlag::True;
+            } else {
+                data = ResultFlag::True;
+                flag = ResultFlag::False;
+            }
+        } else {
+            data = ResultFlag::InvalidState;
+            flag = ResultFlag::InvalidState;
+        }
+        if (evaluate(flag))
+            return data & flag;
+    }
+    return data & ResultFlag::NotFound;
+}
+
+bool isInAreaObjPlayerAll(const PlayerHolder* holder, const char* name) {
+    return isInAreaObjPlayerAllImpl(holder, name) != ResultFlag::NotFound;
+}
+
+inline ResultFlag isInAreaObjPlayerOneIgnoreAreaTargetImpl(const PlayerHolder* holder,
+                                                           const char* name) {
+    s32 playerNum = getPlayerNumMax(holder);
+    for (s32 i = 0; i < playerNum; i++) {
+        LiveActor* playerActor = getPlayerActor(holder, i);
+        ResultFlag flag = ResultFlag::InvalidState;
+        if (!isDead(playerActor)) {
+            if (isInAreaObj(playerActor, name, getTrans(playerActor)))
+                flag = ResultFlag::True;
+            else
+                flag = ResultFlag::False;
+        }
+        if (evaluate(flag))
+            return flag;
+    }
+    return ResultFlag::NotFound;
+}
+
+bool isInAreaObjPlayerOneIgnoreAreaTarget(const PlayerHolder* holder, const char* name) {
+    return isInAreaObjPlayerOneIgnoreAreaTargetImpl(holder, name) != ResultFlag::NotFound;
+}
+
 bool isInDeathArea(const LiveActor* actor) {
     if (!isAreaTarget(actor))
         return false;
