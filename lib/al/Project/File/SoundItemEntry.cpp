@@ -8,10 +8,10 @@ void SoundItemEntry::load() {
     sendMessageDone();
 }
 
-void SoundItemEntry::setLoadRequestInfo(u32 itemId, u32 ItemMiss,
+void SoundItemEntry::setLoadRequestInfo(u32 itemId, u32 itemMiss,
                                         IAudioResourceLoader* resourceLoader) {
     mItemId = itemId;
-    mItemMiss = ItemMiss;
+    mItemMiss = itemMiss;
     mResourceLoader = resourceLoader;
     setLoadStateRequested();
 }
