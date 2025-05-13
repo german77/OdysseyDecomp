@@ -151,6 +151,8 @@ public:
 
     SkyDirector* getSkyDirector() { return mSkyDirector; }
 
+    OcclusionCullingJudge* getOcclusionCullingJudge() { return mOcclusionCullingJudge; }
+
 private:
     sead::StrTreeMap<128, const sead::PtrArray<UniformBlock>*> mViewIndexedUboArrayTree;
     GraphicsInitArg mInitArg;

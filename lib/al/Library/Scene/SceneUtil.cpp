@@ -3,9 +3,16 @@
 #include <common/aglRenderBuffer.h>
 #include <math/seadVector.h>
 
+#include "Library/Area/AreaObjDirector.h"
+#include "Library/Area/SwitchAreaDirector.h"
+#include "Library/Camera/CameraDirector.h"
+#include "Library/Camera/CameraPoseUpdater.h"
+#include "Library/Camera/CameraViewCtrlScene.h"
 #include "Library/Draw/GraphicsQualityController.h"
 #include "Library/Draw/GraphicsSystemInfo.h"
 #include "Library/Effect/EffectSystem.h"
+#include "Library/Layout/LayoutInitInfo.h"
+#include "Library/Layout/LayoutSystem.h"
 #include "Library/LiveActor/LiveActorKit.h"
 #include "Library/Model/ModelDrawBufferUpdater.h"
 #include "Library/Scene/Scene.h"
@@ -143,8 +150,9 @@ void initActorInitInfo(ActorInitInfo* actorInitInfo, const Scene* scene,
     PlayerHolder* playerHolder = actorKit->getPlayerHolder();
     HitSensorDirector* hitSensorDirector = actorKit->getHitSensorDirector();
 
-    EffectSystem* effectSystem=actorKit->getEffectSystem();
-    EffectSystemInfo* effectSystemInfo = effectSystem?effectSystem->getEffectSystemInfo():nullptr;
+    EffectSystem* effectSystem = actorKit->getEffectSystem();
+    EffectSystemInfo* effectSystemInfo =
+        effectSystem ? actorKit->getEffectSystem()->getEffectSystemInfo() : nullptr;
 
     CollisionDirector* collisionDirector = actorKit->getCollisionDirector();
     ItemDirectorBase* itemDirectorBase = actorKit->getItemDirector();
@@ -154,22 +162,71 @@ void initActorInitInfo(ActorInitInfo* actorInitInfo, const Scene* scene,
 
     actorInitInfo->initNew(
         placementInfo, layoutInfo, liveActorGroup, actorFactory, actorResourceHolder,
-        areaObjDirector, audioDirector, cameraDirector, clippingDirector,
-        collisionDirector, demoDirector, effectSystemInfo, executeDirector, gameDataHolderBase,
-        gravityHolder, hitSensorDirector, itemDirectorBase, natureDirector, gamePadSystem,
-        padRumbleDirector, playerHolder, sceneObjHolder, sceneMsgCtrl, scene->getSceneStopCtrl(),
+        areaObjDirector, audioDirector, cameraDirector, clippingDirector, collisionDirector,
+        demoDirector, effectSystemInfo, executeDirector, gameDataHolderBase, gravityHolder,
+        hitSensorDirector, itemDirectorBase, natureDirector, gamePadSystem, padRumbleDirector,
+        playerHolder, sceneObjHolder, sceneMsgCtrl, scene->getSceneStopCtrl(),
         scene->getScreenCoverCtrl(), actorKit->getScreenPointDirector(),
         actorKit->getShadowDirector(), actorKit->getStageSwitchDirector(),
         actorKit->getModelGroup(), actorKit->getGraphicsSystemInfo(),
-        actorKit->getModelDrawBufferUpdater()->getModelDrawBufferCounter(),
-        actorKit->getDynamicDrawActorGroup());
+        actorKit->getModelDrawBufferCounter(), actorKit->getDynamicDrawActorGroup());
 }
 
-void initLayoutInitInfo(LayoutInitInfo*, const Scene* scene, const SceneInitInfo&);
+void initLayoutInitInfo(LayoutInitInfo* layoutInfo, const Scene* scene,
+                        const SceneInitInfo& sceneInfo) {
+    LiveActorKit* actorKit = scene->getLiveActorKit();
+    LayoutKit* layoutKit = scene->getLayoutKit();
+
+    ExecuteDirector* executeDirector;
+    EffectSystem* effectSystem;
+    SceneObjHolder* sceneObjHolder;
+    AudioDirector* audioDirector;
+    CameraDirector* cameraDirector;
+    LayoutSystem* layoutSystem;
+    MessageSystem* messageSystem;
+    GamePadSystem* gamePadSystem;
+    PadRumbleDirector* padRumbleDirector;
+
+    if (actorKit) {
+        executeDirector = actorKit->getExecuteDirector();
+        effectSystem = actorKit->getEffectSystem();
+        sceneObjHolder = scene->getSceneObjHolder();
+        audioDirector = scene->getAudioDirector();
+        cameraDirector = scene->getCameraDirector();
+        GameSystemInfo* gameSysInfo = sceneInfo.gameSysInfo;
+        layoutSystem = gameSysInfo->layoutSystem;
+        messageSystem = gameSysInfo->messageSystem;
+        gamePadSystem = gameSysInfo->gamePadSystem;
+        padRumbleDirector = actorKit->getPadRumbleDirector();
+    } else {
+        executeDirector = layoutKit->getExecuteDirector();
+        effectSystem = layoutKit->getEffectSystem();
+        sceneObjHolder = scene->getSceneObjHolder();
+        audioDirector = scene->getAudioDirector();
+        cameraDirector = nullptr;
+        GameSystemInfo* gameSysInfo = sceneInfo.gameSysInfo;
+        layoutSystem = gameSysInfo->layoutSystem;
+        messageSystem = gameSysInfo->messageSystem;
+        gamePadSystem = gameSysInfo->gamePadSystem;
+        padRumbleDirector = nullptr;
+    }
+
+    layoutInfo->init(executeDirector, effectSystem->getEffectSystemInfo(), sceneObjHolder,
+                     audioDirector, cameraDirector, layoutSystem, messageSystem, gamePadSystem,
+                     padRumbleDirector);
+
+    layoutInfo->setDrawContext(scene->getDrawSystemInfo()->drawContext);
+    if (layoutKit)
+        layoutInfo->setDrawInfo(layoutKit->getDrawInfo());
+    if (actorKit) {
+        layoutInfo->setOcclusionCullingJudge(
+            actorKit->getGraphicsSystemInfo()->getOcclusionCullingJudge());
+    }
+}
 
 void initPlacementAreaObj(Scene* scene, const ActorInitInfo&);
 
-void initPlacementGravityObj(Scene*);
+void initPlacementGravityObj(Scene* scene);
 
 bool tryGetPlacementInfoAndCount(PlacementInfo*, s32*, const StageInfo*, const char*);
 
@@ -197,23 +254,42 @@ void getPlacementInfo(PlacementInfo*, const StageInfo*, const char*);
 
 void getPlacementInfoAndCount(PlacementInfo*, s32*, const StageInfo*, const char*);
 
-void initAreaObjDirector(Scene* scene, const AreaObjFactory*);
+void initAreaObjDirector(Scene* scene, const AreaObjFactory* factory) {
+    scene->getLiveActorKit()->getAreaObjDirector()->init(factory);
+}
 
-void initDemoDirector(Scene* scene, DemoDirector*);
+void initDemoDirector(Scene* scene, DemoDirector* demoDirector) {
+    scene->getLiveActorKit()->setDemoDirector(demoDirector);
+}
 
-void initHitSensorDirector(Scene*);
+void initHitSensorDirector(Scene* scene) {
+    scene->getLiveActorKit()->initHitSensorDirector();
+}
 
-void initGravityHolder(Scene*);
+void initGravityHolder(Scene* scene) {
+    scene->getLiveActorKit()->initGravityHolder();
+}
 
-void initItemDirector(Scene* scene, ItemDirectorBase*);
+void initItemDirector(Scene* scene, ItemDirectorBase* itemDirector) {
+    scene->getLiveActorKit()->setItemDirector(itemDirector);
+}
 
-void initNatureDirector(Scene*);
+void initNatureDirector(Scene* scene) {
+    scene->getLiveActorKit()->initNatureDirector();
+}
 
-void initSwitchAreaDirector(Scene* scene, s32, s32);
+void initSwitchAreaDirector(Scene* scene, s32 val1, s32 val2) {
+    scene->getLiveActorKit()->initSwitchAreaDirector(val1, val2);
+}
 
-void registerSwitchOnAreaGroup(Scene* scene, SwitchOnAreaGroup*);
+void registerSwitchOnAreaGroup(Scene* scene, SwitchOnAreaGroup* switchOnAreaGroup) {
+    scene->getLiveActorKit()->getSwitchAreaDirector()->registerSwitchOnAreaGroup(switchOnAreaGroup);
+}
 
-void registerSwitchKeepOnAreaGroup(Scene* scene, SwitchKeepOnAreaGroup*);
+void registerSwitchKeepOnAreaGroup(Scene* scene, SwitchKeepOnAreaGroup* switchKeepOnAreaGroup) {
+    scene->getLiveActorKit()->getSwitchAreaDirector()->registerSwitchKeepOnAreaGroup(
+        switchKeepOnAreaGroup);
+}
 
 void initGraphicsSystemInfo(Scene* scene, const char*, s32);
 
@@ -226,37 +302,61 @@ void initCameraDirectorWithoutStageResource(Scene* scene, const CameraPoserFacto
 void initCameraDirectorFix(Scene* scene, const sead::Vector3f&, const sead::Vector3f&,
                            const CameraPoserFactory*);
 
-void initSceneCameraFovyDegree(Scene* scene, f32);
+void initSceneCameraFovyDegree(Scene* scene, f32 fov) {
+    scene->getLiveActorKit()->getCameraDirector()->initSceneFovyDegree(fov);
+}
 
-void initSnapShotCameraAudioKeeper(Scene* scene, IUseAudioKeeper*);
+void initSnapShotCameraAudioKeeper(Scene* scene, IUseAudioKeeper* audioKeeper) {
+    scene->getLiveActorKit()->getCameraDirector()->initSnapShotCameraAudioKeeper(audioKeeper);
+}
 
-void setCameraAspect(Scene* scene, f32, f32);
+void setCameraAspect(Scene* scene, f32 aspectA, f32 aspectB) {
+    scene->getLiveActorKit()->getCameraDirector()->getPoseUpdater(0)->setAspect(aspectA);
+    if (aspectB != -1.0f)
+        scene->getLiveActorKit()->getCameraDirector()->getPoseUpdater(1)->setAspect(aspectB);
+}
 
-void resetSceneInitEntranceCamera(Scene*);
+void resetSceneInitEntranceCamera(Scene* scene) {
+    scene->getLiveActorKit()
+        ->getCameraDirector()
+        ->getSceneCameraCtrl()
+        ->getSceneViewAt(0)
+        ->resetViewName();
+}
 
-void stopCameraByDeathPlayer(Scene*);
+void stopCameraByDeathPlayer(Scene* scene) {
+    scene->getLiveActorKit()->getCameraDirector()->stopByDeathPlayer();
+}
 
-void restartCameraByDeathPlayer(Scene*);
+void restartCameraByDeathPlayer(Scene* scene) {
+    scene->getLiveActorKit()->getCameraDirector()->restartByDeathPlayer();
+}
 
-void startInvalidCameraStopJudgeByDemo(Scene*);
+void startInvalidCameraStopJudgeByDemo(Scene* scene){
+    scene->getLiveActorKit()->getCameraDirector()->startInvalidStopJudgeByDemo();
+}
 
-void endInvalidCameraStopJudgeByDemo(Scene*);
+
+void endInvalidCameraStopJudgeByDemo(Scene* scene){
+    scene->getLiveActorKit()->getCameraDirector()->endInvalidStopJudgeByDemo();
+}
+
 
 void startCameraSnapShotMode(Scene* scene, bool);
 
-void endCameraSnapShotMode(Scene*);
+void endCameraSnapShotMode(Scene* scene);
 
 bool isCameraReverseInputH(const Scene* scene);
 
-void onCameraReverseInputH(Scene*);
+void onCameraReverseInputH(Scene* scene);
 
-void offCameraReverseInputH(Scene*);
+void offCameraReverseInputH(Scene* scene);
 
 bool isCameraReverseInputV(const Scene* scene);
 
-void onCameraReverseInputV(Scene*);
+void onCameraReverseInputV(Scene* scene);
 
-void offCameraReverseInputV(Scene*);
+void offCameraReverseInputV(Scene* scene);
 
 s32 getCameraStickSensitivityLevel(const Scene* scene);
 
@@ -264,9 +364,9 @@ void setCameraStickSensitivityLevel(Scene* scene, s32);
 
 bool isValidCameraGyro(const Scene* scene);
 
-void validateCameraGyro(Scene*);
+void validateCameraGyro(Scene* scene);
 
-void invalidateCameraGyro(Scene*);
+void invalidateCameraGyro(Scene* scene);
 
 s32 getCameraGyroSensitivityLevel(const Scene* scene);
 
@@ -289,7 +389,7 @@ void initSceneAudioKeeper(Scene* scene, const SceneInitInfo&, const char*);
 
 void setIsSafeFinalizingInParallelThread(Scene* scene, bool);
 
-void updateKit(Scene*);
+void updateKit(Scene* scene);
 
 void updateKitTable(Scene* scene, const char*);
 
@@ -297,29 +397,29 @@ void updateKitList(Scene* scene, const char*, const char*);
 
 void updateKitList(Scene* scene, const char*);
 
-void updateLayoutKit(Scene*);
+void updateLayoutKit(Scene* scene);
 
-void updateEffect(Scene*);
+void updateEffect(Scene* scene);
 
-void updateEffectSystem(Scene*);
+void updateEffectSystem(Scene* scene);
 
-void updateEffectPlayer(Scene*);
+void updateEffectPlayer(Scene* scene);
 
-void updateEffectDemo(Scene*);
+void updateEffectDemo(Scene* scene);
 
-void updateEffectDemoWithPause(Scene*);
+void updateEffectDemoWithPause(Scene* scene);
 
-void updateEffectLayout(Scene*);
+void updateEffectLayout(Scene* scene);
 
-void updateGraphicsPrev(Scene*);
+void updateGraphicsPrev(Scene* scene);
 
-void updateKitListPrev(Scene*);
+void updateKitListPrev(Scene* scene);
 
-void updateKitListPost(Scene*);
+void updateKitListPost(Scene* scene);
 
-void updateKitListPostDemoWithPauseNormalEffect(Scene*);
+void updateKitListPostDemoWithPauseNormalEffect(Scene* scene);
 
-void updateKitListPostOnNerveEnd(Scene*);
+void updateKitListPostOnNerveEnd(Scene* scene);
 
 void drawKit(const Scene* scene, const char*);
 
@@ -335,11 +435,11 @@ void endForwardPlayerScreenFader(const Scene* scene, s32);
 
 bool isStopScene(const Scene* scene);
 
-void startCheckViewCtrlByCameraPos(Scene*);
+void startCheckViewCtrlByCameraPos(Scene* scene);
 
-void startCheckViewCtrlByLookAtPos(Scene*);
+void startCheckViewCtrlByLookAtPos(Scene* scene);
 
-void startCheckViewCtrlByPlayerPos(Scene*);
+void startCheckViewCtrlByPlayerPos(Scene* scene);
 
 bool isExistScreenCoverCtrl(const Scene* scene);
 
@@ -383,9 +483,9 @@ void pausePadRumble(const Scene* scene);
 
 void endPausePadRumble(const Scene* scene);
 
-void validatePadRumble(Scene*);
+void validatePadRumble(Scene* scene);
 
-void invalidatePadRumble(Scene*);
+void invalidatePadRumble(Scene* scene);
 
 void setPadRumblePowerLevel(Scene* scene, s32);
 
