@@ -6,6 +6,7 @@
 #include "Library/Area/AreaObjDirector.h"
 #include "Library/Area/SwitchAreaDirector.h"
 #include "Library/Camera/CameraDirector.h"
+#include "Library/Camera/CameraFlagCtrl.h"
 #include "Library/Camera/CameraPoseUpdater.h"
 #include "Library/Camera/CameraViewCtrlScene.h"
 #include "Library/Draw/GraphicsQualityController.h"
@@ -332,47 +333,66 @@ void restartCameraByDeathPlayer(Scene* scene) {
     scene->getLiveActorKit()->getCameraDirector()->restartByDeathPlayer();
 }
 
-void startInvalidCameraStopJudgeByDemo(Scene* scene){
+void startInvalidCameraStopJudgeByDemo(Scene* scene) {
     scene->getLiveActorKit()->getCameraDirector()->startInvalidStopJudgeByDemo();
 }
 
-
-void endInvalidCameraStopJudgeByDemo(Scene* scene){
+void endInvalidCameraStopJudgeByDemo(Scene* scene) {
     scene->getLiveActorKit()->getCameraDirector()->endInvalidStopJudgeByDemo();
 }
 
-
-void startCameraSnapShotMode(Scene* scene, bool useInterpole){
+void startCameraSnapShotMode(Scene* scene, bool useInterpole) {
     scene->getLiveActorKit()->getCameraDirector()->startSnapShotMode(useInterpole);
 }
 
-void endCameraSnapShotMode(Scene* scene){
+void endCameraSnapShotMode(Scene* scene) {
     scene->getLiveActorKit()->getCameraDirector()->endSnapShotMode();
 }
 
-bool isCameraReverseInputH(const Scene* scene){
-    scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl();
+bool isCameraReverseInputH(const Scene* scene) {
+    return scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isCameraReverseInputH;
 }
 
-void onCameraReverseInputH(Scene* scene);
+void onCameraReverseInputH(Scene* scene) {
+    scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isCameraReverseInputH = true;
+}
 
-void offCameraReverseInputH(Scene* scene);
+void offCameraReverseInputH(Scene* scene) {
+    scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isCameraReverseInputH = false;
+}
 
-bool isCameraReverseInputV(const Scene* scene);
+bool isCameraReverseInputV(const Scene* scene) {
+    return scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isCameraReverseInputV;
+}
 
-void onCameraReverseInputV(Scene* scene);
+void onCameraReverseInputV(Scene* scene) {
+    scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isCameraReverseInputV = true;
+}
 
-void offCameraReverseInputV(Scene* scene);
+void offCameraReverseInputV(Scene* scene) {
+    scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isCameraReverseInputV = false;
+}
 
-s32 getCameraStickSensitivityLevel(const Scene* scene);
+s32 getCameraStickSensitivityLevel(const Scene* scene) {
+    return scene->getLiveActorKit()->getCameraDirector()->getSceneCameraCtrl()->getRequestParamHolder()->getCameraStickSensitivityLevel();
+}
 
-void setCameraStickSensitivityLevel(Scene* scene, s32);
+void setCameraStickSensitivityLevel(Scene* scene, s32 sensitivityLevel) {
+    scene->getLiveActorKit()->getCameraDirector()->getSceneCameraCtrl()->getRequestParamHolder()->setCameraStickSensitivityLevel(sensitivityLevel);
+}
 
-bool isValidCameraGyro(const Scene* scene);
 
-void validateCameraGyro(Scene* scene);
+bool isValidCameraGyro(const Scene* scene){
+    return scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isValidCameraGyro;
+}
 
-void invalidateCameraGyro(Scene* scene);
+void validateCameraGyro(Scene* scene){
+     scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isValidCameraGyro=false;
+}
+
+void invalidateCameraGyro(Scene* scene){
+     scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isValidCameraGyro=true;
+}
 
 s32 getCameraGyroSensitivityLevel(const Scene* scene);
 

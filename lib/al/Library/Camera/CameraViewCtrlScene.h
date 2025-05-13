@@ -31,6 +31,8 @@ public:
 
     SceneCameraViewCtrl* getSceneViewAt(s32 idx) const { return &mViewArray[idx]; }
 
+    CameraRequestParamHolder* getRequestParamHolder() const { return mRequestParamHolder; }
+
 private:
     s32 mViewNum = 0;
     SceneCameraViewCtrl* mViewArray = nullptr;
