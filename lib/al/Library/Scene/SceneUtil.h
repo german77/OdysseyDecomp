@@ -96,7 +96,7 @@ void stopCameraByDeathPlayer(Scene* scene);
 void restartCameraByDeathPlayer(Scene* scene);
 void startInvalidCameraStopJudgeByDemo(Scene* scene);
 void endInvalidCameraStopJudgeByDemo(Scene* scene);
-void startCameraSnapShotMode(Scene* scene, bool);
+void startCameraSnapShotMode(Scene* scene, bool useInterpole);
 void endCameraSnapShotMode(Scene* scene);
 bool isCameraReverseInputH(const Scene* scene);
 void onCameraReverseInputH(Scene* scene);

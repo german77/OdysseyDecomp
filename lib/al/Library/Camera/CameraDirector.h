@@ -82,6 +82,8 @@ public:
 
     SceneCameraCtrl* getSceneCameraCtrl() const { return mSceneCameraCtrl; }
 
+    CameraFlagCtrl* getFlagCtrl() const { return mFlagCtrl; }
+
 private:
     s32 mCountCameraPoseUpdaters;
     SceneCameraInfo* mSceneCameraInfo;

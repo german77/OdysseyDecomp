@@ -342,11 +342,17 @@ void endInvalidCameraStopJudgeByDemo(Scene* scene){
 }
 
 
-void startCameraSnapShotMode(Scene* scene, bool);
+void startCameraSnapShotMode(Scene* scene, bool useInterpole){
+    scene->getLiveActorKit()->getCameraDirector()->startSnapShotMode(useInterpole);
+}
 
-void endCameraSnapShotMode(Scene* scene);
+void endCameraSnapShotMode(Scene* scene){
+    scene->getLiveActorKit()->getCameraDirector()->endSnapShotMode();
+}
 
-bool isCameraReverseInputH(const Scene* scene);
+bool isCameraReverseInputH(const Scene* scene){
+    scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl();
+}
 
 void onCameraReverseInputH(Scene* scene);
 
