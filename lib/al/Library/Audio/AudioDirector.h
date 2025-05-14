@@ -55,6 +55,8 @@ public:
     void pauseSystem(bool, const char*, bool, f32, bool, bool, bool) override;
     AreaObjDirector* getAreaObjDirector() const override;
 
+    void setPauseSystemEntry(bool index) { mPauseSystemEntries=index;}
+
 private:
     SeDirector* mSeDirector;
     BgmDirector* mBgmDirector;
@@ -64,7 +66,8 @@ private:
     const AudioSystemInfo* mAudioSystemInfo;
     AreaObjDirector* mAreaObjDirector;
     AudioDuckingDirector* mAudioDuckingDirector;
-    sead::PtrArray<PauseSystemEntry> mPauseSystemEntries;
+    AudioDuckingDirector* mAudsioDuckingDirector;
+    bool mPauseSystemEntries;
     aal::AudioFrameProcessMgr* mAudioFrameProcessMgr;
     AudioEffectController* mAudioEffectController;
 };

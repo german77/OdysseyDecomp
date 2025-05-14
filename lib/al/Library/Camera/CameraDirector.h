@@ -25,6 +25,7 @@ class CameraTicketHolder;
 class ICameraInput;
 class IUseAudioKeeper;
 class NameToCameraParamTransferFunc;
+class PauseCameraCtrl;
 class PlacementId;
 class PlayerHolder;
 class SceneCameraCtrl;
@@ -45,7 +46,7 @@ public:
     void initSceneFovyDegree(f32 fov);
     void initSettingCloudSea(f32);
     void initSnapShotCameraAudioKeeper(IUseAudioKeeper* audioKeeper);
-    void initAndCreatePauseCameraCtrl(f32);
+    PauseCameraCtrl* initAndCreatePauseCameraCtrl(f32);
 
     void execute() override;
     void update();

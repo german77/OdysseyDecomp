@@ -5,8 +5,10 @@
 
 #include "Library/Area/AreaObjDirector.h"
 #include "Library/Area/SwitchAreaDirector.h"
+#include "Library/Audio/AudioDirector.h"
 #include "Library/Camera/CameraDirector.h"
 #include "Library/Camera/CameraFlagCtrl.h"
+#include "Library/Camera/CameraViewCtrlPause.h"
 #include "Library/Camera/CameraPoseUpdater.h"
 #include "Library/Camera/CameraRequestParamHolder.h"
 #include "Library/Camera/CameraViewCtrlScene.h"
@@ -21,6 +23,13 @@
 #include "Library/Stage/StageResourceKeeper.h"
 #include "Library/Stage/StageResourceList.h"
 #include "Library/System/GameSystemInfo.h"
+
+namespace aal {
+class AudioFrameProcessMgr{
+public:
+    bool isSafe;
+};
+}
 
 namespace al {
 s32 getStageInfoMapNum(const Scene* scene) {
@@ -418,11 +427,19 @@ void setCameraGyroSensitivityLevel(Scene* scene, s32 sensitivityLevel) {
         ->setGyroSensitivityLevel(sensitivityLevel);
 }
 
-PauseCameraCtrl* initAndCreatePauseCameraCtrl(Scene* scene, f32);
+PauseCameraCtrl* initAndCreatePauseCameraCtrl(Scene* scene, f32 value){
+    return scene->getLiveActorKit()
+        ->getCameraDirector()->initAndCreatePauseCameraCtrl(value);
 
-void startCameraPause(PauseCameraCtrl*);
+}
 
-void endCameraPause(PauseCameraCtrl*);
+void startCameraPause(PauseCameraCtrl* pauseCameraCtrl){
+    pauseCameraCtrl->startCameraPause();
+}
+
+void endCameraPause(PauseCameraCtrl* pauseCameraCtrl){
+    pauseCameraCtrl->endCameraPause();
+}
 
 void initAudioDirector2D(Scene* scene, const SceneInitInfo&, AudioDirectorInitInfo&);
 
@@ -433,7 +450,11 @@ void initAudioDirector3D(Scene* scene, const SceneInitInfo&, AudioDirectorInitIn
 
 void initSceneAudioKeeper(Scene* scene, const SceneInitInfo&, const char*);
 
-void setIsSafeFinalizingInParallelThread(Scene* scene, bool);
+void setIsSafeFinalizingInParallelThread(Scene* scene, bool isSafe){
+    if(scene->getAudioDirector())
+        scene->getAudioDirector()->setIsSafeFinalizingInParallelThread(isSafe);
+
+}
 
 void updateKit(Scene* scene);
 
