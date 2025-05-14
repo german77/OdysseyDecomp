@@ -131,7 +131,7 @@ public:
 
     void set_2f4(s32 set) { _2f4 = set; }
 
-    const ViewRenderer* getViewRenderer() const { return mViewRenderer; }
+    ViewRenderer* getViewRenderer() const { return mViewRenderer; }
 
     ModelLodAllCtrl* getModelLodAllCtrl() const { return mModelLodAllCtrl; }
 

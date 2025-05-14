@@ -8,28 +8,39 @@
 #include "Library/Audio/AudioDirector.h"
 #include "Library/Camera/CameraDirector.h"
 #include "Library/Camera/CameraFlagCtrl.h"
-#include "Library/Camera/CameraViewCtrlPause.h"
 #include "Library/Camera/CameraPoseUpdater.h"
 #include "Library/Camera/CameraRequestParamHolder.h"
+#include "Library/Camera/CameraUtil.h"
+#include "Library/Camera/CameraViewCtrlPause.h"
 #include "Library/Camera/CameraViewCtrlScene.h"
+#include "Library/Camera/SceneCameraInfo.h"
+#include "Library/Controller/PadRumbleDirector.h"
 #include "Library/Draw/GraphicsQualityController.h"
 #include "Library/Draw/GraphicsSystemInfo.h"
+#include "Library/Draw/ViewRenderer.h"
+#include "Library/Effect/EffectKeeper.h"
 #include "Library/Effect/EffectSystem.h"
+#include "Library/Execute/ExecuteUtil.h"
 #include "Library/Layout/LayoutInitInfo.h"
 #include "Library/Layout/LayoutSystem.h"
+#include "Library/Layout/LayoutUtil.h"
 #include "Library/LiveActor/LiveActorKit.h"
 #include "Library/Model/ModelDrawBufferUpdater.h"
 #include "Library/Scene/Scene.h"
+#include "Library/Scene/SceneStopCtrl.h"
+#include "Library/Screen/ScreenCoverCtrl.h"
 #include "Library/Stage/StageResourceKeeper.h"
 #include "Library/Stage/StageResourceList.h"
 #include "Library/System/GameSystemInfo.h"
+#include "Project/Clipping/ClippingDirector.h"
+#include "Project/LiveActor/ActorExecuteFunction.h"
 
 namespace aal {
-class AudioFrameProcessMgr{
+class AudioFrameProcessMgr {
 public:
     bool isSafe;
 };
-}
+}  // namespace aal
 
 namespace al {
 s32 getStageInfoMapNum(const Scene* scene) {
@@ -427,17 +438,15 @@ void setCameraGyroSensitivityLevel(Scene* scene, s32 sensitivityLevel) {
         ->setGyroSensitivityLevel(sensitivityLevel);
 }
 
-PauseCameraCtrl* initAndCreatePauseCameraCtrl(Scene* scene, f32 value){
-    return scene->getLiveActorKit()
-        ->getCameraDirector()->initAndCreatePauseCameraCtrl(value);
-
+PauseCameraCtrl* initAndCreatePauseCameraCtrl(Scene* scene, f32 value) {
+    return scene->getLiveActorKit()->getCameraDirector()->initAndCreatePauseCameraCtrl(value);
 }
 
-void startCameraPause(PauseCameraCtrl* pauseCameraCtrl){
+void startCameraPause(PauseCameraCtrl* pauseCameraCtrl) {
     pauseCameraCtrl->startCameraPause();
 }
 
-void endCameraPause(PauseCameraCtrl* pauseCameraCtrl){
+void endCameraPause(PauseCameraCtrl* pauseCameraCtrl) {
     pauseCameraCtrl->endCameraPause();
 }
 
@@ -450,75 +459,170 @@ void initAudioDirector3D(Scene* scene, const SceneInitInfo&, AudioDirectorInitIn
 
 void initSceneAudioKeeper(Scene* scene, const SceneInitInfo&, const char*);
 
-void setIsSafeFinalizingInParallelThread(Scene* scene, bool isSafe){
-    if(scene->getAudioDirector())
+void setIsSafeFinalizingInParallelThread(Scene* scene, bool isSafe) {
+    if (scene->getAudioDirector())
         scene->getAudioDirector()->setIsSafeFinalizingInParallelThread(isSafe);
-
 }
 
-void updateKit(Scene* scene);
+void updateKit(Scene* scene) {
+    executeUpdate(scene->getLiveActorKit(), nullptr);
+}
 
-void updateKitTable(Scene* scene, const char*);
+void updateKitTable(Scene* scene, const char* tableName) {
+    executeUpdateTable(scene->getLiveActorKit(), tableName);
+}
 
-void updateKitList(Scene* scene, const char*, const char*);
+void updateKitList(Scene* scene, const char* listName, const char* name) {
+    executeUpdateList(scene->getLiveActorKit(), listName, name);
+}
 
-void updateKitList(Scene* scene, const char*);
+void updateKitList(Scene* scene, const char* name) {
+    updateKitList(scene, "更新", name);
+}
 
-void updateLayoutKit(Scene* scene);
+void updateLayoutKit(Scene* scene) {
+    executeUpdate(scene->getLayoutKit());
+}
 
-void updateEffect(Scene* scene);
+void updateEffect(Scene* scene) {
+    alExecuteFunction::updateEffect(scene->getLiveActorKit()->getExecuteDirector());
+}
 
-void updateEffectSystem(Scene* scene);
+void updateEffectSystem(Scene* scene) {
+    alExecuteFunction::updateEffectSystem(scene->getLiveActorKit()->getExecuteDirector());
+}
 
-void updateEffectPlayer(Scene* scene);
+void updateEffectPlayer(Scene* scene) {
+    alExecuteFunction::updateEffectPlayer(scene->getLiveActorKit()->getExecuteDirector());
+}
 
-void updateEffectDemo(Scene* scene);
+void updateEffectDemo(Scene* scene) {
+    alExecuteFunction::updateEffectDemo(scene->getLiveActorKit()->getExecuteDirector());
+}
 
-void updateEffectDemoWithPause(Scene* scene);
+void updateEffectDemoWithPause(Scene* scene) {
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（前処理）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（プレイヤー）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エ��ェクト（Ｚソート）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（カメラデモ）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（カメラ前エフェクト）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（ベース２Ｄ）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（２Ｄ）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（後処理）");
+}
 
-void updateEffectLayout(Scene* scene);
+void updateEffectLayout(Scene* scene) {
+    alExecuteFunction::updateEffectLayout(scene->getLiveActorKit()->getExecuteDirector());
+}
 
-void updateGraphicsPrev(Scene* scene);
+void updateGraphicsPrev(Scene* scene) {
+    LiveActorKit* actorKit = scene->getLiveActorKit();
+    if (actorKit && actorKit->getGraphicsSystemInfo() && actorKit->getCameraDirector())
+        actorKit->preDrawGraphics();
+}
 
-void updateKitListPrev(Scene* scene);
+void updateKitListPrev(Scene* scene) {
+    scene->getLiveActorKit()->clearGraphicsRequest();
+    scene->getLiveActorKit()->getPadRumbleDirector()->update();
+}
 
-void updateKitListPost(Scene* scene);
+void updateKitListPost(Scene* scene) {
+    executeUpdateList(scene->getLiveActorKit(), "更新", "帽子装着位置更新");
+    alExecuteFunction::updateEffect(scene->getLiveActorKit()->getExecuteDirector());
+}
 
-void updateKitListPostDemoWithPauseNormalEffect(Scene* scene);
+void updateKitListPostDemoWithPauseNormalEffect(Scene* scene) {
+    executeUpdateList(scene->getLiveActorKit(), "更新", "帽子装着位置更新");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（前処理）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（プレイヤー）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（Ｚソート）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（カメラデモ）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（カメラ前エフェクト）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（ベース２Ｄ）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（２Ｄ）");
+    executeUpdateList(scene->getLiveActorKit(), "更新", "エフェクト（後処理）");
+}
 
-void updateKitListPostOnNerveEnd(Scene* scene);
+void updateKitListPostOnNerveEnd(Scene* scene) {
+    scene->getLiveActorKit()->updateGraphics();
+    updateGraphicsPrev(scene);
+}
 
-void drawKit(const Scene* scene, const char*);
+void drawKit(const Scene* scene, const char* name) {
+    executeDraw(scene->getLiveActorKit(), name);
+}
 
-void drawKitList(const Scene* scene, const char*, const char*);
+void drawKitList(const Scene* scene, const char* listName, const char* name) {
+    executeDrawList(scene->getLiveActorKit(), listName, name);
+}
 
-void drawLayoutKit(const Scene* scene, const char*);
+void drawLayoutKit(const Scene* scene, const char* name) {
+    executeDraw(scene->getLayoutKit(), name);
+}
 
-void drawEffectDeferred(const Scene* scene, s32);
+void drawEffectDeferred(const Scene* scene, s32 index) {
+    SceneCameraInfo* cameraInfo =
+        scene->getLiveActorKit()->getCameraDirector()->getSceneCameraInfo();
+    alEffectSystemFunction::drawEffectDeferred(
+        scene->getLiveActorKit()->getEffectSystem(), getProjectionMtx(cameraInfo, index),
+        getViewMtx(cameraInfo, index), getNear(cameraInfo, index), getFar(cameraInfo, index),
+        getFovy(cameraInfo, index));
+}
 
-void startForwardPlayerScreenFader(const Scene* scene, s32, s32, f32);
+void startForwardPlayerScreenFader(const Scene* scene, s32 a, s32 b, f32 c) {
+    scene->getLiveActorKit()
+        ->getGraphicsSystemInfo()
+        ->getViewRenderer()
+        ->startForwardPlayerScreenFader(a, b, c);
+}
 
-void endForwardPlayerScreenFader(const Scene* scene, s32);
+void endForwardPlayerScreenFader(const Scene* scene, s32 a) {
+    scene->getLiveActorKit()
+        ->getGraphicsSystemInfo()
+        ->getViewRenderer()
+        ->endForwardPlayerScreenFader(a);
+}
 
-bool isStopScene(const Scene* scene);
+bool isStopScene(const Scene* scene) {
+    return scene->getSceneStopCtrl()->isStop();
+}
 
-void startCheckViewCtrlByCameraPos(Scene* scene);
+void startCheckViewCtrlByCameraPos(Scene* scene) {
+    scene->getLiveActorKit()->getClippingDirector()->startCheckViewCtrlByCameraPos();
+}
 
-void startCheckViewCtrlByLookAtPos(Scene* scene);
+void startCheckViewCtrlByLookAtPos(Scene* scene) {
+    scene->getLiveActorKit()->getClippingDirector()->startCheckViewCtrlByLookAtPos();
+}
 
-void startCheckViewCtrlByPlayerPos(Scene* scene);
+void startCheckViewCtrlByPlayerPos(Scene* scene) {
+    scene->getLiveActorKit()->getClippingDirector()->startCheckViewCtrlByPlayerPos();
+}
 
-bool isExistScreenCoverCtrl(const Scene* scene);
+bool isExistScreenCoverCtrl(const Scene* scene) {
+    return scene->getScreenCoverCtrl() != nullptr;
+}
 
-bool isRequestCaptureScreenCover(const Scene* scene);
+bool isRequestCaptureScreenCover(const Scene* scene) {
+    return scene->getScreenCoverCtrl()->isRequestCapture();
+}
 
-void resetRequestCaptureScreenCover(const Scene* scene);
+void resetRequestCaptureScreenCover(const Scene* scene) {
+    scene->getScreenCoverCtrl()->resetRequestCapture();
+}
 
-bool isOffDrawScreenCover(const Scene* scene);
+bool isOffDrawScreenCover(const Scene* scene) {
+    return scene->getScreenCoverCtrl()->getCoverFrames() == 0;
+}
 
-void resetCaptureScreenCover(const Scene* scene);
+void resetCaptureScreenCover(const Scene* scene) {
+    scene->getScreenCoverCtrl()->resetCapture();
+}
 
-void validatePostProcessingFilter(const Scene* scene);
+void validatePostProcessingFilter(const Scene* scene){
+scene->getLiveActorKit()->getGraphicsSystemInfo()->getPostProcessingFilter();
+
+}
 
 void invalidatePostProcessingFilter(const Scene* scene);
 

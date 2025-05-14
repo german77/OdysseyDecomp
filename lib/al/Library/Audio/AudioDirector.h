@@ -55,7 +55,7 @@ public:
     void pauseSystem(bool, const char*, bool, f32, bool, bool, bool) override;
     AreaObjDirector* getAreaObjDirector() const override;
 
-    void setPauseSystemEntry(bool index) { mPauseSystemEntries=index;}
+    void setIsSafeFinalizingInParallelThread(bool index) { mPauseSystemEntries=index;}
 
 private:
     SeDirector* mSeDirector;
