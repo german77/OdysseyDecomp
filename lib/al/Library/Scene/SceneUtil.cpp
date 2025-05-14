@@ -8,6 +8,7 @@
 #include "Library/Camera/CameraDirector.h"
 #include "Library/Camera/CameraFlagCtrl.h"
 #include "Library/Camera/CameraPoseUpdater.h"
+#include "Library/Camera/CameraRequestParamHolder.h"
 #include "Library/Camera/CameraViewCtrlScene.h"
 #include "Library/Draw/GraphicsQualityController.h"
 #include "Library/Draw/GraphicsSystemInfo.h"
@@ -374,29 +375,48 @@ void offCameraReverseInputV(Scene* scene) {
 }
 
 s32 getCameraStickSensitivityLevel(const Scene* scene) {
-    return scene->getLiveActorKit()->getCameraDirector()->getSceneCameraCtrl()->getRequestParamHolder()->getCameraStickSensitivityLevel();
+    return scene->getLiveActorKit()
+        ->getCameraDirector()
+        ->getSceneCameraCtrl()
+        ->getRequestParamHolder()
+        ->getStickSensitivityLevel();
 }
 
 void setCameraStickSensitivityLevel(Scene* scene, s32 sensitivityLevel) {
-    scene->getLiveActorKit()->getCameraDirector()->getSceneCameraCtrl()->getRequestParamHolder()->setCameraStickSensitivityLevel(sensitivityLevel);
+    scene->getLiveActorKit()
+        ->getCameraDirector()
+        ->getSceneCameraCtrl()
+        ->getRequestParamHolder()
+        ->setStickSensitivityLevel(sensitivityLevel);
 }
 
-
-bool isValidCameraGyro(const Scene* scene){
+bool isValidCameraGyro(const Scene* scene) {
     return scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isValidCameraGyro;
 }
 
-void validateCameraGyro(Scene* scene){
-     scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isValidCameraGyro=false;
+void validateCameraGyro(Scene* scene) {
+    scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isValidCameraGyro = false;
 }
 
-void invalidateCameraGyro(Scene* scene){
-     scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isValidCameraGyro=true;
+void invalidateCameraGyro(Scene* scene) {
+    scene->getLiveActorKit()->getCameraDirector()->getFlagCtrl()->isValidCameraGyro = true;
 }
 
-s32 getCameraGyroSensitivityLevel(const Scene* scene);
+s32 getCameraGyroSensitivityLevel(const Scene* scene) {
+    return scene->getLiveActorKit()
+        ->getCameraDirector()
+        ->getSceneCameraCtrl()
+        ->getRequestParamHolder()
+        ->getGyroSensitivityLevel();
+}
 
-void setCameraGyroSensitivityLevel(Scene* scene, s32);
+void setCameraGyroSensitivityLevel(Scene* scene, s32 sensitivityLevel) {
+    scene->getLiveActorKit()
+        ->getCameraDirector()
+        ->getSceneCameraCtrl()
+        ->getRequestParamHolder()
+        ->setGyroSensitivityLevel(sensitivityLevel);
+}
 
 PauseCameraCtrl* initAndCreatePauseCameraCtrl(Scene* scene, f32);
 
