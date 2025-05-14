@@ -28,21 +28,25 @@ class ColorClampDrawer;
 
 class PostProcessingFilter {
 public:
-    void PostProcessingFilter(al::ShaderHolder*, al::NoiseTextureKeeper*);
-    void ~PostProcessingFilter();
+    PostProcessingFilter(al::ShaderHolder*, al::NoiseTextureKeeper*);
+
     void incrementPreset();
     void decrementPreset();
     void initProjectResource();
     void endInit();
     void clearRequest();
     void update();
-    void findPreset(s32);
-    const void updateViewGpu(s32, sead::Camera const*, al::Projection const*);
+    void findPreset(s32) const;
+    void updateViewGpu(s32, sead::Camera const*, al::Projection const*);
     void drawFilter(agl::DrawContext*, s32, al::SimpleModelEnv*, agl::RenderBuffer const&,
                     agl::TextureData const&, agl::TextureData const&, agl::TextureData const&,
                     sead::Camera const&, al::Projection const&, f32, f32, f32);
 
     void validate() { mIsValid = true; }
+
+    void invalidate() { mIsValid = false; }
+
+    s32 getPresetId() { return mPresetId; }
 
 private:
     bool mIsValid;
@@ -59,7 +63,7 @@ private:
     ColorClampDrawer* mColorClampDrawer;
     int _60;
     void** _68;
-    s32 _70;
+    s32 mPresetId;
 };
 
 }  // namespace al

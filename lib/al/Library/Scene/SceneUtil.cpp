@@ -6,6 +6,8 @@
 #include "Library/Area/AreaObjDirector.h"
 #include "Library/Area/SwitchAreaDirector.h"
 #include "Library/Audio/AudioDirector.h"
+#include "Library/Audio/System/AudioKeeperFunction.h"
+#include "Library/Base/StringUtil.h"
 #include "Library/Camera/CameraDirector.h"
 #include "Library/Camera/CameraFlagCtrl.h"
 #include "Library/Camera/CameraPoseUpdater.h"
@@ -21,28 +23,27 @@
 #include "Library/Effect/EffectKeeper.h"
 #include "Library/Effect/EffectSystem.h"
 #include "Library/Execute/ExecuteUtil.h"
+#include "Library/File/FileUtil.h"
 #include "Library/Layout/LayoutInitInfo.h"
 #include "Library/Layout/LayoutSystem.h"
 #include "Library/Layout/LayoutUtil.h"
 #include "Library/LiveActor/LiveActorKit.h"
 #include "Library/Model/ModelDrawBufferUpdater.h"
+#include "Library/PostProcessing/PostProcessingFilter.h"
+#include "Library/Resource/ResourceHolder.h"
+#include "Library/Scene/DemoDirector.h"
 #include "Library/Scene/Scene.h"
 #include "Library/Scene/SceneStopCtrl.h"
 #include "Library/Screen/ScreenCoverCtrl.h"
+#include "Library/Se/SeFunction.h"
 #include "Library/Stage/StageResourceKeeper.h"
 #include "Library/Stage/StageResourceList.h"
 #include "Library/System/GameSystemInfo.h"
 #include "Project/Clipping/ClippingDirector.h"
 #include "Project/LiveActor/ActorExecuteFunction.h"
 
-namespace aal {
-class AudioFrameProcessMgr {
-public:
-    bool isSafe;
-};
-}  // namespace aal
-
 namespace al {
+
 s32 getStageInfoMapNum(const Scene* scene) {
     if (!scene->getStageResourceKeeper())
         return 0;
@@ -619,48 +620,101 @@ void resetCaptureScreenCover(const Scene* scene) {
     scene->getScreenCoverCtrl()->resetCapture();
 }
 
-void validatePostProcessingFilter(const Scene* scene){
-scene->getLiveActorKit()->getGraphicsSystemInfo()->getPostProcessingFilter();
-
+void validatePostProcessingFilter(const Scene* scene) {
+    scene->getLiveActorKit()->getGraphicsSystemInfo()->getPostProcessingFilter()->validate();
 }
 
-void invalidatePostProcessingFilter(const Scene* scene);
+void invalidatePostProcessingFilter(const Scene* scene) {
+    scene->getLiveActorKit()->getGraphicsSystemInfo()->getPostProcessingFilter()->invalidate();
+}
 
-void incrementPostProcessingFilterPreset(const Scene* scene);
+void incrementPostProcessingFilterPreset(const Scene* scene) {
+    scene->getLiveActorKit()->getGraphicsSystemInfo()->getPostProcessingFilter()->incrementPreset();
+}
 
-void decrementPostProcessingFilterPreset(const Scene* scene);
+void decrementPostProcessingFilterPreset(const Scene* scene) {
+    scene->getLiveActorKit()->getGraphicsSystemInfo()->getPostProcessingFilter()->decrementPreset();
+}
 
-s32 getPostProcessingFilterPresetId(const Scene* scene);
+s32 getPostProcessingFilterPresetId(const Scene* scene) {
+    return scene->getLiveActorKit()
+        ->getGraphicsSystemInfo()
+        ->getPostProcessingFilter()
+        ->getPresetId();
+}
 
-bool isActiveDemo(const Scene* scene);
+bool isActiveDemo(const Scene* scene) {
+    return scene->getLiveActorKit()->getDemoDirector()->isActiveDemo();
+}
 
-const char* getActiveDemoName(const Scene* scene);
+const char* getActiveDemoName(const Scene* scene) {
+    return scene->getLiveActorKit()->getDemoDirector()->getActiveDemoName();
+}
 
-LiveActor* getDemoActorList(const Scene* scene);
+LiveActor** getDemoActorList(const Scene* scene) {
+    return scene->getLiveActorKit()->getDemoDirector()->getDemoActorList();
+}
 
-s32 getDemoActorNum(const Scene* scene);
+s32 getDemoActorNum(const Scene* scene) {
+    return scene->getLiveActorKit()->getDemoDirector()->getDemoActorNum();
+}
 
-void updateDemoActor(const Scene* scene);
+void updateDemoActor(const Scene* scene) {
+    scene->getLiveActorKit()->getDemoDirector()->updateDemoActor(nullptr);
+}
 
-void updateDemoActorForPauseEffect(const Scene* scene);
+void updateDemoActorForPauseEffect(const Scene* scene) {
+    EffectSystem* effectSystem = scene->getLiveActorKit()->getEffectSystem();
+    scene->getLiveActorKit()->getDemoDirector()->updateDemoActor(effectSystem);
+}
 
-void stopAllSe(const Scene* scene, u32);
+void stopAllSe(const Scene* scene, u32 index) {
+    if (scene && scene->getAudioDirector()) {
+        alSeFunction::stopAllSe(scene->getAudioDirector(), index);
+        return;
+    }
+}
 
-void initPadRumble(const Scene* scene, const SceneInitInfo&);
+void initPadRumble(const Scene* scene, const SceneInitInfo& sceneInfo) {
+    WaveVibrationHolder* waveVibrationHolder = sceneInfo.gameSysInfo->waveVibrationHolder;
+    scene->getLiveActorKit()->getPadRumbleDirector()->setWaveVibrationHolder(waveVibrationHolder);
 
-void stopPadRumble(const Scene* scene);
+    alAudioSystemFunction::setPadRumbleDirectorForSe(
+        scene->getAudioDirector(), scene->getLiveActorKit()->getPadRumbleDirector());
+}
 
-void pausePadRumble(const Scene* scene);
+void stopPadRumble(const Scene* scene) {
+    scene->getLiveActorKit()->getPadRumbleDirector()->stopAllRumble();
+}
 
-void endPausePadRumble(const Scene* scene);
+void pausePadRumble(const Scene* scene) {
+    scene->getLiveActorKit()->getPadRumbleDirector()->pause();
+}
 
-void validatePadRumble(Scene* scene);
+void endPausePadRumble(const Scene* scene) {
+    scene->getLiveActorKit()->getPadRumbleDirector()->endPause();
+}
 
-void invalidatePadRumble(Scene* scene);
+void validatePadRumble(Scene* scene) {
+    scene->getLiveActorKit()->getPadRumbleDirector()->validatePadRumble();
+}
 
-void setPadRumblePowerLevel(Scene* scene, s32);
+void invalidatePadRumble(Scene* scene) {
+    scene->getLiveActorKit()->getPadRumbleDirector()->invalidatePadRumble();
+}
 
-const Resource* getPreLoadFileListArc();
+void setPadRumblePowerLevel(Scene* scene, s32 powerLevel) {
+    scene->getLiveActorKit()->getPadRumbleDirector()->setPowerLevel(powerLevel);
+}
 
-bool tryRequestPreLoadFile(const Scene* scene, const SceneInitInfo&, s32, sead::Heap*);
+const Resource* getPreLoadFileListArc() {
+    return findResource("SystemData/PreLoad");
+}
+
+bool tryRequestPreLoadFile(const Scene* scene, const SceneInitInfo& sceneInfo, s32 index,
+                           sead::Heap* heap) {
+    StringTmp<128> stageName{"%s%d", sceneInfo.initStageName, index};
+    return tryRequestPreLoadFile(getPreLoadFileListArc(), stageName, heap, nullptr);
+}
+
 }  // namespace al

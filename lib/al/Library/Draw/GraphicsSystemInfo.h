@@ -149,9 +149,11 @@ public:
         mApplicationMessageReceiver = applicationMessageReceiver;
     }
 
-    SkyDirector* getSkyDirector() { return mSkyDirector; }
+    SkyDirector* getSkyDirector() const { return mSkyDirector; }
 
-    OcclusionCullingJudge* getOcclusionCullingJudge() { return mOcclusionCullingJudge; }
+    OcclusionCullingJudge* getOcclusionCullingJudge() const { return mOcclusionCullingJudge; }
+
+    PostProcessingFilter* getPostProcessingFilter() const { return mPostProcessingFilter; }
 
 private:
     sead::StrTreeMap<128, const sead::PtrArray<UniformBlock>*> mViewIndexedUboArrayTree;

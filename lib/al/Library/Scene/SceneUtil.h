@@ -158,7 +158,7 @@ void decrementPostProcessingFilterPreset(const Scene* scene);
 s32 getPostProcessingFilterPresetId(const Scene* scene);
 bool isActiveDemo(const Scene* scene);
 const char* getActiveDemoName(const Scene* scene);
-LiveActor* getDemoActorList(const Scene* scene);
+LiveActor** getDemoActorList(const Scene* scene);
 s32 getDemoActorNum(const Scene* scene);
 void updateDemoActor(const Scene* scene);
 void updateDemoActorForPauseEffect(const Scene* scene);
