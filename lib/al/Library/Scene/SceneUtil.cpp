@@ -14,6 +14,7 @@
 #include "Library/Camera/CameraFlagCtrl.h"
 #include "Library/Camera/CameraPoseUpdater.h"
 #include "Library/Camera/CameraRequestParamHolder.h"
+#include "Library/Camera/CameraResourceHolder.h"
 #include "Library/Camera/CameraUtil.h"
 #include "Library/Camera/CameraViewCtrlPause.h"
 #include "Library/Camera/CameraViewCtrlScene.h"
@@ -319,14 +320,42 @@ void registerSwitchKeepOnAreaGroup(Scene* scene, SwitchKeepOnAreaGroup* switchKe
 
 void initGraphicsSystemInfo(Scene* scene, const char*, s32);
 
-void initCameraDirector(Scene* scene, const char*, s32, const CameraPoserFactory*);
+void initCameraDirectorImpl(Scene* scene, const CameraPoserFactory* cameraPoserFactory);
 
-void initCameraDirectorWithoutStageResource(Scene* scene, const CameraPoserFactory*);
+inline s32 getMapStageResourceNum(Scene* scene) {
+    if (scene->getStageResourceKeeper() && scene->getStageResourceKeeper()->getMapStageInfo())
+        return scene->getStageResourceKeeper()->getMapStageInfo()->getStageResourceNum();
+    return 0;
+}
 
-void initCameraDirectorWithoutStageResource(Scene* scene, const CameraPoserFactory*);
+void initCameraDirector(Scene* scene, const char* name, s32 index,
+                        const CameraPoserFactory* cameraPoserFactory) {
+    initCameraDirectorImpl(scene, cameraPoserFactory);
+    CameraDirector* cameraDirector = scene->getLiveActorKit()->getCameraDirector();
 
-void initCameraDirectorFix(Scene* scene, const sead::Vector3f&, const sead::Vector3f&,
-                           const CameraPoserFactory*);
+    CameraResourceHolder* cameraResourceHolder =
+        new CameraResourceHolder(name, getMapStageResourceNum(scene));
+
+    for (s32 i = 0; i < getMapStageResourceNum(scene); i++) {
+        cameraResourceHolder->tryInitCameraResource(
+            scene->getStageResourceKeeper()->getMapStageInfo()->getStageInfo(i)->getResource(),
+            i > 0 ? 1 : index);
+    }
+
+    cameraDirector->initResourceHolder(cameraResourceHolder);
+    cameraDirector->initAreaCameraSwitcherSingle();
+}
+
+void initCameraDirectorWithoutStageResource(Scene* scene,
+                                            const CameraPoserFactory* cameraPoserFactory) {
+    initCameraDirectorImpl(scene, cameraPoserFactory);
+}
+
+void initCameraDirectorFix(Scene* scene, const sead::Vector3f& pos, const sead::Vector3f& lookAtPos,
+                           const CameraPoserFactory* cameraPoserFactory) {
+    initCameraDirectorImpl(scene, cameraPoserFactory);
+    startCamera(scene, initFixCamera(scene, "Scene", pos, lookAtPos));
+}
 
 void initSceneCameraFovyDegree(Scene* scene, f32 fov) {
     scene->getLiveActorKit()->getCameraDirector()->initSceneFovyDegree(fov);

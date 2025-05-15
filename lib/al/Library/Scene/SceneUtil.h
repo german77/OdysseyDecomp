@@ -86,7 +86,6 @@ void registerSwitchKeepOnAreaGroup(Scene* scene, SwitchKeepOnAreaGroup*);
 void initGraphicsSystemInfo(Scene* scene, const char*, s32);
 void initCameraDirector(Scene* scene, const char*, s32, const CameraPoserFactory*);
 void initCameraDirectorWithoutStageResource(Scene* scene, const CameraPoserFactory*);
-void initCameraDirectorWithoutStageResource(Scene* scene, const CameraPoserFactory*);
 void initCameraDirectorFix(Scene* scene, const sead::Vector3f&, const sead::Vector3f&,
                            const CameraPoserFactory*);
 void initSceneCameraFovyDegree(Scene* scene, f32);
