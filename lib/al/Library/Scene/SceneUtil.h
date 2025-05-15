@@ -8,6 +8,7 @@
 namespace al {
 class ActorFactory;
 struct ActorInitInfo;
+class AudioDirector;
 class LayoutInitInfo;
 class GameDataHolderBase;
 class SceneMsgCtrl;
@@ -67,8 +68,8 @@ void initPlacementObjectSound(Scene* scene, const ActorInitInfo&, const char*);
 LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo&, s32, const char*);
 LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo&, s32, const char*,
                                         const char*);
-bool tryInitPlacementActorGroup(LiveActorGroup*, Scene* scene, const ActorInitInfo&, s32, const char*,
-                                const char*);
+bool tryInitPlacementActorGroup(LiveActorGroup*, Scene* scene, const ActorInitInfo&, s32,
+                                const char*, const char*);
 void initPlacementByStageInfoSingle(const StageInfo*, const char*, const ActorInitInfo&);
 bool tryGetPlacementInfo(PlacementInfo*, const StageInfo*, const char*);
 void getPlacementInfo(PlacementInfo*, const StageInfo*, const char*);
@@ -89,8 +90,8 @@ void initCameraDirectorWithoutStageResource(Scene* scene, const CameraPoserFacto
 void initCameraDirectorFix(Scene* scene, const sead::Vector3f&, const sead::Vector3f&,
                            const CameraPoserFactory*);
 void initSceneCameraFovyDegree(Scene* scene, f32);
-void initSnapShotCameraAudioKeeper(Scene* scene, IUseAudioKeeper*);
-void setCameraAspect(Scene* scene, f32, f32);
+void initSnapShotCameraAudioKeeper(Scene* scene, IUseAudioKeeper* audioKeeper);
+void setCameraAspect(Scene* scene, f32 aspectA, f32 aspectB);
 void resetSceneInitEntranceCamera(Scene* scene);
 void stopCameraByDeathPlayer(Scene* scene);
 void restartCameraByDeathPlayer(Scene* scene);
@@ -105,25 +106,29 @@ bool isCameraReverseInputV(const Scene* scene);
 void onCameraReverseInputV(Scene* scene);
 void offCameraReverseInputV(Scene* scene);
 s32 getCameraStickSensitivityLevel(const Scene* scene);
-void setCameraStickSensitivityLevel(Scene* scene, s32);
+void setCameraStickSensitivityLevel(Scene* scene, s32 sensitivityLevel);
 bool isValidCameraGyro(const Scene* scene);
 void validateCameraGyro(Scene* scene);
 void invalidateCameraGyro(Scene* scene);
 s32 getCameraGyroSensitivityLevel(const Scene* scene);
-void setCameraGyroSensitivityLevel(Scene* scene, s32);
-PauseCameraCtrl* initAndCreatePauseCameraCtrl(Scene* scene, f32);
-void startCameraPause(PauseCameraCtrl*);
-void endCameraPause(PauseCameraCtrl*);
-void initAudioDirector2D(Scene* scene, const SceneInitInfo&, AudioDirectorInitInfo&);
-void initAudioDirector3D(Scene* scene, const SceneInitInfo&, AudioDirectorInitInfo&);
-void initAudioDirector3D(Scene* scene, const SceneInitInfo&, AudioDirectorInitInfo&,
-                         const sead::LookAtCamera*, const Projection*, AreaObjDirector*);
-void initSceneAudioKeeper(Scene* scene, const SceneInitInfo&, const char*);
-void setIsSafeFinalizingInParallelThread(Scene* scene, bool);
+void setCameraGyroSensitivityLevel(Scene* scene, s32 sensitivityLevel);
+PauseCameraCtrl* initAndCreatePauseCameraCtrl(Scene* scene, f32 value);
+void startCameraPause(PauseCameraCtrl* pauseCameraCtrl);
+void endCameraPause(PauseCameraCtrl* pauseCameraCtrl);
+AudioDirector* initAudioDirector2D(Scene* scene, const SceneInitInfo& sceneInfo,
+                                   AudioDirectorInitInfo& audioDirectorInfo);
+void initAudioDirector3D(Scene* scene, const SceneInitInfo& sceneInfo,
+                         AudioDirectorInitInfo& audioDirectorInfo);
+void initAudioDirector3D(Scene* scene, const SceneInitInfo& sceneInfo,
+                         AudioDirectorInitInfo& audioDirectorInfo,
+                         const sead::LookAtCamera* lookAtCamera, const Projection* projection,
+                         AreaObjDirector* areaObjDirector);
+void initSceneAudioKeeper(Scene* scene, const SceneInitInfo& sceneInfo, const char* name);
+void setIsSafeFinalizingInParallelThread(Scene* scene, bool isSafe);
 void updateKit(Scene* scene);
-void updateKitTable(Scene* scene, const char*);
-void updateKitList(Scene* scene, const char*, const char*);
-void updateKitList(Scene* scene, const char*);
+void updateKitTable(Scene* scene, const char* name);
+void updateKitList(Scene* scene, const char* listName, const char* name);
+void updateKitList(Scene* scene, const char* name);
 void updateLayoutKit(Scene* scene);
 void updateEffect(Scene* scene);
 void updateEffectSystem(Scene* scene);
@@ -136,12 +141,12 @@ void updateKitListPrev(Scene* scene);
 void updateKitListPost(Scene* scene);
 void updateKitListPostDemoWithPauseNormalEffect(Scene* scene);
 void updateKitListPostOnNerveEnd(Scene* scene);
-void drawKit(const Scene* scene, const char*);
-void drawKitList(const Scene* scene, const char*, const char*);
-void drawLayoutKit(const Scene* scene, const char*);
-void drawEffectDeferred(const Scene* scene, s32);
-void startForwardPlayerScreenFader(const Scene* scene, s32, s32, f32);
-void endForwardPlayerScreenFader(const Scene* scene, s32);
+void drawKit(const Scene* scene, const char* name);
+void drawKitList(const Scene* scene, const char* listName, const char* name);
+void drawLayoutKit(const Scene* scene, const char* name);
+void drawEffectDeferred(const Scene* scene, s32 index);
+void startForwardPlayerScreenFader(const Scene* scene, s32 a, s32 b, f32 c);
+void endForwardPlayerScreenFader(const Scene* scene, s32 a);
 bool isStopScene(const Scene* scene);
 void startCheckViewCtrlByCameraPos(Scene* scene);
 void startCheckViewCtrlByLookAtPos(Scene* scene);
@@ -163,17 +168,18 @@ s32 getDemoActorNum(const Scene* scene);
 void updateDemoActor(const Scene* scene);
 void updateDemoActorForPauseEffect(const Scene* scene);
 void stopAllSe(const Scene* scene, u32);
-void initPadRumble(const Scene* scene, const SceneInitInfo&);
+void initPadRumble(const Scene* scene, const SceneInitInfo& sceneInfo);
 void stopPadRumble(const Scene* scene);
 void pausePadRumble(const Scene* scene);
 void endPausePadRumble(const Scene* scene);
 void validatePadRumble(Scene* scene);
 void invalidatePadRumble(Scene* scene);
-void setPadRumblePowerLevel(Scene* scene, s32);
+void setPadRumblePowerLevel(Scene* scene, s32 poweLevel);
 const Resource* getPreLoadFileListArc();
-bool tryRequestPreLoadFile(const Scene* scene, const SceneInitInfo&, s32, sead::Heap*);
+bool tryRequestPreLoadFile(const Scene* scene, const SceneInitInfo& sceneInfo, s32 index,
+                           sead::Heap* heap);
 }  // namespace al
 
 namespace alSceneFunction {
-void initAreaCameraSwitcherMultiForPrototype(const al::Scene*);
+void initAreaCameraSwitcherMultiForPrototype(const al::Scene* scene);
 }

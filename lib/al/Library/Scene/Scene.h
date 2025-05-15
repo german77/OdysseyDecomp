@@ -43,6 +43,8 @@ public:
 
     AudioKeeper* getAudioKeeper() const override { return mAudioKeeper; }
 
+    void setAudioKeeper(AudioKeeper* audioKeeper) { mAudioKeeper = audioKeeper; }
+
     SceneObjHolder* getSceneObjHolder() const override { return mSceneObjHolder; }
 
     CameraDirector* getCameraDirector() const override;

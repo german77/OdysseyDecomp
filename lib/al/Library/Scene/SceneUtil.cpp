@@ -6,6 +6,8 @@
 #include "Library/Area/AreaObjDirector.h"
 #include "Library/Area/SwitchAreaDirector.h"
 #include "Library/Audio/AudioDirector.h"
+#include "Library/Audio/AudioDirectorInitInfo.h"
+#include "Library/Audio/System/AudioKeeper.h"
 #include "Library/Audio/System/AudioKeeperFunction.h"
 #include "Library/Base/StringUtil.h"
 #include "Library/Camera/CameraDirector.h"
@@ -35,6 +37,7 @@
 #include "Library/Scene/Scene.h"
 #include "Library/Scene/SceneStopCtrl.h"
 #include "Library/Screen/ScreenCoverCtrl.h"
+#include "Library/Se/Function/SeDbFunction.h"
 #include "Library/Se/SeFunction.h"
 #include "Library/Stage/StageResourceKeeper.h"
 #include "Library/Stage/StageResourceList.h"
@@ -451,14 +454,54 @@ void endCameraPause(PauseCameraCtrl* pauseCameraCtrl) {
     pauseCameraCtrl->endCameraPause();
 }
 
-void initAudioDirector2D(Scene* scene, const SceneInitInfo&, AudioDirectorInitInfo&);
+AudioDirector* initAudioDirectorImpl(Scene* scene, const SceneInitInfo& sceneInfo,
+                                     AudioDirectorInitInfo& audioDirectorInfo);
 
-void initAudioDirector3D(Scene* scene, const SceneInitInfo&, AudioDirectorInitInfo&);
+AudioDirector* initAudioDirector2D(Scene* scene, const SceneInitInfo& sceneInfo,
+                                   AudioDirectorInitInfo& audioDirectorInfo) {
+    return initAudioDirectorImpl(scene, sceneInfo, audioDirectorInfo);
+}
 
-void initAudioDirector3D(Scene* scene, const SceneInitInfo&, AudioDirectorInitInfo&,
-                         const sead::LookAtCamera*, const Projection*, AreaObjDirector*);
+void initAudioDirector3D(Scene* scene, const SceneInitInfo& sceneInfo,
+                         AudioDirectorInitInfo& audioDirectorInfo) {
+    initAudioDirector3D(scene, sceneInfo, audioDirectorInfo, &getLookAtCamera(scene, 0),
+                        &getProjection(scene, 0), scene->getLiveActorKit()->getAreaObjDirector());
+}
 
-void initSceneAudioKeeper(Scene* scene, const SceneInitInfo&, const char*);
+void initAudioDirector3D(Scene* scene, const SceneInitInfo& sceneInfo,
+                         AudioDirectorInitInfo& audioDirectorInfo,
+                         const sead::LookAtCamera* lookAtCamera, const Projection* projection,
+                         AreaObjDirector* areaObjDirector) {
+    if (!audioDirectorInfo.seDirectorInitInfo.cameraPos)
+        audioDirectorInfo.seDirectorInitInfo.cameraPos = &lookAtCamera->getPos();
+    if (!audioDirectorInfo.seDirectorInitInfo.cameraMatrix)
+        audioDirectorInfo.seDirectorInitInfo.cameraMatrix = &lookAtCamera->getMatrix();
+    if (!audioDirectorInfo.seDirectorInitInfo.cameraProjection)
+        audioDirectorInfo.seDirectorInitInfo.cameraProjection = projection;
+    if (!audioDirectorInfo.seDirectorInitInfo.cameraAt)
+        audioDirectorInfo.seDirectorInitInfo.cameraAt = &lookAtCamera->getAt();
+    if (!audioDirectorInfo.areaObjDirector)
+        audioDirectorInfo.areaObjDirector = areaObjDirector;
+    if (!audioDirectorInfo.demoDirector)
+        audioDirectorInfo.demoDirector = scene->getLiveActorKit()->getDemoDirector();
+
+    initAudioDirectorImpl(scene, sceneInfo, audioDirectorInfo)->init3D(audioDirectorInfo);
+}
+
+void initSceneAudioKeeper(Scene* scene, const SceneInitInfo& sceneInfo, const char* name) {
+    AudioSystemInfo* audioSystemInfo = nullptr;
+    if (sceneInfo.gameSysInfo->audioSystem)
+        audioSystemInfo = sceneInfo.gameSysInfo->audioSystem->getAudioSystemInfo();
+
+    const char* seUserName = alSeDbFunction::tryFindSceneSeUserName(
+        audioSystemInfo, sceneInfo.initStageName, sceneInfo.scenarioNo);
+
+    if (seUserName)
+        name = seUserName;
+
+    scene->setAudioKeeper(
+        alAudioKeeperFunction::createAudioKeeper(scene->getAudioDirector(), name, nullptr));
+}
 
 void setIsSafeFinalizingInParallelThread(Scene* scene, bool isSafe) {
     if (scene->getAudioDirector())
@@ -469,8 +512,8 @@ void updateKit(Scene* scene) {
     executeUpdate(scene->getLiveActorKit(), nullptr);
 }
 
-void updateKitTable(Scene* scene, const char* tableName) {
-    executeUpdateTable(scene->getLiveActorKit(), tableName);
+void updateKitTable(Scene* scene, const char* name) {
+    executeUpdateTable(scene->getLiveActorKit(), name);
 }
 
 void updateKitList(Scene* scene, const char* listName, const char* name) {
@@ -718,3 +761,10 @@ bool tryRequestPreLoadFile(const Scene* scene, const SceneInitInfo& sceneInfo, s
 }
 
 }  // namespace al
+
+namespace alSceneFunction {
+void initAreaCameraSwitcherMultiForPrototype(const al::Scene* scene) {
+    scene->getLiveActorKit()->getCameraDirector()->initAreaCameraSwitcherMultiForPrototype(
+        scene->getLiveActorKit()->getAreaObjDirector());
+}
+}  // namespace alSceneFunction
