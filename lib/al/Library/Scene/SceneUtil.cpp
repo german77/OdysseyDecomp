@@ -272,7 +272,11 @@ bool tryGetPlacementInfoAndCount(PlacementInfo* outPlacementInfo, s32* outCount,
     return false;
 }
 
-void initPlacementObjectMap(Scene* scene, const ActorInitInfo&, const char*);
+void initPlacementObjectMap(Scene* scene, const ActorInitInfo& actorInfo, const char* name) {
+    s32 resourceNum = getStageInfoMapNum(scene);
+    for (s32 i = 0; i < resourceNum; i++)
+        initPlacementByStageInfo(getStageInfoMap(scene, i), name, actorInfo);
+}
 
 void initPlacementByStageInfo(const StageInfo* stageInfo, const char* key,
                               const ActorInitInfo& actorInfo) {
@@ -300,11 +304,74 @@ void initPlacementObjectSound(Scene* scene, const ActorInitInfo& actorInfo, cons
         initPlacementByStageInfo(getStageInfoSound(scene, i), name, actorInfo);
 }
 
-LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo& actorInfo, s32,
-                                        const char*);
+LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo& actorInfo,
+                                        s32 resourceType, const char* key) {
+    if (!scene->getStageResourceKeeper())
+        return nullptr;
 
-LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo& actorInfo, s32,
-                                        const char*, const char*);
+    StageResourceList* resourceList =
+        scene->getStageResourceKeeper()->getStageResourceList(resourceType);
+    if (!resourceList)
+        return nullptr;
+
+    s32 resourceNum = resourceList->getStageResourceNum();
+
+    LiveActor* actor = nullptr;
+    for (s32 i = 0; i < resourceNum; i++) {
+        PlacementInfo placementInfo;
+        StageInfo* stageInfo =
+            scene->getStageResourceKeeper()->getStageResourceList(resourceType)->getStageInfo(i);
+
+        if (tryGetPlacementInfo(&placementInfo, stageInfo, key)) {
+            s32 count = getCountPlacementInfo(placementInfo);
+            for (s32 j = 0; j < count; j++) {
+                PlacementInfo newPlacementInfo;
+                getPlacementInfoByIndex(&newPlacementInfo, placementInfo, j);
+                LiveActor* newActor = createPlacementActorFromFactory(actorInfo, &newPlacementInfo);
+                if (newActor)
+                    actor = newActor;
+            }
+        }
+    }
+    return actor;
+}
+
+LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo& actorInfo,
+                                        s32 resourceType, const char* key, const char* name) {
+    if (!scene->getStageResourceKeeper())
+        return nullptr;
+
+    StageResourceList* resourceList =
+        scene->getStageResourceKeeper()->getStageResourceList(resourceType);
+    if (!resourceList)
+        return nullptr;
+
+    s32 resourceNum = resourceList->getStageResourceNum();
+
+    LiveActor* actor = nullptr;
+    for (s32 i = 0; i < resourceNum; i++) {
+        PlacementInfo placementInfo;
+        StageInfo* stageInfo =
+            scene->getStageResourceKeeper()->getStageResourceList(resourceType)->getStageInfo(i);
+
+        if (tryGetPlacementInfo(&placementInfo, stageInfo, key)) {
+            s32 count = getCountPlacementInfo(placementInfo);
+            for (s32 j = 0; j < count; j++) {
+                PlacementInfo newPlacementInfo;
+                getPlacementInfoByIndex(&newPlacementInfo, placementInfo, j);
+                const char* objName = nullptr;
+                getObjectName(&objName, newPlacementInfo);
+                if (isEqualString(objName, name)) {
+                    LiveActor* newActor =
+                        createPlacementActorFromFactory(actorInfo, &newPlacementInfo);
+                    if (newActor)
+                        actor = newActor;
+                }
+            }
+        }
+    }
+    return actor;
+}
 
 bool tryInitPlacementActorGroup(LiveActorGroup*, Scene* scene, const ActorInitInfo& actorInfo, s32,
                                 const char*, const char*);

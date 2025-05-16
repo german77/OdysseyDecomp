@@ -61,13 +61,14 @@ void initLayoutInitInfo(LayoutInitInfo*, const Scene* scene, const SceneInitInfo
 void initPlacementAreaObj(Scene* scene, const ActorInitInfo&);
 void initPlacementGravityObj(Scene* scene);
 bool tryGetPlacementInfoAndCount(PlacementInfo*, s32*, const StageInfo*, const char*);
-void initPlacementObjectMap(Scene* scene, const ActorInitInfo&, const char*);
-void initPlacementByStageInfo(const StageInfo*, const char*, const ActorInitInfo&);
-void initPlacementObjectDesign(Scene* scene, const ActorInitInfo&, const char*);
-void initPlacementObjectSound(Scene* scene, const ActorInitInfo&, const char*);
-LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo&, s32, const char*);
-LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo&, s32, const char*,
-                                        const char*);
+void initPlacementObjectMap(Scene* scene, const ActorInitInfo&, const char* name);
+void initPlacementByStageInfo(const StageInfo*, const char* key, const ActorInitInfo& actorInfo);
+void initPlacementObjectDesign(Scene* scene, const ActorInitInfo&, const char* name);
+void initPlacementObjectSound(Scene* scene, const ActorInitInfo&, const char* name);
+LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo& actorInfo,
+                                        s32 resourceType, const char* key);
+LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo& actorInfo,
+                                        s32 resourceType, const char* key, const char* name);
 bool tryInitPlacementActorGroup(LiveActorGroup*, Scene* scene, const ActorInitInfo&, s32,
                                 const char*, const char*);
 void initPlacementByStageInfoSingle(const StageInfo*, const char*, const ActorInitInfo&);
@@ -115,7 +116,7 @@ PauseCameraCtrl* initAndCreatePauseCameraCtrl(Scene* scene, f32 value);
 void startCameraPause(PauseCameraCtrl* pauseCameraCtrl);
 void endCameraPause(PauseCameraCtrl* pauseCameraCtrl);
 void initAudioDirector2D(Scene* scene, const SceneInitInfo& sceneInfo,
-                                   AudioDirectorInitInfo& audioDirectorInfo);
+                         AudioDirectorInitInfo& audioDirectorInfo);
 void initAudioDirector3D(Scene* scene, const SceneInitInfo& sceneInfo,
                          AudioDirectorInitInfo& audioDirectorInfo);
 void initAudioDirector3D(Scene* scene, const SceneInitInfo& sceneInfo,
