@@ -13,6 +13,7 @@
 #include "Library/Camera/CameraDirector.h"
 #include "Library/Camera/CameraFlagCtrl.h"
 #include "Library/Camera/CameraPoseUpdater.h"
+#include "Library/Camera/CameraPoserSceneInfo.h"
 #include "Library/Camera/CameraRequestParamHolder.h"
 #include "Library/Camera/CameraResourceHolder.h"
 #include "Library/Camera/CameraUtil.h"
@@ -30,8 +31,12 @@
 #include "Library/Layout/LayoutInitInfo.h"
 #include "Library/Layout/LayoutSystem.h"
 #include "Library/Layout/LayoutUtil.h"
+#include "Library/LiveActor/ActorInitUtil.h"
 #include "Library/LiveActor/LiveActorKit.h"
 #include "Library/Model/ModelDrawBufferUpdater.h"
+#include "Library/Placement/PlacementFunction.h"
+#include "Library/Placement/PlacementInfo.h"
+#include "Library/Play/Camera/SimpleCameraPoserFactory.h"
 #include "Library/PostProcessing/PostProcessingFilter.h"
 #include "Library/Resource/ResourceHolder.h"
 #include "Library/Scene/DemoDirector.h"
@@ -43,6 +48,7 @@
 #include "Library/Stage/StageResourceKeeper.h"
 #include "Library/Stage/StageResourceList.h"
 #include "Library/System/GameSystemInfo.h"
+#include "Library/Yaml/ByamlIter.h"
 #include "Project/Clipping/ClippingDirector.h"
 #include "Project/LiveActor/ActorExecuteFunction.h"
 
@@ -255,31 +261,83 @@ void initPlacementAreaObj(Scene* scene, const ActorInitInfo&);
 
 void initPlacementGravityObj(Scene* scene);
 
-bool tryGetPlacementInfoAndCount(PlacementInfo*, s32*, const StageInfo*, const char*);
+bool tryGetPlacementInfoAndCount(PlacementInfo* outPlacementInfo, s32* outCount,
+                                 const StageInfo* stageInfo, const char* key) {
+    if (tryGetPlacementInfo(outPlacementInfo, stageInfo, key)) {
+        *outCount = getCountPlacementInfo(*outPlacementInfo);
+        return true;
+    }
+
+    *outCount = 0;
+    return false;
+}
 
 void initPlacementObjectMap(Scene* scene, const ActorInitInfo&, const char*);
 
-void initPlacementByStageInfo(const StageInfo*, const char*, const ActorInitInfo&);
+void initPlacementByStageInfo(const StageInfo* stageInfo, const char* key,
+                              const ActorInitInfo& actorInfo) {
+    PlacementInfo placementInfo;
+    if (tryGetPlacementInfo(&placementInfo, stageInfo, key)) {
+        s32 count = getCountPlacementInfo(placementInfo);
 
-void initPlacementObjectDesign(Scene* scene, const ActorInitInfo&, const char*);
+        for (s32 i = 0; i < count; i++) {
+            PlacementInfo placementInfo2;
+            getPlacementInfoByIndex(&placementInfo2, placementInfo, i);
+            createPlacementActorFromFactory(actorInfo, &placementInfo2);
+        }
+    }
+}
 
-void initPlacementObjectSound(Scene* scene, const ActorInitInfo&, const char*);
+void initPlacementObjectDesign(Scene* scene, const ActorInitInfo& actorInfo, const char* name) {
+    s32 resourceNum = getStageInfoDesignNum(scene);
+    for (s32 i = 0; i < resourceNum; i++)
+        initPlacementByStageInfo(getStageInfoDesign(scene, i), name, actorInfo);
+}
 
-LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo&, s32, const char*);
+void initPlacementObjectSound(Scene* scene, const ActorInitInfo& actorInfo, const char* name) {
+    s32 resourceNum = getStageInfoSoundNum(scene);
+    for (s32 i = 0; i < resourceNum; i++)
+        initPlacementByStageInfo(getStageInfoSound(scene, i), name, actorInfo);
+}
 
-LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo&, s32, const char*,
+LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo& actorInfo, s32,
                                         const char*);
 
-bool tryInitPlacementActorGroup(LiveActorGroup*, Scene* scene, const ActorInitInfo&, s32,
+LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo& actorInfo, s32,
+                                        const char*, const char*);
+
+bool tryInitPlacementActorGroup(LiveActorGroup*, Scene* scene, const ActorInitInfo& actorInfo, s32,
                                 const char*, const char*);
 
-void initPlacementByStageInfoSingle(const StageInfo*, const char*, const ActorInitInfo&);
+void initPlacementByStageInfoSingle(const StageInfo* stageInfo, const char* key,
+                                    const ActorInitInfo& actorInfo) {
+    initPlacementByStageInfo(stageInfo, key, actorInfo);
+}
 
-bool tryGetPlacementInfo(PlacementInfo*, const StageInfo*, const char*);
+bool tryGetPlacementInfo(PlacementInfo* outPlacementInfo, const StageInfo* stageInfo,
+                         const char* key) {
+    ByamlIter iter;
+    if (stageInfo->getPlacementIter().tryGetIterByKey(&iter, key)) {
+        outPlacementInfo->set(iter, stageInfo->getZoneIter());
+        return true;
+    }
 
-void getPlacementInfo(PlacementInfo*, const StageInfo*, const char*);
+    return false;
+}
 
-void getPlacementInfoAndCount(PlacementInfo*, s32*, const StageInfo*, const char*);
+void getPlacementInfo(PlacementInfo* outPlacementInfo, const StageInfo* stageInfo,
+                      const char* key) {
+    ByamlIter iter;
+    stageInfo->getPlacementIter().tryGetIterByKey(&iter, key);
+
+    outPlacementInfo->set(iter, stageInfo->getZoneIter());
+}
+
+void getPlacementInfoAndCount(PlacementInfo* outPlacementInfo, s32* outCount,
+                              const StageInfo* stageInfo, const char* key) {
+    getPlacementInfo(outPlacementInfo, stageInfo, key);
+    *outCount = getCountPlacementInfo(*outPlacementInfo);
+}
 
 void initAreaObjDirector(Scene* scene, const AreaObjFactory* factory) {
     scene->getLiveActorKit()->getAreaObjDirector()->init(factory);
@@ -320,12 +378,19 @@ void registerSwitchKeepOnAreaGroup(Scene* scene, SwitchKeepOnAreaGroup* switchKe
 
 void initGraphicsSystemInfo(Scene* scene, const char*, s32);
 
-void initCameraDirectorImpl(Scene* scene, const CameraPoserFactory* cameraPoserFactory);
+void initCameraDirectorImpl(Scene* scene, const CameraPoserFactory* cameraPoserFactory) {
+    LiveActorKit* actorKit = scene->getLiveActorKit();
 
-inline s32 getMapStageResourceNum(Scene* scene) {
-    if (scene->getStageResourceKeeper() && scene->getStageResourceKeeper()->getMapStageInfo())
-        return scene->getStageResourceKeeper()->getMapStageInfo()->getStageResourceNum();
-    return 0;
+    CameraPoserSceneInfo* sceneInfo = new CameraPoserSceneInfo();
+    sceneInfo->init(actorKit->getAreaObjDirector(), actorKit->getCollisionDirector(),
+                    scene->getAudioDirector());
+
+    if (!cameraPoserFactory)
+        cameraPoserFactory = new SimpleCameraPoserFactory("カメラファクトリー");
+
+    scene->getLiveActorKit()->getCameraDirector()->init(sceneInfo, cameraPoserFactory);
+    registerExecutorUser(scene->getLiveActorKit()->getCameraDirector(),
+                         actorKit->getExecuteDirector(), "カメラ");
 }
 
 void initCameraDirector(Scene* scene, const char* name, s32 index,
@@ -334,12 +399,11 @@ void initCameraDirector(Scene* scene, const char* name, s32 index,
     CameraDirector* cameraDirector = scene->getLiveActorKit()->getCameraDirector();
 
     CameraResourceHolder* cameraResourceHolder =
-        new CameraResourceHolder(name, getMapStageResourceNum(scene));
+        new CameraResourceHolder(name, getStageInfoMapNum(scene));
 
-    for (s32 i = 0; i < getMapStageResourceNum(scene); i++) {
-        cameraResourceHolder->tryInitCameraResource(
-            scene->getStageResourceKeeper()->getMapStageInfo()->getStageInfo(i)->getResource(),
-            i > 0 ? 1 : index);
+    for (s32 i = 0; i < getStageInfoMapNum(scene); i++) {
+        cameraResourceHolder->tryInitCameraResource(getStageInfoMap(scene, i)->getResource(),
+                                                    i > 0 ? 1 : index);
     }
 
     cameraDirector->initResourceHolder(cameraResourceHolder);
@@ -484,11 +548,34 @@ void endCameraPause(PauseCameraCtrl* pauseCameraCtrl) {
 }
 
 AudioDirector* initAudioDirectorImpl(Scene* scene, const SceneInitInfo& sceneInfo,
-                                     AudioDirectorInitInfo& audioDirectorInfo);
+                                     AudioDirectorInitInfo& audioDirectorInfo) {
+    audioDirectorInfo.audioSystemInfo = sceneInfo.gameSysInfo->audioSystem
+        ? sceneInfo.gameSysInfo->audioSystem->getAudioSystemInfo()
+        : nullptr;
 
-AudioDirector* initAudioDirector2D(Scene* scene, const SceneInitInfo& sceneInfo,
+    if (!audioDirectorInfo.curStage)
+        audioDirectorInfo.curStage = sceneInfo.initStageName;
+    if (audioDirectorInfo.scenarioNo == 0)
+        audioDirectorInfo.scenarioNo = sceneInfo.scenarioNo;
+    if (audioDirectorInfo.seDirectorInitInfo.maxRequests < 1)
+        audioDirectorInfo.seDirectorInitInfo.maxRequests = 200;
+    if (audioDirectorInfo.seDirectorInitInfo.playerCount < 1)
+        audioDirectorInfo.seDirectorInitInfo.playerCount = 40;
+
+    audioDirectorInfo.bgmDirectorInitInfo.field_0 = true;
+    audioDirectorInfo.bgmDirectorInitInfo.field_8 = "Scene";
+    audioDirectorInfo.duckingName = "DuckingForScene";
+
+    AudioDirector* audioDirector = new AudioDirector();
+    audioDirector->init(audioDirectorInfo);
+    scene->setAudioDirector(audioDirector);
+    audioDirector->setDependentModule(sceneInfo.audioDirector);
+    return audioDirector;
+}
+
+void initAudioDirector2D(Scene* scene, const SceneInitInfo& sceneInfo,
                                    AudioDirectorInitInfo& audioDirectorInfo) {
-    return initAudioDirectorImpl(scene, sceneInfo, audioDirectorInfo);
+    initAudioDirectorImpl(scene, sceneInfo, audioDirectorInfo);
 }
 
 void initAudioDirector3D(Scene* scene, const SceneInitInfo& sceneInfo,

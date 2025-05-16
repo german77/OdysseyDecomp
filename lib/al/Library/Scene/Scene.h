@@ -80,6 +80,8 @@ public:
 
     AudioDirector* getAudioDirector() const { return mAudioDirector; }
 
+    void setAudioDirector(AudioDirector* audioDirector) { mAudioDirector = audioDirector; }
+
     DrawSystemInfo* getDrawSystemInfo() const { return mDrawSystemInfo; }
 
 private:

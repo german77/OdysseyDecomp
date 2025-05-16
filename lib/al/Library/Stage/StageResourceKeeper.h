@@ -11,9 +11,15 @@ public:
 
     void initAndLoadResource(const char* stageName, s32 scenarioNo);
 
-    StageResourceList* getMapStageInfo() const { return mResourceList[0]; }
-    StageResourceList* getDesignStageInfo() const { return mResourceList[1]; }
-    StageResourceList* getSoundStageInfo() const { return mResourceList[2]; }
+    enum class ResourceType : s32 { Map, Stage, Sound };
+
+    StageResourceList* getMapStageInfo() const { return mResourceList[(s32)ResourceType::Map]; }
+
+    StageResourceList* getDesignStageInfo() const {
+        return mResourceList[(s32)ResourceType::Stage];
+    }
+
+    StageResourceList* getSoundStageInfo() const { return mResourceList[(s32)ResourceType::Sound]; }
 
 private:
     StageResourceList** mResourceList = nullptr;

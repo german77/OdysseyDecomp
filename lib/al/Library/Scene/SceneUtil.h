@@ -114,7 +114,7 @@ void setCameraGyroSensitivityLevel(Scene* scene, s32 sensitivityLevel);
 PauseCameraCtrl* initAndCreatePauseCameraCtrl(Scene* scene, f32 value);
 void startCameraPause(PauseCameraCtrl* pauseCameraCtrl);
 void endCameraPause(PauseCameraCtrl* pauseCameraCtrl);
-AudioDirector* initAudioDirector2D(Scene* scene, const SceneInitInfo& sceneInfo,
+void initAudioDirector2D(Scene* scene, const SceneInitInfo& sceneInfo,
                                    AudioDirectorInitInfo& audioDirectorInfo);
 void initAudioDirector3D(Scene* scene, const SceneInitInfo& sceneInfo,
                          AudioDirectorInitInfo& audioDirectorInfo);
