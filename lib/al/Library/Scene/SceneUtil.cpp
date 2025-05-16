@@ -376,7 +376,29 @@ void registerSwitchKeepOnAreaGroup(Scene* scene, SwitchKeepOnAreaGroup* switchKe
         switchKeepOnAreaGroup);
 }
 
-void initGraphicsSystemInfo(Scene* scene, const char*, s32);
+void initGraphicsSystemInfo(Scene* scene, const char* name, s32 index) {
+    if (1 < index) {
+        StringTmp<32> scenario{"Scenario%d"};
+        GraphicsSystemInfo* systemInfo = scene->getLiveActorKit()->getGraphicsSystemInfo();
+
+        Resource* resource;
+        if (getStageInfoDesignNum(scene) != 0)
+            resource = getStageInfoDesign(scene, 0)->getResource();
+        else
+            resource = nullptr;
+        systemInfo->initStageResource(resource, name, scenario.cstr());
+        return;
+    }
+
+    GraphicsSystemInfo* systemInfo = scene->getLiveActorKit()->getGraphicsSystemInfo();
+
+    Resource* resource;
+    if (getStageInfoDesignNum(scene) != 0)
+        resource = getStageInfoDesign(scene, 0)->getResource();
+    else
+        resource = nullptr;
+    systemInfo->initStageResource(resource, name, nullptr);
+}
 
 void initCameraDirectorImpl(Scene* scene, const CameraPoserFactory* cameraPoserFactory) {
     LiveActorKit* actorKit = scene->getLiveActorKit();
@@ -549,9 +571,10 @@ void endCameraPause(PauseCameraCtrl* pauseCameraCtrl) {
 
 AudioDirector* initAudioDirectorImpl(Scene* scene, const SceneInitInfo& sceneInfo,
                                      AudioDirectorInitInfo& audioDirectorInfo) {
-    audioDirectorInfo.audioSystemInfo = sceneInfo.gameSysInfo->audioSystem
-        ? sceneInfo.gameSysInfo->audioSystem->getAudioSystemInfo()
-        : nullptr;
+    audioDirectorInfo.audioSystemInfo =
+        sceneInfo.gameSysInfo->audioSystem ?
+            sceneInfo.gameSysInfo->audioSystem->getAudioSystemInfo() :
+            nullptr;
 
     if (!audioDirectorInfo.curStage)
         audioDirectorInfo.curStage = sceneInfo.initStageName;
@@ -574,7 +597,7 @@ AudioDirector* initAudioDirectorImpl(Scene* scene, const SceneInitInfo& sceneInf
 }
 
 void initAudioDirector2D(Scene* scene, const SceneInitInfo& sceneInfo,
-                                   AudioDirectorInitInfo& audioDirectorInfo) {
+                         AudioDirectorInitInfo& audioDirectorInfo) {
     initAudioDirectorImpl(scene, sceneInfo, audioDirectorInfo);
 }
 
