@@ -57,39 +57,46 @@ void initActorInitInfo(ActorInitInfo* actorInitInfo, const Scene* scene,
                        const PlacementInfo* placementInfo, const LayoutInitInfo* layoutInfo,
                        const ActorFactory* actorFactory, SceneMsgCtrl* sceneMsgCtrl,
                        GameDataHolderBase* gameDataHolderBase);
-void initLayoutInitInfo(LayoutInitInfo*, const Scene* scene, const SceneInitInfo&);
-void initPlacementAreaObj(Scene* scene, const ActorInitInfo&);
+void initLayoutInitInfo(LayoutInitInfo* layoutInfo, const Scene* scene,
+                        const SceneInitInfo& sceneInfo);
+void initPlacementAreaObj(Scene* scene, const ActorInitInfo& actorInfo);
 void initPlacementGravityObj(Scene* scene);
-bool tryGetPlacementInfoAndCount(PlacementInfo*, s32*, const StageInfo*, const char*);
-void initPlacementObjectMap(Scene* scene, const ActorInitInfo&, const char* name);
+bool tryGetPlacementInfoAndCount(PlacementInfo* outPlacementInfo, s32* outCount,
+                                 const StageInfo* stageInfo, const char* key);
+void initPlacementObjectMap(Scene* scene, const ActorInitInfo& actorInfo, const char* name);
 void initPlacementByStageInfo(const StageInfo*, const char* key, const ActorInitInfo& actorInfo);
-void initPlacementObjectDesign(Scene* scene, const ActorInitInfo&, const char* name);
-void initPlacementObjectSound(Scene* scene, const ActorInitInfo&, const char* name);
+void initPlacementObjectDesign(Scene* scene, const ActorInitInfo& actorInfo, const char* name);
+void initPlacementObjectSound(Scene* scene, const ActorInitInfo& actorInfo, const char* name);
 LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo& actorInfo,
                                         s32 resourceType, const char* key);
 LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo& actorInfo,
                                         s32 resourceType, const char* key, const char* name);
-bool tryInitPlacementActorGroup(LiveActorGroup*, Scene* scene, const ActorInitInfo&, s32,
-                                const char*, const char*);
-void initPlacementByStageInfoSingle(const StageInfo*, const char*, const ActorInitInfo&);
-bool tryGetPlacementInfo(PlacementInfo*, const StageInfo*, const char*);
-void getPlacementInfo(PlacementInfo*, const StageInfo*, const char*);
-void getPlacementInfoAndCount(PlacementInfo*, s32*, const StageInfo*, const char*);
-void initAreaObjDirector(Scene* scene, const AreaObjFactory*);
-void initDemoDirector(Scene* scene, DemoDirector*);
+bool tryInitPlacementActorGroup(LiveActorGroup* liveActorGroup, Scene* scene,
+                                const ActorInitInfo& actorInfo, s32 resourceType, const char* key,
+                                const char* name);
+void initPlacementByStageInfoSingle(const StageInfo* stageInfo, const char* key,
+                                    const ActorInitInfo& actorInfo);
+bool tryGetPlacementInfo(PlacementInfo* outPlacementInfo, const StageInfo* stageInfo,
+                         const char* key);
+void getPlacementInfo(PlacementInfo* outPlacementInfo, const StageInfo* stageInfo, const char* key);
+void getPlacementInfoAndCount(PlacementInfo* outPlacementInfo, s32* outCount,
+                              const StageInfo* stageInfo, const char* key);
+void initAreaObjDirector(Scene* scene, const AreaObjFactory* factory);
+void initDemoDirector(Scene* scene, DemoDirector* demoDirector);
 void initHitSensorDirector(Scene* scene);
 void initGravityHolder(Scene* scene);
-void initItemDirector(Scene* scene, ItemDirectorBase*);
+void initItemDirector(Scene* scene, ItemDirectorBase* itemDirector);
 void initNatureDirector(Scene* scene);
-void initSwitchAreaDirector(Scene* scene, s32, s32);
-void registerSwitchOnAreaGroup(Scene* scene, SwitchOnAreaGroup*);
-void registerSwitchKeepOnAreaGroup(Scene* scene, SwitchKeepOnAreaGroup*);
-void initGraphicsSystemInfo(Scene* scene, const char*, s32);
-void initCameraDirector(Scene* scene, const char*, s32, const CameraPoserFactory*);
-void initCameraDirectorWithoutStageResource(Scene* scene, const CameraPoserFactory*);
-void initCameraDirectorFix(Scene* scene, const sead::Vector3f&, const sead::Vector3f&,
-                           const CameraPoserFactory*);
-void initSceneCameraFovyDegree(Scene* scene, f32);
+void initSwitchAreaDirector(Scene* scene, s32 val1, s32 val2);
+void registerSwitchOnAreaGroup(Scene* scene, SwitchOnAreaGroup* switchOnAreaGroup);
+void registerSwitchKeepOnAreaGroup(Scene* scene, SwitchKeepOnAreaGroup* switchKeepOnAreaGroup);
+void initGraphicsSystemInfo(Scene* scene, const char* name, s32 index);
+void initCameraDirector(Scene* scene, const CameraPoserFactory* cameraPoserFactory);
+void initCameraDirectorWithoutStageResource(Scene* scene,
+                                            const CameraPoserFactory* cameraPoserFactory);
+void initCameraDirectorFix(Scene* scene, const sead::Vector3f& pos, const sead::Vector3f& lookAtPos,
+                           const CameraPoserFactory* cameraPoserFactory);
+void initSceneCameraFovyDegree(Scene* scene, f32 fov);
 void initSnapShotCameraAudioKeeper(Scene* scene, IUseAudioKeeper* audioKeeper);
 void setCameraAspect(Scene* scene, f32 aspectA, f32 aspectB);
 void resetSceneInitEntranceCamera(Scene* scene);

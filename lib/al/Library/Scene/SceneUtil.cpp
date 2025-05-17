@@ -3,6 +3,7 @@
 #include <common/aglRenderBuffer.h>
 #include <math/seadVector.h>
 
+#include "Library/Area/AreaInitInfo.h"
 #include "Library/Area/AreaObjDirector.h"
 #include "Library/Area/SwitchAreaDirector.h"
 #include "Library/Audio/AudioDirector.h"
@@ -32,6 +33,7 @@
 #include "Library/Layout/LayoutSystem.h"
 #include "Library/Layout/LayoutUtil.h"
 #include "Library/LiveActor/ActorInitUtil.h"
+#include "Library/LiveActor/LiveActorGroup.h"
 #include "Library/LiveActor/LiveActorKit.h"
 #include "Library/Model/ModelDrawBufferUpdater.h"
 #include "Library/Placement/PlacementFunction.h"
@@ -43,6 +45,7 @@
 #include "Library/Scene/Scene.h"
 #include "Library/Scene/SceneStopCtrl.h"
 #include "Library/Screen/ScreenCoverCtrl.h"
+#include "Library/LiveActor/ActorAreaFunction.h"
 #include "Library/Se/Function/SeDbFunction.h"
 #include "Library/Se/SeFunction.h"
 #include "Library/Stage/StageResourceKeeper.h"
@@ -50,6 +53,7 @@
 #include "Library/System/GameSystemInfo.h"
 #include "Library/Yaml/ByamlIter.h"
 #include "Project/Clipping/ClippingDirector.h"
+#include "Project/Gravity/GravityHolder.h"
 #include "Project/LiveActor/ActorExecuteFunction.h"
 
 namespace al {
@@ -257,9 +261,56 @@ void initLayoutInitInfo(LayoutInitInfo* layoutInfo, const Scene* scene,
     }
 }
 
-void initPlacementAreaObj(Scene* scene, const ActorInitInfo&);
+void initPlacementAreaObj(Scene* scene, const ActorInitInfo& actorInfo){
+    AreaInitInfo areaInitInfo[256];
 
-void initPlacementGravityObj(Scene* scene);
+    s32 entries=0;
+    s32 resourceNum=getStageInfoMapNum(scene);
+    for (s32 i = 0; i < resourceNum; i++) {
+        StageInfo* stageInfo = getStageInfoMap(scene, i);
+        PlacementInfo placementInfo;
+        if (tryGetPlacementInfo(&placementInfo, stageInfo, "AreaList")) {
+            initAreaInitInfo(&areaInitInfo[entries],placementInfo,actorInfo);
+            entries++;
+        }
+    }
+    for (s32 i = 0; i < getStageInfoDesignNum(scene); i++) {
+        StageInfo* stageInfo = getStageInfoDesign(scene, i);
+        PlacementInfo placementInfo;
+        if (tryGetPlacementInfo(&placementInfo, stageInfo, "AreaList")) {
+            initAreaInitInfo(&areaInitInfo[entries],placementInfo,actorInfo);
+            entries++;
+        }
+    }
+    for (s32 i = 0; i < getStageInfoSoundNum(scene); i++) {
+        StageInfo* stageInfo = getStageInfoSound(scene, i);
+        PlacementInfo placementInfo;
+        if (tryGetPlacementInfo(&placementInfo, stageInfo, "AreaList")) {
+            initAreaInitInfo(&areaInitInfo[entries],placementInfo,actorInfo);
+            entries++;
+        }
+    }
+
+    actorInfo.actorSceneInfo.areaObjDirector->placement(areaInitInfo,entries);
+}
+
+void initPlacementGravityObj(Scene* scene) {
+    PlacementInfo placementInfo;
+    for (s32 i = 0; i < getStageInfoMapNum(scene); i++) {
+        StageInfo* stageInfo = getStageInfoMap(scene, i);
+
+        s32 count;
+        if (tryGetPlacementInfoAndCount(&placementInfo, &count, stageInfo, "GravityList")) {
+            for (s32 j = 0; j < count; j++) {
+                PlacementInfo placementInfo2;
+                getPlacementInfoByIndex(&placementInfo2, placementInfo, j);
+                if (isClassName(placementInfo2, "GravityPoint"))
+
+                    scene->getLiveActorKit()->getGravityHolder()->createGravity(placementInfo2);
+            }
+        }
+    }
+}
 
 bool tryGetPlacementInfoAndCount(PlacementInfo* outPlacementInfo, s32* outCount,
                                  const StageInfo* stageInfo, const char* key) {
@@ -373,8 +424,44 @@ LiveActor* tryInitPlacementSingleObject(Scene* scene, const ActorInitInfo& actor
     return actor;
 }
 
-bool tryInitPlacementActorGroup(LiveActorGroup*, Scene* scene, const ActorInitInfo& actorInfo, s32,
-                                const char*, const char*);
+bool tryInitPlacementActorGroup(LiveActorGroup* liveActorGroup, Scene* scene,
+                                const ActorInitInfo& actorInfo, s32 resourceType, const char* key,
+                                const char* name) {
+    if (!scene->getStageResourceKeeper())
+        return false;
+
+    StageResourceList* resourceList =
+        scene->getStageResourceKeeper()->getStageResourceList(resourceType);
+    if (!resourceList)
+        return false;
+
+    s32 resourceNum = resourceList->getStageResourceNum();
+    bool isRegistered = false;
+    for (s32 i = 0; i < resourceNum; i++) {
+        PlacementInfo placementInfo;
+        StageInfo* stageInfo =
+            scene->getStageResourceKeeper()->getStageResourceList(resourceType)->getStageInfo(i);
+
+        if (tryGetPlacementInfo(&placementInfo, stageInfo, key)) {
+            s32 count = getCountPlacementInfo(placementInfo);
+            for (s32 j = 0; j < count; j++) {
+                PlacementInfo newPlacementInfo;
+                getPlacementInfoByIndex(&newPlacementInfo, placementInfo, j);
+                const char* objName = nullptr;
+                getObjectName(&objName, newPlacementInfo);
+                if (isEqualString(objName, name)) {
+                    LiveActor* actor =
+                        createPlacementActorFromFactory(actorInfo, &newPlacementInfo);
+                    if (actor) {
+                        liveActorGroup->registerActor(actor);
+                        isRegistered = true;
+                    }
+                }
+            }
+        }
+    }
+    return isRegistered;
+}
 
 void initPlacementByStageInfoSingle(const StageInfo* stageInfo, const char* key,
                                     const ActorInitInfo& actorInfo) {
