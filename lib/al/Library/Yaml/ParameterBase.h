@@ -10,6 +10,7 @@ class ByamlIter;
 class ParameterObj;
 class ParameterList;
 
+// Enum formatted for match purposes
 SEAD_ENUM(YamlParamType,
     Invalid ,
     Bool ,
@@ -54,9 +55,7 @@ SEAD_ENUM(YamlParamType,
 class ParameterBase {
 public:
     ParameterBase(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
-                  ParameterObj* d, bool e) {
-        initializeListNode(a, b, c, d, e);
-    }
+                  ParameterObj* d, bool e);
 
     ParameterBase(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
                   ParameterList* d, bool e);
@@ -94,7 +93,7 @@ public:
     }
 
 private:
-    ParameterBase* mNext = nullptr;
+    ParameterBase* mNext;
     sead::FixedSafeString<0x40> mName;
     u32 mHash;
 };
