@@ -43,6 +43,7 @@ SEAD_ENUM(YamlParamType,
         Parameter##Name(const sead::SafeString& a, const sead::SafeString& b,                      \
                         const sead::SafeString& c, ParameterList* d, bool e)                       \
             : Parameter(a, b, c, d, e) {}                                                          \
+                                                                                                   \
         const char* getParamTypeStr() const override {                                             \
             return YamlParamType::text(YamlParamType::Name);                                       \
         }                                                                                          \
@@ -65,7 +66,7 @@ public:
     virtual const void* ptr() const = 0;
     virtual void* ptr() = 0;
     virtual void afterGetParam();
-    virtual s32 getParamSize() const = 0;
+    virtual s32 size() const = 0;
     virtual bool isEqual(const ParameterBase&);
     virtual bool copy(const ParameterBase&);
     virtual bool copyLerp(const ParameterBase&, const ParameterBase&, f32);
@@ -113,15 +114,24 @@ public:
 
     void* ptr() override { return &mValue; };
 
-    const T& getValue() { return mValue; }
+    s32 size() const override { return sizeof(T); }
+
+    const char* getParamTypeStr() const override {
+        return YamlParamType::text(YamlParamType::Invalid);
+    }
+
+    YamlParamType getParamType() const override {
+        return YamlParamType::Invalid;
+    }
+
+    const T& getValue() const { return mValue; }
 
     void setValue(const T& value) { mValue = value; }
-
-    s32 getParamSize() const override { return sizeof(T); }
 
 private:
     T mValue;
 };
+
 
 PARAM_TYPE_DEF(Bool, bool)
 PARAM_TYPE_DEF(F32, f32)
