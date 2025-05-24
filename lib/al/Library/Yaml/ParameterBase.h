@@ -40,6 +40,7 @@ SEAD_ENUM(YamlParamType,
         Parameter##Name(const sead::SafeString& a, const sead::SafeString& b,                      \
                         const sead::SafeString& c, ParameterObj* d, bool e)                        \
             : Parameter(a, b, c, d, e) {}                                                          \
+                                                                                                   \
         Parameter##Name(const sead::SafeString& a, const sead::SafeString& b,                      \
                         const sead::SafeString& c, ParameterList* d, bool e)                       \
             : Parameter(a, b, c, d, e) {}                                                          \
@@ -55,13 +56,11 @@ SEAD_ENUM(YamlParamType,
 
 class ParameterBase {
 public:
-    ParameterBase(const sead::SafeString&, const sead::SafeString&, const sead::SafeString&,
-                  ParameterObj*, bool e) {
-        initialize("default", "parameter", "", e);
-    }
+    ParameterBase(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
+                  ParameterObj* d, bool e);
 
-    ParameterBase(const sead::SafeString&, const sead::SafeString&, const sead::SafeString&,
-                  ParameterList*, bool);
+    ParameterBase(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
+                  ParameterList* d, bool e);
 
     virtual const char* getParamTypeStr() const = 0;
     virtual YamlParamType getParamType() const = 0;
@@ -69,9 +68,9 @@ public:
     virtual void* ptr() = 0;
     virtual void afterGetParam();
     virtual s32 size() const = 0;
-    virtual bool isEqual(const ParameterBase&);
-    virtual bool copy(const ParameterBase&);
-    virtual bool copyLerp(const ParameterBase&, const ParameterBase&, f32);
+    virtual bool isEqual(const ParameterBase& parameter) const;
+    virtual bool copy(const ParameterBase& parameter);
+    virtual bool copyLerp(const ParameterBase& parameterA, const ParameterBase& parameterB, f32 rate);
 
     void initializeListNode(const sead::SafeString&, const sead::SafeString&,
                             const sead::SafeString&, ParameterObj*, bool);
@@ -104,6 +103,7 @@ private:
 template <typename T>
 class Parameter : public ParameterBase {
 public:
+<<<<<<< HEAD
     // TODO: Add proper parameter names
     Parameter(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
               ParameterObj* d, bool e)
@@ -112,7 +112,6 @@ public:
         mValue = T();
     }
 
-    // TODO: Add proper parameter names
     Parameter(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
               ParameterList* d, bool e)
         : ParameterBase(a, b, c, d, e) {}
