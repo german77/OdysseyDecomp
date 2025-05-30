@@ -1,5 +1,6 @@
 #pragma once
 
+#include <basis/seadTypes.h>
 #include <math/seadMatrix.h>
 #include <math/seadVector.h>
 
@@ -11,15 +12,15 @@ class AnimPlayerMat;
 class AnimPlayerSimple;
 class AnimPlayerSkl;
 class AnimPlayerVis;
-class ModelCtrl;
 class DitherAnimator;
-class ModelLodCtrl;
 class GpuMemAllocator;
-class ModelShaderHolder;
+class ModelCtrl;
+class ModelLodCtrl;
 class ModelOcclusionCullingDirector;
-class ShadowDirector;
+class ModelShaderHolder;
 class PrepassTriangleCulling;
 class Resource;
+class ShadowDirector;
 
 class ModelKeeper : public HioNode {
 public:
@@ -27,8 +28,10 @@ public:
 
     virtual ~ModelKeeper();
 
-    void initResource(const ActorResource*);
+    void initResource(const al::ActorResource* resource);
     void createMatAnimForProgram(s32);
+    Resource* getAnimResource() const;
+    Resource* getModelResource() const;
     void setDisplayRootJointMtxPtr(const sead::Matrix34f* mtx);
     void setModelLodCtrl(ModelLodCtrl* modelLodCtrl);
     void setDitherAnimator(DitherAnimator* ditherAnimator);
@@ -41,8 +44,6 @@ public:
     void calc(const sead::Matrix34f&, const sead::Vector3f&);
     const sead::Matrix34f* getBaseMtx() const;
     sead::Matrix34f* getWorldMtxPtrByIndex(s32 index) const;
-    Resource* getAnimResource() const;
-    Resource* getModelResource() const;
 
     ModelCtrl* getModelCtrl() const { return mModelCtrl; }
 
@@ -67,20 +68,21 @@ public:
     bool isNeedSetBaseMtxAndCalcAnim() const { return mIsNeedSetBaseMtxAndCalcAnim; }
 
 private:
-    const char* mName;
-    ModelCtrl* mModelCtrl;
-    ActorResource* mActorRes;
-    AnimPlayerSkl* mAnimSkl;
-    AnimPlayerMat* mAnimMtp;
-    AnimPlayerMat* mAnimMts;
-    AnimPlayerMat* mAnimMcl;
-    AnimPlayerMat* mAnimMat;
-    AnimPlayerVis* mAnimVisForAction;
-    AnimPlayerVis* mAnimVis;
-    char gap_58[9];
-    bool mIsFixedModel;
-    bool mIsIgnoreUpdateDrawClipping;
-    bool mIsNeedSetBaseMtxAndCalcAnim;
+    const char* mName = nullptr;
+    ModelCtrl* mModelCtrl = nullptr;
+    const ActorResource* mActorRes = nullptr;
+    AnimPlayerSkl* mAnimSkl = nullptr;
+    AnimPlayerMat* mAnimMtp = nullptr;
+    AnimPlayerMat* mAnimMts = nullptr;
+    AnimPlayerMat* mAnimMcl = nullptr;
+    AnimPlayerMat* mAnimMat = nullptr;
+    AnimPlayerVis* mAnimVisForAction = nullptr;
+    AnimPlayerVis* mAnimVis = nullptr;
+    sead::Matrix34f* mWorldMtxHolder = nullptr;
+    bool _60 = false;
+    bool mIsFixedModel = false;
+    bool mIsIgnoreUpdateDrawClipping = false;
+    bool mIsNeedSetBaseMtxAndCalcAnim = true;
 };
 
 }  // namespace al
