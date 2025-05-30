@@ -67,6 +67,8 @@ public:
 
     Resource* getAnimRes() const { return mAnimRes; }
 
+    InitResourceDataAnim* getAnimResData() const { return mAnimResData; }
+
 private:
     sead::FixedSafeString<0x80> mName;
     Resource* mModelRes;
