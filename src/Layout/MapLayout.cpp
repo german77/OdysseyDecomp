@@ -100,8 +100,8 @@ MapLayout::MapLayout(const al::LayoutInitInfo& initInfo, const al::PlayerHolder*
 
     HintAmiibo* hint = new HintAmiibo[3];
     if (hint != nullptr) {
-        hintAmiiboSizer = 3;
-        hintAmiibo = hint;
+        mHintAmiiboSizer = 3;
+        mHintAmiibo = hint;
     }
 
     mWaitEndMapBg =
@@ -144,10 +144,10 @@ MapLayout::MapLayout(const al::LayoutInitInfo& initInfo, const al::PlayerHolder*
     mMapIconInfoSize = mapIconSizeNumMax;
     mMainScenarioNumMax = mainScenarioNumMax;
 
-    mapIconLayoutA = new MapIconLayout(0, 0, nullptr);
-    mapIconLayoutB = new MapIconLayout(0, 0, nullptr);
-    mapIconLayoutC = new MapIconLayout(0, 0, nullptr);
-    mapIconLayoutD = new MapIconLayout(0, 0, nullptr);
+    mMapIconLayoutA = new MapIconLayout(0, 0, nullptr);
+    mMapIconLayoutB = new MapIconLayout(0, 0, nullptr);
+    mMapIconLayoutC = new MapIconLayout(0, 0, nullptr);
+    mMapIconLayoutD = new MapIconLayout(0, 0, nullptr);
 
     setPanelName(this, GameDataFunction::getWorldDevelopName(this, worldId), worldId);
     mMapTerrainLayout = new MapTerrainLayout("[マップ]地形");
@@ -155,11 +155,11 @@ MapLayout::MapLayout(const al::LayoutInitInfo& initInfo, const al::PlayerHolder*
 
     al::startAction(mMapTerrainLayout, "Wait", nullptr);
     if (GameDataFunction::isWorldSnow(this)) {
-        array.allocBuffer(5, nullptr);
+        mArray.allocBuffer(5, nullptr);
         for (s32 i = 0; i < 5; i++) {
             al::LayoutActor* layActor = new al::LayoutActor("[マップ]アイコンライン");
             al::initLayoutActor(layActor, initInfo, "MapIconLine", nullptr);
-            array.pushBack(layActor);
+            mArray.pushBack(layActor);
         }
     }
 
@@ -180,13 +180,13 @@ void MapLayout::appear() {
         iconInfo.value = false;
     }
 
-    if (isPrintWorldChanged) {
+    if (mIsPrintWorldChanged) {
         sead::Vector2f prevLocalSize = mPanelLocalScale;
-        sead::Vector2f prevPanelSize = PanelSize;
+        sead::Vector2f prevPanelSize = mPanelSize;
         reset();
         if (!mIsSomesomebool) {
             mPanelLocalScale = prevLocalSize;
-            PanelSize = prevPanelSize;
+            mPanelSize = prevPanelSize;
         }
         mIsSomesomebool = false;
         al::LiveActor* playerActor = al::tryGetPlayerActor(mPlayerHolder, 0);
@@ -214,7 +214,7 @@ void MapLayout::appear() {
     al::startAction(this, "Appear", nullptr);
     al::startAction(this, "LeftIn", "Change");
     al::setActionFrame(this, al::getActionFrameMax(this, "LeftIn", "Change"), "Change");
-    if (help)
+    if (mIsHelp)
         mWaitEndMapBg->appear();
 }
 
@@ -240,7 +240,7 @@ void setPanelName(al::LayoutActor* layoutActor, const char* message, s32 id) {
 }
 
 void MapLayout::changePrintWorld(s32 worldId) {
-    isPrintWorldChanged = mMapTerrainLayout->tryChangePrintWorld(worldId);
+    mIsPrintWorldChanged = mMapTerrainLayout->tryChangePrintWorld(worldId);
     mWorldId = worldId;
     reset();
 }
@@ -261,13 +261,13 @@ void MapLayout::reset() {
     mPanelLocalScale.y = 0.4f;
     mPanelLocalScale.x = 0.4f;
     f32 map = mMapTerrainLayout->getPaneSize();
-    PanelSize.x = map * mPanelLocalScale.x;
-    PanelSize.y = map * mPanelLocalScale.y;
+    mPanelSize.x = map * mPanelLocalScale.x;
+    mPanelSize.y = map * mPanelLocalScale.y;
     mScrollPosition = sead::Vector2f::zero;
 }
 
 void MapLayout::moveFocusLayout(const sead::Vector3f& param_1, const sead::Vector2f& param_2) {
-    if (isPrintWorldChanged) {
+    if (mIsPrintWorldChanged) {
         MapData* mapdata = mMapTerrainLayout->getMapData();
         f32 fVar8 = mapdata->viewProjMatrix.m[0][0];
         f32 fVar11 = mapdata->viewProjMatrix.m[0][1];
@@ -305,7 +305,7 @@ void MapLayout::moveFocusLayout(const sead::Vector3f& param_1, const sead::Vecto
 }
 
 void MapLayout::updateST() {
-    if (isPrintWorldChanged) {
+    if (mIsPrintWorldChanged) {
         al::setPaneLocalScale(this, "All", mPanelLocalScale);
         sead::Vector2f position = {mScrollPosition.x * mPanelLocalScale.x,
                                    mScrollPosition.y * mPanelLocalScale.y};
@@ -316,10 +316,10 @@ void MapLayout::updateST() {
             updatePlayerPosLayout();
         for (s32 i = 0; i < mMapIconInfoSize; i++) {
         }
-        setPanelFont(mPanelLocalScale.x, &currentFontType, this, currentFontType);
-        s32 size = array.size();
+        setPanelFont(mPanelLocalScale.x, &mCurrentFontType, this, mCurrentFontType);
+        s32 size = mArray.size();
         for (s32 i = 0; i < size; i++) {
-            if (al::isActive(array[i])) {
+            if (al::isActive(mArray[i])) {
                 sead::Vector2f vector2 = {50.0f, 50.0f};
                 if (i == 1)
                     vector2 = {-50.0f, 50.0f};
@@ -327,24 +327,24 @@ void MapLayout::updateST() {
                     vector2 = {50.0f, 0.0f};
                 else
                     vector2 = sead::Vector2f::zero;
-                updateIconLine(array[i], mAAA, vector2);
+                updateIconLine(mArray[i], mAAA, vector2);
             }
         }
     }
 }
 
-HintAmiibo& getHintAmiibo(s32 i, u32 maxSize, HintAmiibo* hintAmiibo) {
+HintAmiibo& getHintAmiibo(s32 i, u32 maxSize, HintAmiibo* mHintAmiibo) {
     if (maxSize > (u32)i)
-        return hintAmiibo[i];
-    return hintAmiibo[0];
+        return mHintAmiibo[i];
+    return mHintAmiibo[0];
 }
 
 void MapLayout::addAmiiboHint() {
-    getHintAmiibo(hintDecideIconAmiiboSize, hintAmiiboSizer, hintAmiibo).position =
+    getHintAmiibo(mHintDecideIconAmiiboSize, mHintAmiiboSizer, mHintAmiibo).position =
         GameDataFunction::getLatestHintTrans(this);
-    getHintAmiibo(hintDecideIconAmiiboSize, hintAmiiboSizer, hintAmiibo).isValid =
+    getHintAmiibo(mHintDecideIconAmiiboSize, mHintAmiiboSizer, mHintAmiibo).isValid =
         GameDataFunction::checkLatestHintSeaOfTree(this);
-    hintDecideIconAmiiboSize++;
+    mHintDecideIconAmiiboSize++;
 }
 
 void MapLayout::appearAmiiboHint() {
@@ -364,7 +364,7 @@ void MapLayout::appearAmiiboHint() {
         mPanelLocalScale.x = 0.4f;
         mMapTerrainLayout->getPaneSize();
         mScrollPosition = sead::Vector2f::zero;
-        PanelSize = {map * 0.4f, map * 0.4f};
+        mPanelSize = {map * 0.4f, map * 0.4f};
         mPanelLocalScale.y = 0.3f;
         mPanelLocalScale.x = 0.3f;
         updateST();
@@ -553,7 +553,7 @@ void MapLayout::appearWithHint() {
         mPanelLocalScale.x = 0.4f;
         mMapTerrainLayout->getPaneSize();
         mScrollPosition = sead::Vector2f::zero;
-        PanelSize = {map * 0.4f, map * 0.4f};
+        mPanelSize = {map * 0.4f, map * 0.4f};
         mPanelLocalScale.y = 0.3f;
         mPanelLocalScale.x = 0.3f;
         updateST();
@@ -593,7 +593,7 @@ void MapLayout::appearMoonRockDemo(s32 sworldId) {
     mScrollPosition = sead::Vector2f::zero;
     mPanelLocalScale.y = 0.3f;
     mPanelLocalScale.x = 0.3f;
-    PanelSize = {map * 0.3f, map * 0.3f};
+    mPanelSize = {map * 0.3f, map * 0.3f};
     updateST();
     al::LayoutActor::appear();
     al::setNerve(this, &NrvMapLayout.HintInitWaitMoonRock);
@@ -611,7 +611,7 @@ void MapLayout::appearMoonRockDemo(s32 sworldId) {
 }
 
 void MapLayout::appearCollectionList() {
-    help = false;
+    mIsHelp = false;
     appear();
 }
 
@@ -636,9 +636,9 @@ void MapLayout::changeOut(bool isLeftOut) {
     al::startAction(mWaitEndMapCursor, "ChangeOut", nullptr);
     mWaitEndMapPlayer->kill();
     mWaitEndMapGuide->kill();
-    s32 size = array.size();
+    s32 size = mArray.size();
     for (s32 i = 0; i < size; i++)
-        array[i]->kill();
+        mArray[i]->kill();
     for (s32 i = 0; i < mMapIconInfoSize; i++)
         if (mMapIconInfo[i].isActive && al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
             mMapIconInfo[i].isActive = false;
@@ -649,7 +649,7 @@ void MapLayout::changeIn(bool isRightIn) {
     appearCollectionList();
     al::startAction(this, "Wait", nullptr);
     mWaitEndMapCursor->appear();
-    help = false;
+    mIsHelp = false;
     al::startAction(mWaitEndMapCursor, "ChangeIn", nullptr);
     al::startAction(this, isRightIn ? "RightIn" : "LeftIn", "Change");
     al::setNerve(this, &NrvMapLayout.ChangeIn);
@@ -731,36 +731,36 @@ void MapLayout::calcMapTransAndAppear(MapIconLayout*, MapIconInfo*, const sead::
                                       bool) {}
 
 void MapLayout::scroll(const sead::Vector2f& scrollDistance) {
-    if (!isPrintWorldChanged)
+    if (!mIsPrintWorldChanged)
         return;
 
     f32 scale = scrollDistance.length() / mPanelLocalScale.x;
     mScrollPosition += scrollDistance * scale;
 
     mScrollPosition.x =
-        sead::Mathf::clamp(mScrollPosition.x, minScrollPosition.x, maxScrollPosition.x);
+        sead::Mathf::clamp(mScrollPosition.x, mMinScrollPosition.x, mMaxScrollPosition.x);
     mScrollPosition.y =
-        sead::Mathf::clamp(mScrollPosition.y, minScrollPosition.y, maxScrollPosition.y);
+        sead::Mathf::clamp(mScrollPosition.y, mMinScrollPosition.y, mMaxScrollPosition.y);
 }
 
 void MapLayout::addSize(const sead::Vector2f& size) {
-    PanelSize += size;
+    mPanelSize += size;
 
     f32 prevLocalScaleX = mPanelLocalScale.x;
     f32 maxSize = mMapTerrainLayout->getPaneSize();
     f32 minSize = maxSize * 0.3f;
 
-    PanelSize.x = sead::Mathf::clamp(PanelSize.x, minSize, maxSize);
-    PanelSize.y = sead::Mathf::clamp(PanelSize.y, minSize, maxSize);
-    mPanelLocalScale.x = (1.0f / maxSize) * PanelSize.x;
-    mPanelLocalScale.y = (1.0f / maxSize) * PanelSize.y;
+    mPanelSize.x = sead::Mathf::clamp(mPanelSize.x, minSize, maxSize);
+    mPanelSize.y = sead::Mathf::clamp(mPanelSize.y, minSize, maxSize);
+    mPanelLocalScale.x = (1.0f / maxSize) * mPanelSize.x;
+    mPanelLocalScale.y = (1.0f / maxSize) * mPanelSize.y;
     mPanelLocalScale.x = sead::Mathf::clamp(mPanelLocalScale.x, 0.3f, 1.0f);
     mPanelLocalScale.y = sead::Mathf::clamp(mPanelLocalScale.y, 0.3f, 1.0f);
 
     if (!al::isNearZero(mPanelLocalScale.x - prevLocalScaleX, 0.001f))
         al::holdSeWithParam(this, "Zoom", mPanelLocalScale.x, "スケール");
 
-    setPanelFont(mPanelLocalScale.x, &currentFontType, this, currentFontType);
+    setPanelFont(mPanelLocalScale.x, &mCurrentFontType, this, mCurrentFontType);
     updateST();
 }
 
@@ -1090,10 +1090,10 @@ void MapLayout::exeAppear() {
 void MapLayout::exeWait() {
     if (al::isFirstStep(this)) {
         al::startAction(this, "Wait", nullptr);
-        s32 size = array.size();
+        s32 size = mArray.size();
         for (s32 i = 0; i < size; i++)
-            if (al::isActive(array[i]))
-                al::startAction(array[i], "Wait", nullptr);
+            if (al::isActive(mArray[i]))
+                al::startAction(mArray[i], "Wait", nullptr);
     }
 }
 
@@ -1116,22 +1116,22 @@ void MapLayout::exeHintAppear() {
         if (al::isNerve(this, &NrvMapLayout.HintAppearNpc)) {
             s32 hintNum = GameDataFunction::calcHintNum(this);
             if (!GameDataFunction::checkLatestHintSeaOfTree(this)) {
-                calcMapTransAndAppear(&hintDecideIconLayout[hintNum - 1], mMapIconInfo,
+                calcMapTransAndAppear(&mHintDecideIconLayout[hintNum - 1], mMapIconInfo,
                                       GameDataFunction::getLatestHintTrans(this), IconType::Hint1,
                                       false);
-                al::startAction(hintDecideIconLayout[hintNum - 1].layout, "HintNew", nullptr);
+                al::startAction(mHintDecideIconLayout[hintNum - 1].layout, "HintNew", nullptr);
             } else {
                 sead::Vector3f position;
                 calcSeaOfTreeIconPos(&position);
-                setLocalTransAndAppear(&hintDecideIconLayout[hintNum - 1], mMapIconInfo, position,
+                setLocalTransAndAppear(&mHintDecideIconLayout[hintNum - 1], mMapIconInfo, position,
                                        IconType::Hint1, true);
-                al::startAction(hintDecideIconLayout[hintNum - 1].layout, "HintNew", nullptr);
+                al::startAction(mHintDecideIconLayout[hintNum - 1].layout, "HintNew", nullptr);
             }
         } else if (al::isNerve(this, &NrvMapLayout.HintAppearAmiibo)) {
             s32 hintNum = GameDataFunction::calcHintNum(this);
             MapIconLayout* iconLayout = nullptr;
-            for (s32 i = 0; i < hintDecideIconAmiiboSize; i++) {
-                HintAmiibo& hintamiibo = getHintAmiibo(i, hintDecideIconAmiiboSize, hintAmiibo);
+            for (s32 i = 0; i < mHintDecideIconAmiiboSize; i++) {
+                HintAmiibo& hintamiibo = getHintAmiibo(i, mHintDecideIconAmiiboSize, mHintAmiibo);
                 if (!hintamiibo.isValid) {
                     for (s32 e = 0; e < i; e++) {
                         sead::Vector3f diff = mMapIconInfo[e].position - hintamiibo.position;
@@ -1140,13 +1140,13 @@ void MapLayout::exeHintAppear() {
                             goto skip2;
                         }
                     }
-                    calcMapTransAndAppear(&hintDecideIconLayout[i], mMapIconInfo,
+                    calcMapTransAndAppear(&mHintDecideIconLayout[i], mMapIconInfo,
                                           hintamiibo.position, IconType::Hint1, false);
-                    al::startAction(hintDecideIconLayout[i].layout, "HintNew", nullptr);
+                    al::startAction(mHintDecideIconLayout[i].layout, "HintNew", nullptr);
                 } else if (iconLayout == nullptr) {
                     sead::Vector3f position = sead::Vector3f::zero;
                     calcSeaOfTreeIconPos(&position);
-                    iconLayout = &hintDecideIconLayout[i];
+                    iconLayout = &mHintDecideIconLayout[i];
                     setLocalTransAndAppear(iconLayout, mMapIconInfo, position, IconType::Hint1,
                                            true);
                 } else {
@@ -1167,9 +1167,9 @@ void MapLayout::exeHintAppear() {
                         goto skip;
                     }
                 }
-                calcMapTransAndAppear(&moonRockLayout[i], mMapIconInfo, rockPosition,
+                calcMapTransAndAppear(&mMoonRockLayout[i], mMapIconInfo, rockPosition,
                                       IconType::HintRock1, false);
-                al::startAction(moonRockLayout[i].layout, "HintNew", nullptr);
+                al::startAction(mMoonRockLayout[i].layout, "HintNew", nullptr);
             skip:
                 continue;
             }
@@ -1192,20 +1192,20 @@ void MapLayout::exeHintDecideIconAppear() {
         if (al::isNerve(this, &NrvMapLayout.HintDecideIconAppearMoonRock)) {
             s32 moonRockNum = GameDataFunction::calcHintMoonRockNum(this);
             for (s32 i = 0; i < moonRockNum; i++) {
-                al::startAction(moonRockLayout[i].layout, "Wait", nullptr);
+                al::startAction(mMoonRockLayout[i].layout, "Wait", nullptr);
                 startNumberAction();
             }
         } else if (al::isNerve(this, &NrvMapLayout.HintDecideIconAppearNpc)) {
-            al::startAction(hintDecideIconLayout[GameDataFunction::calcHintNum(this) - 1].layout,
+            al::startAction(mHintDecideIconLayout[GameDataFunction::calcHintNum(this) - 1].layout,
                             "Wait", nullptr);
             startNumberAction();
         } else if (al::isNerve(this, &NrvMapLayout.HintDecideIconAppearAmiibo)) {
             s32 hintNum = GameDataFunction::calcHintNum(this);
-            for (s32 i = 0; i < hintDecideIconAmiiboSize; i++) {
-                al::startAction(hintDecideIconLayout[hintNum + i].layout, "Wait", nullptr);
+            for (s32 i = 0; i < mHintDecideIconAmiiboSize; i++) {
+                al::startAction(mHintDecideIconLayout[hintNum + i].layout, "Wait", nullptr);
                 startNumberAction();
             }
-            hintDecideIconAmiiboSize = 0;
+            mHintDecideIconAmiiboSize = 0;
         }
     }
     mDecideIconLayout->updateNerve();
@@ -1235,9 +1235,9 @@ void MapLayout::exeEnd() {
         if (al::isActive(mWaitEndMapLine))
             al::startAction(mWaitEndMapLine, "End", nullptr);
 
-        s32 size = array.size();
+        s32 size = mArray.size();
         for (s32 i = 0; i < size; i++)
-            al::startAction(array[i], "End", nullptr);
+            al::startAction(mArray[i], "End", nullptr);
         for (s32 i = 0; i < mMapIconInfoSize; i++)
             if (mMapIconInfo[i].isActive &&
                 al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
@@ -1245,16 +1245,16 @@ void MapLayout::exeEnd() {
         al::startHitReaction(this, "マップクローズ", nullptr);
     }
     if (al::isActionEnd(this, nullptr)) {
-        s32 size = array.size();
+        s32 size = mArray.size();
         for (s32 i = 0; i < size; i++)
-            array[i]->kill();
+            mArray[i]->kill();
         mWaitEndMapPlayer->kill();
         mWaitEndMapCursor->kill();
         mWaitEndMapGuide->kill();
         mWaitEndMapLine->kill();
-        if (help)
+        if (mIsHelp)
             mWaitEndMapBg->kill();
-        help = true;
+        mIsHelp = true;
         kill();
     }
 }
@@ -1271,9 +1271,9 @@ void MapLayout::exeChangeOut() {
         mWaitEndMapCursor->kill();
         mWaitEndMapGuide->kill();
         mWaitEndMapLine->kill();
-        if (help)
+        if (mIsHelp)
             mWaitEndMapBg->kill();
-        help = true;
+        mIsHelp = true;
         kill();
     }
 }
