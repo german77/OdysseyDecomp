@@ -6,6 +6,7 @@
 
 #include "Library/Layout/LayoutActor.h"
 #include "Library/Scene/ISceneObj.h"
+
 #include "Scene/SceneObjFactory.h"
 
 namespace al {
@@ -136,14 +137,14 @@ private:
     MapTerrainLayout* mMapTerrainLayout = nullptr;
     TalkMessage* mTalkMessage = nullptr;
 
-    void* pointers = nullptr;
+    void* mPointers = nullptr;
 
     s32 mCheckpointNumMaxInWorld = 0;
-    MapIconLayout* mapIconLayoutAnother = nullptr;
-    MapIconLayout* hintDecideIconLayout = nullptr;
+    MapIconLayout* mMapIconLayoutAnother = nullptr;
+    MapIconLayout* mHintDecideIconLayout = nullptr;
 
     s32 mHintNumMax = 0;
-    MapIconLayout* pointersvc2 = nullptr;
+    MapIconLayout* mPointersvc2 = nullptr;
 
     s32 mCalcShopNum = 0;
     MapIconLayout* mMapIconLayoutSomething = nullptr;
@@ -154,33 +155,33 @@ private:
     MapIconLayout* mMapIconLayout = nullptr;
 
     s32 mMainScenarioNumMax = 0;
-    MapIconLayout* moonRockLayout = nullptr;
+    MapIconLayout* mMoonRockLayout = nullptr;
 
     s32 mHintMoonRockNumMax = 0;
-    MapIconLayout* mapIconLayoutA = nullptr;
-    MapIconLayout* mapIconLayoutB = nullptr;
-    MapIconLayout* mapIconLayoutC = nullptr;
-    MapIconLayout* mapIconLayoutD = nullptr;
+    MapIconLayout* mMapIconLayoutA = nullptr;
+    MapIconLayout* mMapIconLayoutB = nullptr;
+    MapIconLayout* mMapIconLayoutC = nullptr;
+    MapIconLayout* mMapIconLayoutD = nullptr;
     MapIconInfo* mMapIconInfo = nullptr;
 
     s32 mMapIconInfoSize = 0;
-    sead::PtrArray<al::LayoutActor> array;
+    sead::PtrArray<al::LayoutActor> mArray;
     sead::Vector3f mAAA = sead::Vector3f::zero;
     const al::PlayerHolder* mPlayerHolder = nullptr;
-    bool isPrintWorldChanged = true;
-    bool help = true;
+    bool mIsPrintWorldChanged = true;
+    bool mIsHelp = true;
     sead::Vector2f mScrollPosition = sead::Vector2f::zero;
-    sead::Vector2f minScrollPosition = {-2300.0f, -1200.0f};
-    sead::Vector2f maxScrollPosition = {2300.0f, 1200.0f};
-    sead::Vector2f PanelSize = {0.0f, 0.0f};
+    sead::Vector2f mMinScrollPosition = {-2300.0f, -1200.0f};
+    sead::Vector2f mMaxScrollPosition = {2300.0f, 1200.0f};
+    sead::Vector2f mPanelSize = {0.0f, 0.0f};
     sead::Vector2f mPanelLocalScale = {0.0f, 0.0f};
     s32 mWorldId = -1;
-    s32 currentFontType = 3;
-    s32 doesntexist;
+    s32 mCurrentFontType = 3;
+    s32 mDoesntexist;
 
-    u32 hintAmiiboSizer = 0;
-    HintAmiibo* hintAmiibo = nullptr;
-    s32 hintDecideIconAmiiboSize;
+    u32 mHintAmiiboSizer = 0;
+    HintAmiibo* mHintAmiibo = nullptr;
+    s32 mHintDecideIconAmiiboSize;
 
     bool mIsFreezeAction;
     bool mIsSomesomebool;
