@@ -711,12 +711,11 @@ const char* getIconName(const IconType iconType) {
 void MapLayout::setLocalTransAndAppear(MapIconLayout* iconLayout, MapIconInfo* iconInfo,
                                        const sead::Vector3f& position, IconType iconType,
                                        bool isbool) {
-    if (iconType == 0xe || iconType == 0x5) {
-        al::startAction(iconLayout->layout, "HintNew", "Main");
-        al::setLocalTrans(iconLayout->layout, position);
-    } else {
-        al::setLocalTrans(iconLayout->layout, position);
-    }
+    al::SimpleLayoutAppearWaitEnd* layout = iconLayout->layout;
+    if (iconType == 0xe || iconType == 0x5)
+        al::startAction(layout, "HintNew", "Main");
+
+    al::setLocalTrans(iconLayout->layout, position);
     al::startAction(iconLayout->layout, getIconName(iconType), "Icon");
     iconInfo[iconLayout->fieldA].isActive = true;
     iconInfo[iconLayout->fieldA].position = sead::Vector3f::zero;
@@ -1202,7 +1201,7 @@ void MapLayout::exeHintDecideIconAppear() {
         } else if (al::isNerve(this, &NrvMapLayout.HintDecideIconAppearAmiibo)) {
             s32 hintNum = GameDataFunction::calcHintNum(this);
             for (s32 i = 0; i < mHintDecideIconAmiiboSize; i++) {
-                al::startAction(mHintDecideIconLayout[hintNum + i].layout, "Wait", nullptr);
+                al::startAction(mHintDecideIconLayout[hintNum - (i + 1)].layout, "Wait", nullptr);
                 startNumberAction();
             }
             mHintDecideIconAmiiboSize = 0;
