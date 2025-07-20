@@ -103,7 +103,6 @@ private:
 template <typename T>
 class Parameter : public ParameterBase {
 public:
-<<<<<<< HEAD
     // TODO: Add proper parameter names
     Parameter(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
               ParameterObj* d, bool e)

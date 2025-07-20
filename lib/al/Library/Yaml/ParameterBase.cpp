@@ -109,7 +109,6 @@ void initializeListNode(const sead::SafeString&, const sead::SafeString&, const 
 void initializeListNode(const sead::SafeString&, const sead::SafeString&, const sead::SafeString&,
                         ParameterList*, bool) {}
 
-void initialize(const sead::SafeString&, const sead::SafeString&, const sead::SafeString&, bool) {}
 
 u32 calcHash(const sead::SafeString&) {}
 
