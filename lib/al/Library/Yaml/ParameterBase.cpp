@@ -5,6 +5,7 @@
 
 #include "Library/Base/StringUtil.h"
 #include "Library/Yaml/ByamlIter.h"
+#include "Library/Yaml/ByamlUtil.h"
 
 namespace al {
 
@@ -207,7 +208,107 @@ u32 ParameterBase::calcHash(const sead::SafeString& key) {
     return sead::HashCRC32::calcHash(key.cstr(), key.calcLength());
 }
 
-void tryGetParam(const ByamlIter&) {}
+void ParameterBase::tryGetParam(const ByamlIter& iter) {
+    const char* typeStr = getParamTypeStr();
+    switch (getParamType()) {
+    case YamlParamType::Bool: {
+        bool value;
+        if (tryGetByamlBool(&value, iter, mName.cstr()))
+            *(bool*)ptr() = value;
+        afterGetParam();
+        return;
+    }
+    case YamlParamType::F32: {
+        f32 value;
+        if (tryGetByamlF32(&value, iter, mName.cstr()))
+            *(f32*)ptr() = value;
+        afterGetParam();
+        return;
+    }
+    case YamlParamType::S32: {
+        s32 value;
+        if (tryGetByamlS32(&value, iter, mName.cstr()))
+            *(s32*)ptr() = value;
+        afterGetParam();
+        return;
+    }
+    case YamlParamType::U32: {
+        u32 value;
+        if (tryGetByamlU32(&value, iter, mName.cstr()))
+            *(u32*)ptr() = value;
+        afterGetParam();
+        return;
+    }
+
+    case YamlParamType::V2f:{
+        sead::Vector2f value;
+        if (tryGetByamlV2f(&value, iter, mName.cstr()))
+            *(sead::Vector2f*)ptr() = value;
+        afterGetParam();
+        return;
+    }
+
+    case YamlParamType::V2s32:{
+        sead::Vector2i value;
+        if (tryGetByamlV2s32(&value, iter, mName.cstr()))
+            *(sead::Vector2i*)ptr() = value;
+        afterGetParam();
+        return;
+    }
+
+    case YamlParamType::V3f:{
+        sead::Vector3f value;
+        if (tryGetByamlV3f(&value, iter, mName.cstr()))
+            *(sead::Vector3f*)ptr() = value;
+        afterGetParam();
+        return;
+    }
+
+    case YamlParamType::V4f:
+    case YamlParamType::Q4f:{
+        sead::Vector4f value;
+        if (tryGetByamlV4f(&value, iter, mName.cstr()))
+            *(sead::Vector4f*)ptr() = value;
+        afterGetParam();
+        return;
+    }
+
+    case YamlParamType::C4f:{
+        sead::Color4f value;
+        if (tryGetByamlColor(&value, iter, mName.cstr()))
+            *(sead::Color4f*)ptr() = value;
+        afterGetParam();
+        return;
+    }
+
+    case YamlParamType::StringRef: {
+        const char* value = tryGetByamlKeyStringOrNULL(iter, mName.cstr());
+        if (value) {
+            *(const char **)ptr() =value;
+        }
+        afterGetParam();
+        return;
+    }
+
+    case YamlParamType::String32:
+    case YamlParamType::String64:
+    case YamlParamType::String128:
+    case YamlParamType::String256:
+    case YamlParamType::String512:
+    case YamlParamType::String1024:
+    case YamlParamType::String2048:
+    case YamlParamType::String4096: {
+        const char* value = tryGetByamlKeyStringOrNULL(iter, mName.cstr());
+        if (value)
+            ((sead::BufferedSafeString*)ptr())->format("%s", value);
+
+        afterGetParam();
+        return;
+    }
+    default:
+        return;
+    }
+}
 
 ParameterObj::ParameterObj() = default;
 
