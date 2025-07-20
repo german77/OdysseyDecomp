@@ -7,6 +7,7 @@
 
 namespace al {
 class ByamlIter;
+class ParameterArray;
 class ParameterObj;
 class ParameterList;
 
@@ -37,13 +38,13 @@ SEAD_ENUM(YamlParamType,
 #define PARAM_TYPE_DEF(Name, Type)                                                                 \
     class Parameter##Name : public Parameter<Type> {                                               \
     public:                                                                                        \
-        Parameter##Name(const sead::SafeString& a, const sead::SafeString& b,                      \
-                        const sead::SafeString& c, ParameterObj* d, bool e)                        \
-            : Parameter(a, b, c, d, e) {}                                                          \
+        Parameter##Name(const sead::SafeString& name, const sead::SafeString& label,               \
+                        const sead::SafeString& meta, ParameterObj* obj, bool e)                   \
+            : Parameter(name, label, meta, obj, e) {}                                              \
                                                                                                    \
-        Parameter##Name(const sead::SafeString& a, const sead::SafeString& b,                      \
-                        const sead::SafeString& c, ParameterList* d, bool e)                       \
-            : Parameter(a, b, c, d, e) {}                                                          \
+        Parameter##Name(const sead::SafeString& name, const sead::SafeString& label,               \
+                        const sead::SafeString& meta, ParameterList* list, bool e)                 \
+            : Parameter(name, label, meta, list, e) {}                                             \
                                                                                                    \
         const char* getParamTypeStr() const override {                                             \
             return YamlParamType::text(YamlParamType::Name);                                       \
@@ -56,11 +57,14 @@ SEAD_ENUM(YamlParamType,
 
 class ParameterBase {
 public:
-    ParameterBase(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
-                  ParameterObj* d, bool e);
+    static u32 calcHash(const sead::SafeString& key);
 
-    ParameterBase(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
-                  ParameterList* d, bool e);
+    // TODO: Add proper parameter names
+    ParameterBase(const sead::SafeString& name, const sead::SafeString& label, const sead::SafeString& meta,
+                  ParameterObj* obj, bool e);
+
+    ParameterBase(const sead::SafeString& name, const sead::SafeString& label, const sead::SafeString& meta,
+                  ParameterList* list, bool e);
 
     virtual const char* getParamTypeStr() const = 0;
     virtual YamlParamType getParamType() const = 0;
@@ -72,14 +76,13 @@ public:
     virtual bool copy(const ParameterBase& parameter);
     virtual bool copyLerp(const ParameterBase& parameterA, const ParameterBase& parameterB, f32 rate);
 
-    void initializeListNode(const sead::SafeString&, const sead::SafeString&,
-                            const sead::SafeString&, ParameterObj*, bool);
-    void initializeListNode(const sead::SafeString&, const sead::SafeString&,
-                            const sead::SafeString&, ParameterList*, bool);
-    void initialize(const sead::SafeString&, const sead::SafeString&, const sead::SafeString&,
-                    bool);
-    u32 calcHash(const sead::SafeString&);
-    void tryGetParam(const ByamlIter&);
+    void initializeListNode(const sead::SafeString& name, const sead::SafeString& label,
+                            const sead::SafeString& meta, ParameterObj* obj, bool e);
+    void initializeListNode(const sead::SafeString& name, const sead::SafeString& label,
+                            const sead::SafeString& meta, ParameterList* list, bool e);
+    void initialize(const sead::SafeString& name, const sead::SafeString& label, const sead::SafeString& meta,
+                    bool e);
+    void tryGetParam(const ByamlIter& iter);
 
     ParameterBase* getNext() const { return mNext; }
 
@@ -104,16 +107,16 @@ template <typename T>
 class Parameter : public ParameterBase {
 public:
     // TODO: Add proper parameter names
-    Parameter(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
-              ParameterObj* d, bool e)
-        : ParameterBase(a, b, c, d, e) {
-        initializeListNode(a, b, c, d, e);
+    Parameter(const sead::SafeString& name, const sead::SafeString& label, const sead::SafeString& meta,
+              ParameterObj* obj, bool e)
+        : ParameterBase(name, label, meta, obj, e) {
+        initializeListNode(name, label, meta, obj, e);
         mValue = T();
     }
 
-    Parameter(const sead::SafeString& a, const sead::SafeString& b, const sead::SafeString& c,
-              ParameterList* d, bool e)
-        : ParameterBase(a, b, c, d, e) {}
+    Parameter(const sead::SafeString& name, const sead::SafeString& label, const sead::SafeString& meta,
+              ParameterList* list, bool e)
+        : ParameterBase(name, label, meta, list, e) {}
 
     const void* ptr() const override { return &mValue; };
 
@@ -152,5 +155,99 @@ PARAM_TYPE_DEF(String512, sead::FixedSafeString<512>)
 PARAM_TYPE_DEF(String1024, sead::FixedSafeString<1024>)
 PARAM_TYPE_DEF(String2048, sead::FixedSafeString<2048>)
 PARAM_TYPE_DEF(String4096, sead::FixedSafeString<4096>)
+
+class ParameterObj {
+public:
+    ParameterObj();
+
+    void pushBackListNode(ParameterBase* param);
+    void tryGetParam(const ByamlIter& iter);
+    void addArray(ParameterArray* array, const sead::SafeString& key);
+    bool isEqual(const ParameterObj& obj) const;
+    void copy(const ParameterObj& obj);
+    void copyLerp(const ParameterObj& objA, const ParameterObj& objB, f32 rate);
+    ParameterBase* findParameter(const char* name) const;
+
+    ParameterBase* getRootParam() const { return mRootParam; }
+
+    ParameterObj* getNext() const { return mNext; }
+
+    ParameterArray* getParamArray() const { return mParamArray; }
+
+    void setNext(ParameterObj* obj) { mNext = obj; }
+
+    void setKey(const sead::SafeString& key) { mKey = key; }
+
+private:
+    ParameterBase* mRootParam = nullptr;
+    ParameterBase* mTailParam = nullptr;
+    ParameterObj* mNext = nullptr;
+    ParameterArray* mParamArray = nullptr;
+    sead::FixedSafeString<0x40> mKey;
+};
+
+class ParameterArray {
+public:
+    ParameterArray();
+    void tryGetParam(const ByamlIter& iter);
+    bool isEqual(const ParameterArray& array) const;
+    void copy(const ParameterArray& array);
+    void copyLerp(const ParameterArray& arrayA, const ParameterArray& arrayB, f32 rate);
+    void addObj(ParameterObj* obj);
+    void clearObj();
+    void removeObj(ParameterObj* obj);
+    bool isExistObj(ParameterObj* obj);
+
+    ParameterObj* getRootObjNode() const { return mRootObjNode; }
+
+    ParameterArray* getNext() const { return mNext; }
+
+    void setNext(ParameterArray* array) { mNext = array; }
+
+    void setKey(const sead::SafeString& key) { mKey = key; }
+
+    s32 getSize() const { return mSize; }
+
+private:
+    ParameterObj* mRootObjNode = nullptr;
+    ParameterArray* mNext = nullptr;
+    sead::FixedSafeString<0x40> mKey;
+    s32 mSize = 0;
+};
+
+class ParameterList {
+public:
+    ParameterList();
+
+    void addParam(ParameterBase* param);
+    void addList(ParameterList* list, const sead::SafeString& key);
+    void addObj(ParameterObj* obj, const sead::SafeString& key);
+    void addArray(ParameterArray* array, const sead::SafeString& key);
+    void clearList();
+    void clearObj();
+    void removeList(ParameterList* list);
+    void removeObj(ParameterObj* obj);
+    bool isExistObj(ParameterObj* obj);
+    void tryGetParam(const ByamlIter& iter);
+
+    ParameterList* getNext() const { return mNext; }
+
+    void setNext(ParameterList* list) { mNext = list; }
+
+    void setKey(const sead::SafeString& key) { mKey = key; }
+
+private:
+    ParameterBase* mRootParamNode = nullptr;
+    ParameterObj* mRootObjNode = nullptr;
+    ParameterList* mRootListNode = nullptr;
+    ParameterArray* mRootArrayNode = nullptr;
+    ParameterList* mNext = nullptr;
+    sead::FixedSafeString<0x40> mKey;
+};
+
+class ParameterIo : public ParameterList {
+public:
+    ParameterIo();
+};
 
 }  // namespace al
