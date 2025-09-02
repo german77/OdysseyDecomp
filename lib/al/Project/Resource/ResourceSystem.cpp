@@ -28,6 +28,115 @@ ResourceSystem::ResourceSystem(const char* name) {
     }
 }
 
+ResourceSystem::ResourceCategory* ResourceSystem::addCategory(const sead::SafeString& name,
+                                                              s32 size, sead::Heap* heap) {
+    auto iter = findResourceCategoryIter(name);
+    if (iter != mCategories.end())
+        return *iter;
+
+    sead::ScopedCurrentHeapSetter heapSetter(heap);
+    ResourceCategory* category = new ResourceCategory(name, heap);
+    category->treeMap.allocBuffer(size, nullptr);
+
+    mCategories.pushBack(category);
+    return category;
+}
+
+Resource* ResourceSystem::findOrCreateResourceCategory(const sead::SafeString& name,
+                                                       const sead::SafeString& category,
+                                                       const char* ext) {
+    Resource* resource = findResourceCore(name, nullptr);
+    if (resource)
+        return resource;
+
+    auto iter = findResourceCategoryIter(category);
+    if (iter == mCategories.end())
+        return nullptr;
+
+    return createResource(name, *iter, ext);
+}
+
+sead::RingBuffer<ResourceSystem::ResourceCategory*>::iterator
+ResourceSystem::findResourceCategoryIter(const sead::SafeString& name) {
+    for (auto iter = mCategories.begin(); iter != mCategories.end(); ++iter){
+        /*
+        unsigned int head = mCategories.mHead;
+        unsigned int capacity = mCategories.mCapacity;
+
+        int index = head;
+        // Use inline assembly to match the exact target sequence
+        asm volatile("add w9, w9, w22" );
+        if (index >= (s32)capacity)
+            index -= capacity;
+
+        if (isEqualString(mCategories.mBuffer[index]->name.cstr(), name.cstr())) {
+            return iter;
+        }
+        */
+        if (isEqualString((*iter)->name.cstr(), name.cstr()))
+            return iter;
+    }
+    return mCategories.end();
+}
+
+bool ResourceSystem::isEmptyCategoryResource(const sead::SafeString& name) {
+    auto iter = findResourceCategoryIter(name);
+    if (iter == mCategories.end())
+        return true;
+
+    return (*iter)->treeMap.isEmpty();
+}
+
+void ResourceSystem::createCategoryResourceAll(const sead::SafeString& name) {
+    if (!mResourceCategoryTable)
+        return;
+
+    auto iter = findResourceCategoryIter(name);
+    if (iter == mCategories.end())
+        return;
+
+    for (s32 i = 0; i < mResourceCategoryTable->getSize(); i++) {
+        ByamlIter categoryIter;
+        if (!mResourceCategoryTable->tryGetIterByIndex(&categoryIter, i))
+            continue;
+
+        const char* iterName = nullptr;
+        if (!categoryIter.tryGetStringByKey(&iterName, "Category"))
+            continue;
+
+        if (!isEqualString(iterName, name.cstr()))
+            continue;
+
+        ByamlIter arcsIter;
+        if (!categoryIter.tryGetIterByKey(&arcsIter, "Arcs"))
+            continue;
+
+        bool isLocalized = false;
+        categoryIter.tryGetBoolByKey(&isLocalized, "Localized");
+
+        for (s32 j = 0; j < arcsIter.getSize(); j++) {
+            ByamlIter subArcIter;
+            arcsIter.tryGetIterByIndex(&subArcIter, j);
+
+            const char* arcName = nullptr;
+            const char* arcExt = nullptr;
+
+            if (!subArcIter.tryGetStringByKey(&arcName, "Name"))
+                continue;
+
+            subArcIter.tryGetStringByKey(&arcExt, "Ext");
+
+            sead::FixedSafeString<0x80> localizedName;
+            if (isLocalized) {
+                makeLocalizedArchivePath(&localizedName, arcName);
+                arcName = localizedName.cstr();
+            }
+
+            createResource(arcName, *iter, arcExt);
+        }
+    }
+}
+
 ALWAYS_INLINE void ResourceSystem::createResourceCore(Resource* resource) {
     StringTmp<256> fileName = StringTmp<256>("%s.bfres", resource->getArchiveName());
 
@@ -66,6 +175,25 @@ void cleanupResGraphicsFile(const sead::SafeString& key, Resource* resource) {
     resource->cleanupResGraphicsFile();
 }
 
+void disableSoundMemoryPoolHandler(const sead::SafeString& key, Resource* resource) {
+    resource->cleanupResGraphicsFile();
+}
+
+void ResourceSystem::removeCategory(const sead::SafeString& name) {
+    sead::FixedSafeString<0x40> soundData;
+    soundData.format("SoundData/");
+
+    auto iter = findResourceCategoryIter(name);
+    if (iter == mCategories.end())
+        return;
+
+    (*iter)->treeMap.forEach(cleanupResGraphicsFile);
+    (*iter)->treeMap.forEach(disableSoundMemoryPoolHandler);
+
+    (*iter)->treeMap.clear();
+    mCategories.popFront();
+}
+
 Resource* ResourceSystem::findResource(const sead::SafeString& categoryName) {
     return findResourceCore(categoryName, nullptr);
 }
@@ -91,6 +219,60 @@ Resource* ResourceSystem::findOrCreateResource(const sead::SafeString& categoryN
         return resource;
 
     return createResource(categoryName, findResourceCategory(categoryName), name);
+}
+
+// ResourceCategory* findResourceCategory(const sead::SafeString&);
+
+void ResourceSystem::loadCategoryArchiveAll(const sead::SafeString& name) {
+    if (findResourceCategoryIter(name) == mCategories.end())
+        return;
+
+    for (s32 i = 0; i < mResourceCategoryTable->getSize(); i++) {
+        ByamlIter categoryIter;
+        if (!mResourceCategoryTable->tryGetIterByIndex(&categoryIter, i))
+            continue;
+
+        const char* iterName = nullptr;
+        if (!categoryIter.tryGetStringByKey(&iterName, "Category"))
+            continue;
+
+        if (!isEqualString(iterName, name.cstr()))
+            continue;
+
+        ByamlIter arcsIter;
+        if (!categoryIter.tryGetIterByKey(&arcsIter, "Arcs"))
+            continue;
+
+        bool isLocalized = false;
+        categoryIter.tryGetBoolByKey(&isLocalized, "Localized");
+
+        for (s32 j = 0; j < arcsIter.getSize(); j++) {
+            ByamlIter subArcIter;
+            arcsIter.tryGetIterByIndex(&subArcIter, j);
+
+            const char* arcName = nullptr;
+            const char* arcExt = nullptr;
+
+            if (!subArcIter.tryGetStringByKey(&arcName, "Name"))
+                continue;
+
+            subArcIter.tryGetStringByKey(&arcExt, "Ext");
+
+            sead::FixedSafeString<0x80> localizedName;
+            if (isLocalized) {
+                if (isEqualString(arcName, "TrialRating"))
+                    makeLocalizedArchivePathByCountryCode(&localizedName, arcName);
+                else
+                    makeLocalizedArchivePath(&localizedName, arcName);
+                arcName = localizedName.cstr();
+            }
+
+            if (arcExt)
+                loadArchiveWithExt(arcName, arcExt);
+            else
+                loadArchive(arcName);
+        }
+    }
 }
 
 void ResourceSystem::setCurrentCategory(const char* name) {
