@@ -27,7 +27,25 @@ ResourceSystem::ResourceSystem(const char* name) {
     }
 }
 
-// const sead::SafeString& addCategory(const sead::SafeString&, s32, sead::Heap*);
+ResourceSystem::ResourceCategory* ResourceSystem::addCategory(const sead::SafeString& name,
+                                                              s32 value, sead::Heap* heap) {
+    auto iter = findResourceCategoryIter(name);
+    if (iter != mCategories.end())
+        return *iter;
+
+    sead::ScopedCurrentHeapSetter heapSetter(heap);
+    ResourceCategory* category = new ResourceCategory();
+    category->name = name;
+    category->heap = heap;
+    if (value > 0) {
+        category->value = value;
+        category->_a8 = new ResourceMystery[value];
+        category->_b0 = category->_a8;
+    }
+    mCategories.pushBack(category);
+    return category;
+}
+
 Resource* ResourceSystem::findOrCreateResourceCategory(const sead::SafeString& name,
                                                        const sead::SafeString& category,
                                                        const char* ext) {
@@ -152,14 +170,35 @@ Resource* ResourceSystem::createResource(const sead::SafeString& name, ResourceC
     return nullptr;
 }
 
-// void removeCategory(const sead::SafeString&);
+void ResourceSystem::removeCategory(const sead::SafeString& name) {
+    sead::FixedSafeString<0x40> soundData;
+    soundData.format("SoundData/");
+
+    auto iter = findResourceCategoryIter(name);
+    if (iter == mCategories.end())
+        return;
+
+    (*iter)->treeMap->clear();
+    mCategories.popFront();
+}
 
 Resource* ResourceSystem::findResource(const sead::SafeString& categoryName) {
     return findResourceCore(categoryName, nullptr);
 }
 
-// Resource* findResourceCore(const sead::SafeString&,
-//                            sead::RingBuffer<ResourceCategory*>::iterator*);
+Resource* ResourceSystem::findResourceCore(const sead::SafeString& name,
+                                           sead::RingBuffer<ResourceCategory*>::iterator* outIter) {
+    for (auto iter = mCategories.begin(); iter != mCategories.end(); ++iter) {
+        auto* node = (*iter)->treeMap->find(name);
+        if (!node)
+            continue;
+        if (outIter)
+            *outIter = iter;
+        return node->value();
+    }
+
+    return nullptr;
+}
 
 Resource* ResourceSystem::findOrCreateResource(const sead::SafeString& categoryName,
                                                const char* name) {

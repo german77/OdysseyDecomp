@@ -16,20 +16,26 @@ class SeadAudioPlayer;
 
 class ResourceSystem {
 public:
+    struct ResourceMystery {
+        char filler[0xe0];
+    };
+    static_assert(sizeof(ResourceMystery) == 0xe0);
+
     struct ResourceCategory {
         sead::FixedSafeString<0x80> name;
         sead::Heap* heap = nullptr;
-        sead::StrTreeMap<152, Resource*>* treeMap = nullptr;
-        void* _a8 = nullptr;
-        void* _b0 = nullptr;
+        sead::StrTreeMap<156, Resource*>* treeMap = nullptr;
+        ResourceMystery* _a8 = nullptr;
+        ResourceMystery* _b0 = nullptr;
         s32 size = 0;
+        s32 value = 0;
     };
 
     static_assert(sizeof(ResourceCategory) == 0xc0);
 
     ResourceSystem(const char*);
 
-    const sead::SafeString& addCategory(const sead::SafeString&, s32, sead::Heap*);
+    ResourceCategory* addCategory(const sead::SafeString&, s32, sead::Heap*);
     Resource* findOrCreateResourceCategory(const sead::SafeString&, const sead::SafeString&,
                                            const char*);
     sead::RingBuffer<ResourceSystem::ResourceCategory*>::iterator
