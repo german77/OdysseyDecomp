@@ -1,6 +1,5 @@
 #include "Project/Resource/ResourceSystem.h"
 
-#include <container/seadStrTreeMap.h>
 #include <heap/seadHeapMgr.h>
 
 #include "Library/Base/StringUtil.h"
@@ -28,20 +27,15 @@ ResourceSystem::ResourceSystem(const char* name) {
 }
 
 ResourceSystem::ResourceCategory* ResourceSystem::addCategory(const sead::SafeString& name,
-                                                              s32 value, sead::Heap* heap) {
+                                                              s32 size, sead::Heap* heap) {
     auto iter = findResourceCategoryIter(name);
     if (iter != mCategories.end())
         return *iter;
 
     sead::ScopedCurrentHeapSetter heapSetter(heap);
-    ResourceCategory* category = new ResourceCategory();
-    category->name = name;
-    category->heap = heap;
-    if (value > 0) {
-        category->value = value;
-        category->_a8 = new ResourceMystery[value];
-        category->_b0 = category->_a8;
-    }
+    ResourceCategory* category = new ResourceCategory(name, heap);
+    category->treeMap.allocBuffer(size, nullptr);
+
     mCategories.pushBack(category);
     return category;
 }
@@ -62,9 +56,28 @@ Resource* ResourceSystem::findOrCreateResourceCategory(const sead::SafeString& n
 
 sead::RingBuffer<ResourceSystem::ResourceCategory*>::iterator
 ResourceSystem::findResourceCategoryIter(const sead::SafeString& name) {
-    for (auto iter = mCategories.begin(); iter != mCategories.end(); ++iter)
-        if (isEqualString((*iter)->name.cstr(), name.cstr()))
+    for (auto iter = mCategories.begin(); iter != mCategories.end(); ++iter) {
+        // Use inline assembly to match the exact target sequence
+        ResourceSystem::ResourceCategory* category;
+        register ResourceSystem::ResourceCategory* result asm("x21");
+
+        asm volatile("ldp     w8, w9, [%1, #8]    \n" // Load capacity->w8, head->w9
+                     "add     w9, w9, w22         \n" // Add iterator counter: w9 = w9 + w22
+                     "cmp     w9, w8              \n" // Compare head_plus_iter with capacity
+                     "csel    w8, wzr, w8, lt     \n" // Select offset
+                     "sub     w8, w9, w8          \n" // Calculate final index -> w8
+                     "ldr     x9, [%1]            \n" // Load mBuffer -> x9 (not x8)
+                     "ldr     x21, [x9, w8, sxtw #3] \n" // Load category directly using w8
+                     : "=r"(result)
+                     : "r"(&mCategories)
+                     : "w8", "w9", "x9","x21");
+
+        category = result;
+
+        if (isEqualString(category->name.cstr(), name.cstr()))
             return iter;
+    }
+
     return mCategories.end();
 }
 
@@ -73,7 +86,7 @@ bool ResourceSystem::isEmptyCategoryResource(const sead::SafeString& name) {
     if (iter == mCategories.end())
         return true;
 
-    return (*iter)->size == 0;
+    return (*iter)->treeMap.isEmpty();
 }
 
 void ResourceSystem::createCategoryResourceAll(const sead::SafeString& name) {
@@ -107,8 +120,8 @@ void ResourceSystem::createCategoryResourceAll(const sead::SafeString& name) {
             ByamlIter subArcIter;
             arcsIter.tryGetIterByIndex(&subArcIter, j);
 
-            const char* arcExt = nullptr;
             const char* arcName = nullptr;
+            const char* arcExt = nullptr;
 
             if (!subArcIter.tryGetStringByKey(&arcName, "Name"))
                 continue;
@@ -138,7 +151,7 @@ Resource* ResourceSystem::createResource(const sead::SafeString& name, ResourceC
         resource2 = new Resource(name);
 
     resource = resource2;
-    category->treeMap->insert(name, resource);
+    category->treeMap.insert(name, resource);
     resource2 = resource;
 
     StringTmp<256> fileName = StringTmp<256>("%s.bfres", resource->getArchiveName());
@@ -178,7 +191,7 @@ void ResourceSystem::removeCategory(const sead::SafeString& name) {
     if (iter == mCategories.end())
         return;
 
-    (*iter)->treeMap->clear();
+    (*iter)->treeMap.clear();
     mCategories.popFront();
 }
 
@@ -189,7 +202,7 @@ Resource* ResourceSystem::findResource(const sead::SafeString& categoryName) {
 Resource* ResourceSystem::findResourceCore(const sead::SafeString& name,
                                            sead::RingBuffer<ResourceCategory*>::iterator* outIter) {
     for (auto iter = mCategories.begin(); iter != mCategories.end(); ++iter) {
-        auto* node = (*iter)->treeMap->find(name);
+        auto* node = (*iter)->treeMap.find(name);
         if (!node)
             continue;
         if (outIter)
@@ -238,8 +251,8 @@ void ResourceSystem::loadCategoryArchiveAll(const sead::SafeString& name) {
             ByamlIter subArcIter;
             arcsIter.tryGetIterByIndex(&subArcIter, j);
 
-            const char* arcExt = nullptr;
             const char* arcName = nullptr;
+            const char* arcExt = nullptr;
 
             if (!subArcIter.tryGetStringByKey(&arcName, "Name"))
                 continue;
