@@ -56,28 +56,20 @@ Resource* ResourceSystem::findOrCreateResourceCategory(const sead::SafeString& n
 
 sead::RingBuffer<ResourceSystem::ResourceCategory*>::iterator
 ResourceSystem::findResourceCategoryIter(const sead::SafeString& name) {
-    for (auto iter = mCategories.begin(); iter != mCategories.end(); ++iter) {
+    for (auto iter = mCategories.begin(); iter != mCategories.end(); ++iter){
+        unsigned int head = mCategories.mHead;
+        unsigned int capacity = mCategories.mCapacity;
+
+        int index = head;
         // Use inline assembly to match the exact target sequence
-        ResourceSystem::ResourceCategory* category;
-        register ResourceSystem::ResourceCategory* result asm("x21");
+        asm volatile("add w9, w9, w22" );
+        if (index >= (s32)capacity)
+            index -= capacity;
 
-        asm volatile("ldp     w8, w9, [%1, #8]    \n" // Load capacity->w8, head->w9
-                     "add     w9, w9, w22         \n" // Add iterator counter: w9 = w9 + w22
-                     "cmp     w9, w8              \n" // Compare head_plus_iter with capacity
-                     "csel    w8, wzr, w8, lt     \n" // Select offset
-                     "sub     w8, w9, w8          \n" // Calculate final index -> w8
-                     "ldr     x9, [%1]            \n" // Load mBuffer -> x9 (not x8)
-                     "ldr     x21, [x9, w8, sxtw #3] \n" // Load category directly using w8
-                     : "=r"(result)
-                     : "r"(&mCategories)
-                     : "w8", "w9", "x9","x21");
-
-        category = result;
-
-        if (isEqualString(category->name.cstr(), name.cstr()))
+        if (isEqualString(mCategories.mBuffer[index]->name.cstr(), name.cstr())) {
             return iter;
+        }
     }
-
     return mCategories.end();
 }
 
@@ -183,6 +175,14 @@ Resource* ResourceSystem::createResource(const sead::SafeString& name, ResourceC
     return nullptr;
 }
 
+void cleanupResGraphicsFile(const sead::SafeString& key, Resource* resource) {
+    resource->cleanupResGraphicsFile();
+}
+
+void disableSoundMemoryPoolHandler(const sead::SafeString& key, Resource* resource) {
+    resource->cleanupResGraphicsFile();
+}
+
 void ResourceSystem::removeCategory(const sead::SafeString& name) {
     sead::FixedSafeString<0x40> soundData;
     soundData.format("SoundData/");
@@ -190,6 +190,9 @@ void ResourceSystem::removeCategory(const sead::SafeString& name) {
     auto iter = findResourceCategoryIter(name);
     if (iter == mCategories.end())
         return;
+
+    (*iter)->treeMap.forEach(cleanupResGraphicsFile);
+    (*iter)->treeMap.forEach(disableSoundMemoryPoolHandler);
 
     (*iter)->treeMap.clear();
     mCategories.popFront();
