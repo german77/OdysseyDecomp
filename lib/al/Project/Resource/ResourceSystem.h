@@ -40,6 +40,8 @@ public:
     Resource* createResource(const sead::SafeString& name, ResourceCategory* category,
                              const char* ext);
     void removeCategory(const sead::SafeString& name);
+    //static void cleanupResGraphicsFile(Resource* resource);
+
     Resource* findResource(const sead::SafeString& name);
     Resource* findResourceCore(const sead::SafeString& name,
                                sead::RingBuffer<ResourceCategory*>::iterator* outIter);

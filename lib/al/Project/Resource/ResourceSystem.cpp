@@ -56,28 +56,20 @@ Resource* ResourceSystem::findOrCreateResourceCategory(const sead::SafeString& n
 
 sead::RingBuffer<ResourceSystem::ResourceCategory*>::iterator
 ResourceSystem::findResourceCategoryIter(const sead::SafeString& name) {
-    for (auto iter = mCategories.begin(); iter != mCategories.end(); ++iter) {
+    for (auto iter = mCategories.begin(); iter != mCategories.end(); ++iter){
+        unsigned int head = mCategories.mHead;
+        unsigned int capacity = mCategories.mCapacity;
+
+        int index = head;
         // Use inline assembly to match the exact target sequence
-        ResourceSystem::ResourceCategory* category;
-        register ResourceSystem::ResourceCategory* result asm("x21");
+        asm volatile("add w9, w9, w22" );
+        if (index >= (s32)capacity)
+            index -= capacity;
 
-        asm volatile("ldp     w8, w9, [%1, #8]    \n" // Load capacity->w8, head->w9
-                     "add     w9, w9, w22         \n" // Add iterator counter: w9 = w9 + w22
-                     "cmp     w9, w8              \n" // Compare head_plus_iter with capacity
-                     "csel    w8, wzr, w8, lt     \n" // Select offset
-                     "sub     w8, w9, w8          \n" // Calculate final index -> w8
-                     "ldr     x9, [%1]            \n" // Load mBuffer -> x9 (not x8)
-                     "ldr     x21, [x9, w8, sxtw #3] \n" // Load category directly using w8
-                     : "=r"(result)
-                     : "r"(&mCategories)
-                     : "w8", "w9", "x9","x21");
-
-        category = result;
-
-        if (isEqualString(category->name.cstr(), name.cstr()))
+        if (isEqualString(mCategories.mBuffer[index]->name.cstr(), name.cstr())) {
             return iter;
+        }
     }
-
     return mCategories.end();
 }
 
@@ -139,48 +131,45 @@ void ResourceSystem::createCategoryResourceAll(const sead::SafeString& name) {
     }
 }
 
+__attribute__((always_inline)) void createResourceCore(ResourceSystem* self, Resource* resource) {
+    StringTmp<256> fileName = StringTmp<256>("%s.bfres", resource->getArchiveName());
+    if (resource->isExistFile(fileName)) {
+        ByamlIter iter;
+
+        nn::g3d::ResFile* resFile = nullptr;
+        if (tryGetActorInitFileIter(&iter, resource, "InitModel", nullptr)) {
+            const char* textureArc = nullptr;
+            iter.tryGetStringByKey(&textureArc, "TextureArc");
+
+            if (textureArc) {
+                StringTmp<256> filePath = StringTmp<256>("ObjectData/%s", textureArc);
+                resFile = self->findOrCreateResource(filePath, nullptr)->getResFile();
+            }
+        }
+        resource->tryCreateResGraphicsFile(fileName, resFile);
+        resource->setActorInitResourceData(new ActorInitResourceData(resource));
+    }
+}
+
 Resource* ResourceSystem::createResource(const sead::SafeString& name, ResourceCategory* category,
                                          const char* ext) {
     sead::ScopedCurrentHeapSetter setter(category->heap);
 
     Resource* resource = nullptr;
-    Resource* resource2;
-    if (ext)
-        resource2 = new Resource(name, loadArchiveWithExt(name, ext));
-    else
-        resource2 = new Resource(name);
-
-    resource = resource2;
+    resource = ext ? new Resource(name, loadArchiveWithExt(name, ext)) : new Resource(name);
     category->treeMap.insert(name, resource);
-    resource2 = resource;
 
-    StringTmp<256> fileName = StringTmp<256>("%s.bfres", resource->getArchiveName());
-    if (resource2->isExistFile(fileName)) {
-        ByamlIter iter;
+    createResourceCore(this, resource);
 
-        nn::g3d::ResFile* resFile = nullptr;
-        if (tryGetActorInitFileIter(&iter, resource2, "InitModel", nullptr)) {
-            const char* textureArc = nullptr;
-            iter.tryGetStringByKey(&textureArc, "TextureArc");
+    return resource->getFileArchive() ? resource : nullptr;
+}
 
-            resFile = nullptr;
-            if (textureArc) {
-                StringTmp<256> filePath = StringTmp<256>("ObjectData/%s", textureArc);
-                Resource* res2 = findResourceCore(filePath, nullptr);
-                if (!res2)
-                    res2 = createResource(filePath, findResourceCategory(filePath), nullptr);
-                resFile = res2->getResFile();
-            }
-        }
-        resource2->tryCreateResGraphicsFile(fileName, resFile);
-        resource2->setActorInitResourceData(new ActorInitResourceData(resource2));
-    }
+void cleanupResGraphicsFile(const sead::SafeString& key, Resource* resource) {
+    resource->cleanupResGraphicsFile();
+}
 
-    resource2 = resource;
-    if (resource->getFileArchive() != nullptr)
-        return resource2;
-
-    return nullptr;
+void disableSoundMemoryPoolHandler(const sead::SafeString& key, Resource* resource) {
+    resource->cleanupResGraphicsFile();
 }
 
 void ResourceSystem::removeCategory(const sead::SafeString& name) {
@@ -190,6 +179,9 @@ void ResourceSystem::removeCategory(const sead::SafeString& name) {
     auto iter = findResourceCategoryIter(name);
     if (iter == mCategories.end())
         return;
+
+    (*iter)->treeMap.forEach(cleanupResGraphicsFile);
+    (*iter)->treeMap.forEach(disableSoundMemoryPoolHandler);
 
     (*iter)->treeMap.clear();
     mCategories.popFront();
