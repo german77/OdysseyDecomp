@@ -21,7 +21,7 @@ private:
 
 class AnimPlayerVis : public AnimPlayerSimple {
 public:
-    static AnimPlayerVis* tryCreate(const AnimPlayerInitInfo*, s32);
+    static AnimPlayerVis* tryCreate(const AnimPlayerInitInfo*);
 
     AnimPlayerVis();
 
