@@ -137,6 +137,8 @@ public:
 
     void setModelOcclusionQuery(ModelOcclusionQuery* query) { mModelOcclusionQuery = query; }
 
+    void set_169(bool isSet){_169=isSet;}
+
 private:
     nn::g3d::ModelObj* mModelObj;
     void* _8;
