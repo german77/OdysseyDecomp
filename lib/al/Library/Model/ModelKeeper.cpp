@@ -65,9 +65,44 @@ void ModelKeeper::setDitherAnimator(DitherAnimator* ditherAnimator) {
     mModelCtrl->setDitherAnimator(ditherAnimator);
 }
 
-void ModelKeeper::initModel(s32, GpuMemAllocator*, ModelShaderHolder*,
-                            ModelOcclusionCullingDirector*, ShadowDirector*,
-                            PrepassTriangleCulling*) {}
+void Fun1(nn::g3d::ModelObj* modelObj) {
+    ((ModelKeeper*)modelObj->m_UserData)->getModelCtrl()->set_169(true);
+}
+
+void ModelKeeper::initModel(s32 value, GpuMemAllocator* memAllocator,
+                            ModelShaderHolder* shaderHolder,
+                            ModelOcclusionCullingDirector* cullingDirector,
+                            ShadowDirector* shadowDirector,
+                            PrepassTriangleCulling* TriangleCulling) {
+    mModelCtrl->initModel(memAllocator, shaderHolder, cullingDirector, shadowDirector, TriangleCulling, 1, 3);
+
+    Resource* animRes = getAnimResource();
+    nn::g3d::ModelObj* modelObj = mModelCtrl->getModelObj();
+    Resource* modelRes = getModelResource();
+    InitResourceDataAnim* animResData = mActorRes->getAnimResData();
+
+    AnimPlayerInitInfo initInfo{
+        .animRes = animRes,
+        .modelObj = modelObj,
+        .modelRes = modelRes,
+        .animResData = animResData,
+    };
+
+    mAnimSkl = AnimPlayerSkl::tryCreate(&initInfo,value);
+    mAnimMtp = AnimPlayerMat::tryCreate(&initInfo,1);
+    mAnimMcl = AnimPlayerMat::tryCreate(&initInfo,0);
+    mAnimMts = AnimPlayerMat::tryCreate(&initInfo,2);
+    mAnimVisForAction = AnimPlayerVis::tryCreate(&initInfo);
+    mAnimVis = AnimPlayerVis::tryCreate(&initInfo);
+
+    if(mAnimSkl){
+        mAnimSkl->initInterp(getResourcePath(getAnimResource()));
+    }
+
+    mModelCtrl->getModelObj()->m_UserData=(void*)this;
+    mModelCtrl->getModelObj()->_78=(void*)Fun1;
+    mModelCtrl->getModelObj()->_80=(void*)Fun1;
+}
 
 void ModelKeeper::show() {
     if (mAnimSkl)
@@ -116,9 +151,9 @@ void ModelKeeper::updateLast() {
 }
 
 void ModelKeeper::calc(const sead::Matrix34f& mtx, const sead::Vector3f& vec) {
-    bool isUpdate=false;
+    bool isUpdate = false;
     if (mAnimSkl)
-        isUpdate=mAnimSkl->calcNeedUpdateAnimNext();
+        isUpdate = mAnimSkl->calcNeedUpdateAnimNext();
     if (mAnimMtp)
         mAnimMtp->calcNeedUpdateAnimNext();
     if (mAnimMcl)
@@ -132,26 +167,26 @@ void ModelKeeper::calc(const sead::Matrix34f& mtx, const sead::Vector3f& vec) {
     if (mAnimVis)
         mAnimVis->calcNeedUpdateAnimNext();
 
-    bool isSkeletonUpdate =  mModelCtrl->setSkeletonUpdateInfo(isUpdate,mtx,vec);
-    if(_60){
-        _60=false;
+    bool isSkeletonUpdate = mModelCtrl->setSkeletonUpdateInfo(isUpdate, mtx, vec);
+    if (_60) {
+        _60 = false;
         mModelCtrl->recreateDisplayList();
     }
 
-    mModelCtrl->calc(mtx,vec);
-    auto skeleton=mModelCtrl->getModelObj()->GetSkeleton();
-    if(skeleton && !isSkeletonUpdate){
-        s32 size=skeleton->GetSize();
-        for(s32 i=0;i<size;i++){
+    mModelCtrl->calc(mtx, vec);
+    auto skeleton = mModelCtrl->getModelObj()->GetSkeleton();
+    if (skeleton && !isSkeletonUpdate) {
+        s32 size = skeleton->GetSize();
+        for (s32 i = 0; i < size; i++) {
             skeleton->setFlag();
             nn::g3d::matrix44& mtx = skeleton->getMtxArray()[i];
             auto& mtx2 = mWorldMtxHolder[i];
-            mtx2.m[0][0]=mtx.m[0][0];
-            mtx2.m[0][1]=mtx.m[0][1];
-            mtx2.m[0][2]=mtx.m[0][2];
-            mtx2.m[0][3]=mtx.m[0][3];
-            mtx2.m[1][0]=mtx.m[1][0];
-            mtx2.m[1][1]=mtx.m[1][1];
+            mtx2.m[0][0] = mtx.m[0][0];
+            mtx2.m[0][1] = mtx.m[0][1];
+            mtx2.m[0][2] = mtx.m[0][2];
+            mtx2.m[0][3] = mtx.m[0][3];
+            mtx2.m[1][0] = mtx.m[1][0];
+            mtx2.m[1][1] = mtx.m[1][1];
         }
     }
 }
