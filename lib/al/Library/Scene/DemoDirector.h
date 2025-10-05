@@ -6,10 +6,26 @@
 
 namespace al {
 struct ActorInitInfo;
-class AddDemoInfo;
 class EffectSystem;
 class LiveActor;
 class PlacementId;
+
+class AddDemoInfo {
+public:
+    AddDemoInfo(s32);
+    void init(const PlacementId& placementId);
+    void addDemoActor(LiveActor* actor);
+    const char* getDemoName() const;
+    void reset();
+    LiveActor* getDemoActor(s32) const;
+
+public:
+    const char* mName = nullptr;
+    PlacementId* mPlacementId = nullptr;
+    LiveActor** mActorList = nullptr;
+    s32 mActorListCount = 0;
+    s32 mActorListSize = 0;
+};
 
 class DemoDirector : public HioNode {
 public:
@@ -36,7 +52,19 @@ public:
     virtual void endDemo(const char*);
 
 private:
-    const char* mActiveDemoName;
-    void* filler[8];
+    const char* mActiveDemoName=nullptr;
+    s32 mActiveDemoTime = 0;
+    LiveActor** mActorList;
+    s32 mActorListCount=0;
+    s32 mActorListSize=0;
+    void* _28;
+    const char** mDemoInfoName=nullptr;
+    AddDemoInfo** mDemoInfoList=nullptr;
+    s32 mDemoInfoListCount=0;
+    AddDemoInfo* mLastDemoInfo=0;
+
 };
+
+static_assert(sizeof(DemoDirector) == 0x50);
+
 }  // namespace al
