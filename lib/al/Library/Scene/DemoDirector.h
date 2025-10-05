@@ -19,7 +19,7 @@ public:
     void reset();
     LiveActor* getDemoActor(s32 index) const;
 
-private:
+public:
     const char* mName = nullptr;
     PlacementId* mPlacementId = nullptr;
     LiveActor** mActorList = nullptr;
@@ -54,12 +54,16 @@ public:
     virtual void endDemo(const char*);
 
 private:
-    const char* mActiveDemoName;
-    s32 _10;
+    const char* mActiveDemoName=nullptr;
+    s32 mActiveDemoTime = 0;
     LiveActor** mActorList;
-    s32 mActorListCount;
-    s32 mActorListSize;
-    void* filler[5];
+    s32 mActorListCount=0;
+    s32 mActorListSize=0;
+    void* _28;
+    const char** mDemoInfoName=nullptr;
+    AddDemoInfo** mDemoInfoList=nullptr;
+    s32 mDemoInfoListCount=0;
+    AddDemoInfo* mLastDemoInfo=0;
 };
 
 static_assert(sizeof(DemoDirector) == 0x50);

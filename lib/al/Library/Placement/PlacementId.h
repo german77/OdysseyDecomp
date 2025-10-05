@@ -23,6 +23,7 @@ public:
     void makeString(sead::BufferedSafeString* out) const;
 
     const char* getId() const { return mId; }
+    void setId(const char* id)  { mId=id; }
 
     const char* getUnitConfigName() const { return mUnitConfigName; }
 
