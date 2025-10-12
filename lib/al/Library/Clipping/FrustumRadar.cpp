@@ -48,11 +48,11 @@ void FrustumRadar::setFactor(f32 angle, f32 f2) {
 }
 
 void FrustumRadar::calcFrustumArea(const sead::Matrix34f& orthoMtx,
-                                   const sead::Matrix44f& factorMtx, f32 f1, f32 f2) {
+                                   const sead::Matrix44f& factorMtx, f32 areaMin, f32 areaMax) {
     setLocalAxis(orthoMtx);
     setFactor(factorMtx);
-    mAreaMin = f1;
-    mAreaMax = f2;
+    mAreaMin = areaMin;
+    mAreaMax = areaMax;
 }
 
 void FrustumRadar::setFactor(const sead::Matrix44f& mtx) {
@@ -65,11 +65,11 @@ void FrustumRadar::setFactor(const sead::Matrix44f& mtx) {
 
 void FrustumRadar::calcFrustumAreaStereo(const sead::Matrix34f& orthoMtxLeft,
                                          const sead::Matrix34f& OrthoMtxRight,
-                                         const sead::Matrix44f& mtx, f32 f1, f32 f2) {
+                                         const sead::Matrix44f& mtx, f32 areaMin, f32 areaMax) {
     setLocalAxisStereo(orthoMtxLeft, OrthoMtxRight);
     setFactorStereo(mtx);
-    mAreaMin = f1;
-    mAreaMax = f2;
+    mAreaMin = areaMin;
+    mAreaMax = areaMax;
 }
 
 void FrustumRadar::setLocalAxisStereo(const sead::Matrix34f& orthoMtxLeft,
@@ -134,24 +134,20 @@ bool FrustumRadar::judgeInBottom(const sead::Vector3f& pos, f32 f) const {
     return !(-(dot1 * _38 + _3c * f) > dot2);
 }
 
-bool FrustumRadar::judgeInArea(const sead::Vector3f& pos, f32 f1, f32 f2, f32 f3) const {
-    f32 dot;
-    f32 f4;
-    f32 fVar2;
-
-    dot = mOrthoFront.dot(pos - mOrthoTrans);
-    if (dot < f2 - f1)
+bool FrustumRadar::judgeInArea(const sead::Vector3f& pos, f32 f1, f32 areaMin, f32 areaMax) const {
+    f32 dot = mOrthoFront.dot(pos - mOrthoTrans);
+    if (dot < areaMin - f1)
         return false;
 
-    if (0.0 < f3 && f1 + f3 < dot)
+    if (0.0f < areaMax && f1 + areaMax < dot)
         return false;
 
-    f4 = sead::Mathf::abs(mOrthoUp.dot(pos - mOrthoTrans));
+    f32 f4 = sead::Mathf::abs(mOrthoUp.dot(pos - mOrthoTrans));
     if (dot * _38 + _3c * f1 < f4)
         return false;
 
-    fVar2 = mOrthoSide.dot(pos - mOrthoTrans);
-    if (isNearZero(_40, 0.001)) {
+    f32 fVar2 = mOrthoSide.dot(pos - mOrthoTrans);
+    if (isNearZero(_40)) {
         if (dot * _30 + _34 * f1 < sead::Mathf::abs(fVar2))
             return false;
     } else {
@@ -163,17 +159,14 @@ bool FrustumRadar::judgeInArea(const sead::Vector3f& pos, f32 f1, f32 f2, f32 f3
         if (fVar4 > dot && fVar2 > fVar3)
             return false;
 
-        f32 neg_fVar3 = -fVar3;
-        f32 neg_dot = -dot;
-
-        if (fVar4 < neg_fVar3 && fVar2 < neg_dot)
+        if (fVar4 < -fVar3 && fVar2 < -dot)
             return false;
     }
     return true;
 }
 
-bool FrustumRadar::judgeInArea(const sead::Vector3f& pos, f32 f1, f32 f2) const {
-    return judgeInArea(pos, f1, f2, mAreaMax);
+bool FrustumRadar::judgeInArea(const sead::Vector3f& pos, f32 f1, f32 areaMin) const {
+    return judgeInArea(pos, f1, areaMin, mAreaMax);
 }
 
 bool FrustumRadar::judgeInArea(const sead::Vector3f& pos, f32 f1) const {
@@ -185,22 +178,17 @@ bool FrustumRadar::judgeInAreaNoFar(const sead::Vector3f& pos, f32 f1) const {
 }
 
 PointFlag FrustumRadar::judgePointFlag(const sead::Vector3f& pos, f32 areaMin, f32 areaMax) const {
-    sead::Vector3f delta = pos - mOrthoTrans;
-    f32 dot = delta.dot(mOrthoFront);
+    f32 dot = mOrthoFront.dot(pos - mOrthoTrans);
     u32 flag = ((dot < areaMin) ? PointFlag::Dot : PointFlag::None) | PointFlag::Go;
 
     if ((dot <= areaMax || areaMax == 0.0f) || (areaMax < dot && areaMax < 0.0f))
         flag = (dot < areaMin) ? PointFlag::Dot : PointFlag::None;
 
-    f32 dot2 = delta.dot(mOrthoUp);
-    u32 gg = flag | PointFlag::Little;
-    if (-(dot * _38) <= dot2)
-        gg = flag;
-    flag = gg | PointFlag::Rocket;
-    if (dot2 <= dot * _38)
-        flag = gg;
+    f32 dot2 = mOrthoUp.dot(pos - mOrthoTrans);
+    u32 gg = -(dot * _38) > dot2? flag | PointFlag::Little : flag;
+    flag = dot2 < dot * _38? gg | PointFlag::Rocket: gg;
 
-    f32 dot3 = delta.dot(mOrthoSide);
+    f32 dot3 = mOrthoSide.dot(pos - mOrthoTrans);
     bool bVar1;
     u32 bVar3;
     if (!isNearZero(_40)) {
@@ -214,9 +202,7 @@ PointFlag FrustumRadar::judgePointFlag(const sead::Vector3f& pos, f32 areaMin, f
         flag = bVar3 | PointFlag::Nain;
         bVar1 = false;
     } else {
-        bVar3 = flag | PointFlag::Nain;
-        if (-(dot * _30) <= dot3)
-            bVar3 = flag;
+        bVar3 = -(dot * _30) > dot3 ? flag | PointFlag::Nain : flag;
         bVar1 = dot * _30 < dot3;
         flag = bVar3 | PointFlag::Main;
     }
