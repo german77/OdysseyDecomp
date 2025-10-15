@@ -14,7 +14,7 @@ class CollisionPartsKeeperPtrArray;
 class CollisionPartsFilterBase;
 class TriangleFilterBase;
 class Strike;
-struct HitInfo;
+class HitInfo;
 struct ArrowHitInfo;
 struct DiskHitInfo;
 struct SphereHitInfo;

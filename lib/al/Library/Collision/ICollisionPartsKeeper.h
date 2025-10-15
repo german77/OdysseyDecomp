@@ -7,10 +7,10 @@
 
 namespace al {
 class CollisionParts;
-struct HitInfo;
-class SphereCheckInfo;
-class ArrowCheckInfo;
-class DiskCheckInfo;
+class HitInfo;
+struct SphereCheckInfo;
+struct ArrowCheckInfo;
+struct DiskCheckInfo;
 class SphereHitResultBuffer;
 class ArrowHitResultBuffer;
 class DiskHitResultBuffer;
