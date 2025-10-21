@@ -1620,6 +1620,28 @@ void calcMomentRollBall(sead::Vector3f* outVec, const sead::Vector3f& vecA,
     *outVec = scale * vecNorm;
 }
 
+bool turnQuat(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& axis,
+              const sead::Vector3f& dir, f32 radian) {
+    sead::Vector3f random;
+    sead::Vector3f didi = dir;
+    // isNearDirection(axis, dir, 0.01f)
+    if (!(axis.dot(dir) >= 0.0f) && isParallelDirection(axis, dir, 0.01f))
+        turnRandomVector(&random, axis, 0.001f);
+    else
+        random.set(axis);
+
+    sead::Vector3f papa;
+    tryNormalizeOrZero(&random);
+    papa = random;
+    tryNormalizeOrZero(&didi);
+
+    sead::Quatf cuack;
+    makeQuatRotationLimit(&cuack, random, didi, radian);
+    outQuat->setMul(cuack, quat);
+    outQuat->normalize();
+    return papa.dot(didi) > 0.995f;
+}
+
 bool turnQuatXDirRadian(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& dir,
                         f32 radian) {
     sead::Vector3f axis;
@@ -1836,6 +1858,24 @@ void calcBoxFacePoint(sead::Vector3f facePoints[4], const sead::BoundBox3f& boun
     default:
         return;
     }
+}
+
+void calcBoxFacePoint(sead::Vector3f vector[4], const sead::BoundBox3f& boundBox, s32 axis,
+                      const sead::Matrix34f& matrix) {
+    sead::Vector3f facePoints[4];
+    calcBoxFacePoint(facePoints, boundBox, axis);
+
+    for (s32 i = 0; i < 4; i++) {
+        vector[i] = facePoints[i];
+        vector[i].rotate(matrix);
+    }
+}
+
+void calcBoxFacePoint(sead::Vector3f vector[4], const sead::BoundBox3f& boundBox, s32 axis,
+                      const sead::Quatf& quat, const sead::Vector3f& vec) {
+    sead::Matrix34f matrix;
+    matrix.makeQT(quat, vec);
+    calcBoxFacePoint(vector, boundBox, axis, matrix);
 }
 
 void calcCirclePointPicking(sead::Vector2f* outPoint, f32 x, f32 y) {
