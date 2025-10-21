@@ -314,14 +314,11 @@ bool tryNormalizeOrZero(sead::Vector2f* out, const sead::Vector2f& vec) {
 }
 
 bool tryNormalizeOrDirZ(sead::Vector3f* vec) {
-    if (isNearZero(*vec)) {
-        // mismatches if this isn't set twice
-        vec->set(0.0f, 0.0f, 0.0f);
+    if (!tryNormalizeOrZero(vec)) {
         vec->set(sead::Vector3f::ez);
         return false;
     }
 
-    normalize(vec);
     return true;
 }
 
@@ -1181,6 +1178,19 @@ s32 getMinAbsElementValue(const sead::Vector3i& vec) {
     return vec.z;
 }
 
+void calcQuatLocalAxisAll(const sead::Quatf& quat, sead::Vector3f* outSide,
+                          sead::Vector3f* outFront, sead::Vector3f* outUp) {
+    outSide->set(1.0f - 2.0f * (quat.y * quat.y) - 2.0f * (quat.z * quat.z),
+                 2.0f * (quat.y * quat.x) + 2.0f * (quat.z * quat.w),
+                 2.0f * (quat.z * quat.x) - 2.0f * (quat.y * quat.w));
+
+    outUp->set(2.0f * (quat.x * quat.y) - 2.0f * (quat.w * quat.z), calcQuatUpY(quat),
+               2.0f * (quat.x * quat.w) + 2.0f * (quat.y * quat.z));
+
+    outFront->set(2.0f * (quat.x * quat.z) + 2.0f * (quat.w * quat.y), calcQuatFrontY(quat),
+                  1.0f - 2.0f * (quat.x * quat.x) - 2.0f * (quat.y * quat.y));
+}
+
 void makeQuatFromTwoAxis(sead::Quatf* outQuat, const sead::Vector3f& vectorA,
                          const sead::Vector3f& vectorB, s32 axisA, s32 axisB) {
     sead::Matrix34f mtx = sead::Matrix34f::ident;
@@ -1244,20 +1254,165 @@ void makeQuatSideNoSupport(sead::Quatf* outQuat, const sead::Vector3f& side) {
     mtx.toQuat(*outQuat);
 }
 
-// https://decomp.me/scratch/MqKUQ
-//  NON_MATCHING: Regswap on Mult and Add
-void rotateQuatRadian(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& vec,
-                      f32 angle) {
-    f32 cos = sead::Mathf::cos(angle * 0.5f);
-    f32 sin = sead::Mathf::sin(angle * 0.5f);
+void makeQuatFromToQuat(sead::Quatf* outQuat, const sead::Quatf& quatA, const sead::Quatf& quatB) {
+    sead::Quatf quat;
+    quat.setInverse(quatA);
 
+    outQuat->setMul(quatB, quat);
+}
+
+bool getAxisAngleFromTwoVec(sead::Vector3f* outAxis, f32* outRadians, const sead::Vector3f& vecA,
+                            const sead::Vector3f& vecB) {
+    // isNearDirection(vecA, vecB, 0.01f)
+    if (!(vecA.dot(vecB) >= 0.0f) && isParallelDirection(vecA, vecB, 0.01f)) {
+        sead::Vector3f dir;
+        al::calcDirVerticalAny(&dir, vecA);
+        *outRadians = sead::Mathf::pi();
+        outAxis->set(dir);
+        return true;
+    }
+
+    sead::Vector3f axis;
+    axis.setCross(vecA, vecB);
+
+    if (!tryNormalizeOrZero(&axis)) {
+        *outRadians = 0.0f;
+        outAxis->set(sead::Vector3f::ey);
+        return false;
+    }
+
+    f32 radians = sead::Mathf::acos(sead::Mathf::clamp(vecA.dot(vecB), -1.0f, 1.0f));
+
+    if (isNearZero(radians)) {
+        *outRadians = 0.0f;
+        outAxis->set(sead::Vector3f::ey);
+        return false;
+    }
+
+    *outRadians = radians;
+    outAxis->set(axis);
+    return true;
+}
+
+inline void makeQuatRotateRadian(sead::Quatf* outQuat, const sead::Vector3f& axis, f32 radian) {
+    f32 cos = sead::Mathf::cos(radian * 0.5f);
+    f32 sin = sead::Mathf::sin(radian * 0.5f);
+
+    outQuat->set(cos, sin * axis.x, sin * axis.y, sin * axis.z);
+}
+
+void makeQuatRotationRate(sead::Quatf* outQuat, const sead::Vector3f& vecA,
+                          const sead::Vector3f& vecB, f32 rate) {
+    sead::Vector3f axis;
+    f32 radian = 0.0f;
+    if (!getAxisAngleFromTwoVec(&axis, &radian, vecA, vecB)) {
+        outQuat->set(1.0f, 0.0f, 0.0f, 0.0f);
+        return;
+    }
+
+    makeQuatRotateRadian(outQuat, axis, radian * rate);
+}
+
+bool makeQuatRotationLimit(sead::Quatf* outQuat, const sead::Vector3f& vecA,
+                           const sead::Vector3f& vecB, f32 limit) {
+    sead::Vector3f axis;
+    f32 radian = 0.0f;
+    if (!getAxisAngleFromTwoVec(&axis, &radian, vecA, vecB)) {
+        outQuat->set(1.0f, 0.0f, 0.0f, 0.0f);
+        return false;
+    }
+
+    bool isClamped = limit < radian;
+    f32 rate = sead::Mathf::clamp(limit / radian, 0.0f, 1.0f);
+    makeQuatRotateRadian(outQuat, axis, rate * radian);
+
+    return isClamped;
+}
+
+void makeQuatAxisRotation(sead::Quatf* outQuat, const sead::Vector3f& vecA,
+                          const sead::Vector3f& vecB, const sead::Vector3f& vecC, f32 rotation) {
+    makeQuatRotateDegree(outQuat, vecC, calcAngleOnPlaneDegree(vecA, vecB, vecC) * rotation);
+}
+
+void makeQuatRotateDegree(sead::Quatf* outQuat, const sead::Vector3f& axis, f32 angle) {
+    makeQuatRotateRadian(outQuat, axis, sead::Mathf::deg2rad(angle));
+}
+
+void slerpQuat(sead::Quatf* outQuat, const sead::Quatf& quatA, const sead::Quatf& quatB, f32 rate) {
+    outQuat->slerpTo(quatA, quatB, rate);
+}
+
+void calcQuatSide(sead::Vector3f* outVec, const sead::Quatf& quat) {
+    outVec->set(1.0f - 2.0f * (quat.y * quat.y) - 2.0f * (quat.z * quat.z),
+                2.0f * (quat.y * quat.x) + 2.0f * (quat.z * quat.w),
+                2.0f * (quat.z * quat.x) - 2.0f * (quat.y * quat.w));
+}
+
+void calcQuatUp(sead::Vector3f* outVec, const sead::Quatf& quat) {
+    outVec->set(2.0f * (quat.x * quat.y) - 2.0f * (quat.w * quat.z), calcQuatUpY(quat),
+                2.0f * (quat.y * quat.z) + 2.0f * (quat.x * quat.w));
+}
+
+void calcQuatGravity(sead::Vector3f* outVec, const sead::Quatf& quat) {
+    outVec->set(2.0f * (quat.z * quat.w) - 2.0f * (quat.x * quat.y),
+                quat.z * quat.z - quat.w * quat.w + quat.x * quat.x - quat.y * quat.y,
+                -(2.0f * (quat.w * quat.x)) - 2.0f * (quat.z * quat.y));
+}
+
+void calcQuatFront(sead::Vector3f* outVec, const sead::Quatf& quat) {
+    outVec->set(2.0f * (quat.x * quat.z) + 2.0f * (quat.w * quat.y), calcQuatFrontY(quat),
+                1.0f - 2.0f * (quat.x * quat.x) - 2.0f * (quat.y * quat.y));
+}
+
+f32 calcQuatUpY(const sead::Quatf& quat) {
+    return 1.0f - 2.0f * (quat.x * quat.x) - 2.0f * (quat.z * quat.z);
+}
+
+f32 calcQuatFrontY(const sead::Quatf& quat) {
+    return 2.0f * (quat.y * quat.z) - 2.0f * (quat.w * quat.x);
+}
+
+void calcQuatRotateDegree(sead::Vector3f* outVec, const sead::Quatf& quat) {
+    calcQuatRotateRadian(outVec, quat);
+    outVec->set(*outVec * (180.0f / sead::Mathf::pi()));
+}
+
+void calcQuatRotateRadian(sead::Vector3f* outVec, const sead::Quatf& quat) {
+    quat.calcRPY(*outVec);
+}
+
+void calcQuatRotateAxisAndDegree(sead::Vector3f* outAxis, f32* outDegree, const sead::Quatf& quat) {
+    outAxis->set(quat.x, quat.y, quat.z);
+    f32 len = outAxis->length();
+    f32 quek = quat.w;
+
+    if (sead::Mathf::abs(len) < 0.001f)
+        outAxis->set(sead::Vector3f::zero);
+    else
+        *outAxis *= 1.0f / len;
+
+    f32 radian = sead::Mathf::atan2(len, quek);
+    f32 degree = modf(sead::Mathf::rad2deg(2.0f * radian) + 360.0f, 360.0f) + 0.0f;
+
+    if (degree >= 180.0f)
+        degree += -360.0f;
+    *outDegree = degree;
+}
+
+void calcQuatRotateAxisAndDegree(sead::Vector3f* outAxis, f32* outDegree, const sead::Quatf& quatA,
+                                 const sead::Quatf& quatB) {
+    sead::Quatf invA;
+    invA.setInverse(quatA);
+
+    calcQuatRotateAxisAndDegree(outAxis, outDegree, quatB * invA);
+}
+
+void rotateQuatRadian(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& axis,
+                      f32 radian) {
     sead::Quatf rotation;
-    rotation.w = cos;
-    rotation.x = sin * vec.x;
-    rotation.y = sin * vec.y;
-    rotation.z = sin * vec.z;
+    makeQuatRotateRadian(&rotation, axis, radian);
 
-    *outQuat = rotation * quat;
+    outQuat->setMul(rotation, quat);
     outQuat->normalize();
 }
 
@@ -1291,30 +1446,24 @@ void makeQuatZDegree(sead::Quatf* outQuat, f32 angle) {
     outQuat->z = sin;
 }
 
-// https://decomp.me/scratch/utMuy
-//  NON_MATCHING: Regswap on Add
 void rotateQuatXDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat, f32 angle) {
     sead::Quatf rotation;
     makeQuatXDegree(&rotation, angle);
-    *outQuat = quat * rotation;
+    outQuat->setMul(quat, rotation);
     outQuat->normalize();
 }
 
-// https://decomp.me/scratch/DEZoH
-//  NON_MATCHING: Regswap on Add
 void rotateQuatYDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat, f32 angle) {
     sead::Quatf rotation;
     makeQuatYDegree(&rotation, angle);
-    *outQuat = quat * rotation;
+    outQuat->setMul(quat, rotation);
     outQuat->normalize();
 }
 
-// https://decomp.me/scratch/iJBbn
-//  NON_MATCHING: Regswap on Add
 void rotateQuatZDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat, f32 angle) {
     sead::Quatf rotation;
     makeQuatZDegree(&rotation, angle);
-    *outQuat = quat * rotation;
+    outQuat->setMul(quat, rotation);
     outQuat->normalize();
 }
 
@@ -1338,41 +1487,33 @@ void rotateQuatLocalDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat, s32
 }
 
 // https://decomp.me/scratch/nV2zl
-// NON_MATCHING: Multiple issues
+// NON_MATCHING: Same logic different store order
 void rotateQuatMoment(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& vec) {
+    f32 radian = vec.length();
+
     sead::Vector3f vecNorm;
     tryNormalizeOrZero(&vecNorm, vec);
 
-    f32 angle = vec.length() * 0.5f;
-    f32 cos = sead::Mathf::cos(angle);
-    f32 sin = sead::Mathf::sin(angle);
-
     sead::Quatf rotation;
-    rotation.w = cos;
-    rotation.x = sin * vecNorm.x;
-    rotation.y = sin * vecNorm.y;
-    rotation.z = sin * vecNorm.z;
-    *outQuat = rotation * quat;
+    makeQuatRotateRadian(&rotation, vecNorm, radian);
+
+    outQuat->setMul(rotation, quat);
     outQuat->normalize();
 }
 
 // https://decomp.me/scratch/l1K35
-// NON_MATCHING: Multiple issues
+// NON_MATCHING: Same logic different store order
 void rotateQuatMomentDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
                             const sead::Vector3f& vec) {
+    f32 radian = vec.length();
+
     sead::Vector3f vecNorm;
     tryNormalizeOrZero(&vecNorm, vec);
 
-    f32 angle = sead::Mathf::deg2rad(vec.length()) * 0.5f;
-    f32 cos = sead::Mathf::cos(angle);
-    f32 sin = sead::Mathf::sin(angle);
-
     sead::Quatf rotation;
-    rotation.w = cos;
-    rotation.x = sin * vecNorm.x;
-    rotation.y = sin * vecNorm.y;
-    rotation.z = sin * vecNorm.z;
-    *outQuat = rotation * quat;
+    makeQuatRotateDegree(&rotation, vecNorm, radian);
+
+    outQuat->setMul(rotation, quat);
     outQuat->normalize();
 }
 
@@ -1394,6 +1535,113 @@ void calcMomentRollBall(sead::Vector3f* outVec, const sead::Vector3f& vecA,
     vecNorm.setCross(vecNorm, vecA);
     scale = 1.0f / scale;
     *outVec = scale * vecNorm;
+}
+
+bool turnQuat(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& axis,
+              const sead::Vector3f& dir, f32 radian) {
+    sead::Vector3f random;
+    sead::Vector3f didi = dir;
+    // isNearDirection(axis, dir, 0.01f)
+    if (!(axis.dot(dir) >= 0.0f) && isParallelDirection(axis, dir, 0.01f))
+        turnRandomVector(&random, axis, 0.001f);
+    else
+        random.set(axis);
+
+    sead::Vector3f papa;
+    tryNormalizeOrZero(&random);
+    papa = random;
+    tryNormalizeOrZero(&didi);
+
+    sead::Quatf cuack;
+    makeQuatRotationLimit(&cuack, random, didi, radian);
+    outQuat->setMul(cuack, quat);
+    outQuat->normalize();
+    return papa.dot(didi) > 0.995f;
+}
+
+bool turnQuatXDirRadian(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& dir,
+                        f32 radian) {
+    sead::Vector3f axis;
+    calcQuatSide(&axis, quat);
+    return turnQuat(outQuat, quat, axis, dir, radian);
+}
+
+bool turnQuatYDirRadian(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& dir,
+                        f32 radian) {
+    sead::Vector3f axis;
+    calcQuatUp(&axis, quat);
+    return turnQuat(outQuat, quat, axis, dir, radian);
+}
+
+bool turnQuatZDirRadian(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& dir,
+                        f32 radian) {
+    sead::Vector3f axis;
+    calcQuatFront(&axis, quat);
+    return turnQuat(outQuat, quat, axis, dir, radian);
+}
+
+void turnQuatXDirRate(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
+void turnQuatYDirRate(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
+void turnQuatZDirRate(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
+
+bool turnQuatXDirWithYDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
+                                const sead::Vector3f& axis, f32 degree) {
+    sead::Vector3f side;
+    calcQuatSide(&side, quat);
+
+    sead::Vector3f up;
+    calcQuatUp(&up, quat);
+    return turnQuatWithAxisDegree(outQuat, quat, side, axis, up, degree);
+}
+
+bool turnQuatXDirWithZDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
+                                const sead::Vector3f& axis, f32 degree) {
+    sead::Vector3f side;
+    calcQuatSide(&side, quat);
+
+    sead::Vector3f front;
+    calcQuatFront(&front, quat);
+    return turnQuatWithAxisDegree(outQuat, quat, side, axis, front, degree);
+}
+
+bool turnQuatYDirWithZDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
+                                const sead::Vector3f& axis, f32 degree) {
+    sead::Vector3f up;
+    calcQuatUp(&up, quat);
+
+    sead::Vector3f front;
+    calcQuatFront(&front, quat);
+    return turnQuatWithAxisDegree(outQuat, quat, up, axis, front, degree);
+}
+
+bool turnQuatYDirWithXDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
+                                const sead::Vector3f& axis, f32 degree) {
+    sead::Vector3f up;
+    calcQuatUp(&up, quat);
+
+    sead::Vector3f side;
+    calcQuatSide(&side, quat);
+    return turnQuatWithAxisDegree(outQuat, quat, up, axis, side, degree);
+}
+
+bool turnQuatZDirWithXDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
+                                const sead::Vector3f& axis, f32 degree) {
+    sead::Vector3f front;
+    calcQuatFront(&front, quat);
+
+    sead::Vector3f side;
+    calcQuatSide(&side, quat);
+    return turnQuatWithAxisDegree(outQuat, quat, front, axis, side, degree);
+}
+
+bool turnQuatZDirWithYDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
+                                const sead::Vector3f& axis, f32 degree) {
+    sead::Vector3f front;
+    calcQuatFront(&front, quat);
+
+    sead::Vector3f up;
+    calcQuatUp(&up, quat);
+    return turnQuatWithAxisDegree(outQuat, quat, front, axis, up, degree);
 }
 
 void calcCirclePointPicking(sead::Vector2f* outPoint, f32 x, f32 y) {
@@ -1449,6 +1697,27 @@ void calcParabolicFunctionParam(f32* gravity, f32* initialVelY, f32 maxHeight,
         sead::Mathf::sqrt(sead::Mathf::clampMin((maxHeight - verticalDistance) * maxHeight, 0.0));
     *initialVelY = 2 * ((maxHeightSign * maxHeightAdjusted) + maxHeight);
     *gravity = verticalDistance - *initialVelY;
+}
+
+f32 calcSpringDumperForce(f32 a, f32 b, f32 c, f32 d) {
+    return -(a * c + b * d);
+}
+
+f32 convertSpringEnergyToSpeed(f32 a, f32 b, f32 c) {
+    return sead::Mathf::sqrt(a * c * a + b * b);
+}
+
+const char* axisIndexToString(s32 axisIndex) {
+    switch (axisIndex) {
+    case 0:
+        return "X";
+    case 1:
+        return "Y";
+    case 2:
+        return "Z";
+    default:
+        return "UnKnown";
+    }
 }
 
 }  // namespace al

@@ -292,11 +292,13 @@ void makeQuatSideFront(sead::Quatf* outQuat, const sead::Vector3f& side,
                        const sead::Vector3f& front);
 void makeQuatSideNoSupport(sead::Quatf* outQuat, const sead::Vector3f& side);
 void makeQuatFromToQuat(sead::Quatf*, const sead::Quatf&, const sead::Quatf&);
-void makeQuatRotationRate(sead::Quatf*, const sead::Vector3f&, const sead::Vector3f&, f32);
-bool makeQuatRotationLimit(sead::Quatf*, const sead::Vector3f&, const sead::Vector3f&, f32);
+void makeQuatRotationRate(sead::Quatf* outQuat, const sead::Vector3f& vecA,
+                          const sead::Vector3f& vecB, f32 rate);
+bool makeQuatRotationLimit(sead::Quatf* outQuat, const sead::Vector3f& vecA,
+                           const sead::Vector3f& vecB, f32 limit);
 void makeQuatAxisRotation(sead::Quatf*, const sead::Vector3f&, const sead::Vector3f&,
                           const sead::Vector3f&, f32);
-void makeQuatRotateDegree(sead::Quatf*, const sead::Vector3f&, f32);
+void makeQuatRotateDegree(sead::Quatf* outQuat, const sead::Vector3f& axis, f32 angle);
 void slerpQuat(sead::Quatf*, const sead::Quatf&, const sead::Quatf&, f32);
 void calcQuatSide(sead::Vector3f* out, const sead::Quatf& quat);
 void calcQuatUp(sead::Vector3f* out, const sead::Quatf& quat);
@@ -310,8 +312,8 @@ void calcQuatRotateDegree(sead::Vector3f*, const sead::Quatf&);
 void calcQuatRotateRadian(sead::Vector3f*, const sead::Quatf&);
 void calcQuatRotateAxisAndDegree(sead::Vector3f*, f32*, const sead::Quatf&);
 void calcQuatRotateAxisAndDegree(sead::Vector3f*, f32*, const sead::Quatf&, const sead::Quatf&);
-void rotateQuatRadian(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& vec,
-                      f32 angle);
+void rotateQuatRadian(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& axis,
+                      f32 radian);
 void makeQuatXDegree(sead::Quatf* outQuat, f32 angle);
 void makeQuatYDegree(sead::Quatf* outQuat, f32 angle);
 void makeQuatZDegree(sead::Quatf* outQuat, f32 angle);
@@ -327,9 +329,12 @@ void rotateQuatRollBall(sead::Quatf* outQuat, const sead::Quatf& quat, const sea
 void calcMomentRollBall(sead::Vector3f* outVec, const sead::Vector3f& vecA,
                         const sead::Vector3f& vecB, f32 scale);
 bool turnQuat(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, const sead::Vector3f&, f32);
-bool turnQuatXDirRadian(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
-bool turnQuatYDirRadian(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
-bool turnQuatZDirRadian(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
+bool turnQuatXDirRadian(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& dir,
+                        f32 radian);
+bool turnQuatYDirRadian(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& dir,
+                        f32 radian);
+bool turnQuatZDirRadian(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& dir,
+                        f32 radian);
 void turnQuatXDirRate(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
 void turnQuatYDirRate(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
 void turnQuatZDirRate(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
@@ -340,12 +345,18 @@ void tiltQuatYDirDegree(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&,
 void tiltQuatZDirDegree(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
 bool turnQuatWithAxisDegree(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&,
                             const sead::Vector3f&, const sead::Vector3f&, f32);
-bool turnQuatXDirWithYDirDegree(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
-bool turnQuatXDirWithZDirDegree(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
-bool turnQuatYDirWithZDirDegree(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
-bool turnQuatYDirWithXDirDegree(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
-bool turnQuatZDirWithXDirDegree(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
-bool turnQuatZDirWithYDirDegree(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
+bool turnQuatXDirWithYDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
+                                const sead::Vector3f& axis, f32 degree);
+bool turnQuatXDirWithZDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
+                                const sead::Vector3f& axis, f32 degree);
+bool turnQuatYDirWithZDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
+                                const sead::Vector3f& axis, f32 degree);
+bool turnQuatYDirWithXDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
+                                const sead::Vector3f& axis, f32 degree);
+bool turnQuatZDirWithXDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
+                                const sead::Vector3f& axis, f32 degree);
+bool turnQuatZDirWithYDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
+                                const sead::Vector3f& axis, f32 degree);
 bool turnQuatZDirToTargetWithAxis(sead::Quatf*, const sead::Vector3f&, const sead::Vector3f&, f32);
 bool turnQuatFrontToDirDegreeH(sead::Quatf*, const sead::Vector3f&, f32);
 void rotateQuatAndTransDegree(sead::Quatf*, sead::Vector3f*, const sead::Quatf&,
