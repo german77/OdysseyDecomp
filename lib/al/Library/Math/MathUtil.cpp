@@ -1207,6 +1207,19 @@ s32 getMinAbsElementValue(const sead::Vector3i& vec) {
     return vec.z;
 }
 
+void calcQuatLocalAxisAll(const sead::Quatf& quat, sead::Vector3f* outSide,
+                          sead::Vector3f* outFront, sead::Vector3f* outUp) {
+    outSide->set(1.0f - 2.0f * (quat.y * quat.y) - 2.0f * (quat.z * quat.z),
+                 2.0f * (quat.y * quat.x) + 2.0f * (quat.z * quat.w),
+                 2.0f * (quat.z * quat.x) - 2.0f * (quat.y * quat.w));
+
+    outUp->set(2.0f * (quat.x * quat.y) - 2.0f * (quat.w * quat.z), calcQuatUpY(quat),
+               2.0f * (quat.x * quat.w) + 2.0f * (quat.y * quat.z));
+
+    outFront->set(2.0f * (quat.x * quat.z) + 2.0f * (quat.w * quat.y), calcQuatFrontY(quat),
+                  1.0f - 2.0f * (quat.x * quat.x) - 2.0f * (quat.y * quat.y));
+}
+
 void makeQuatFromTwoAxis(sead::Quatf* outQuat, const sead::Vector3f& vectorA,
                          const sead::Vector3f& vectorB, s32 axisA, s32 axisB) {
     sead::Matrix34f mtx = sead::Matrix34f::ident;
@@ -1556,6 +1569,28 @@ void calcMomentRollBall(sead::Vector3f* outVec, const sead::Vector3f& vecA,
     *outVec = scale * vecNorm;
 }
 
+bool turnQuat(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& axis,
+              const sead::Vector3f& dir, f32 radian) {
+    sead::Vector3f random;
+    sead::Vector3f didi = dir;
+    // isNearDirection(axis, dir, 0.01f)
+    if (!(axis.dot(dir) >= 0.0f) && isParallelDirection(axis, dir, 0.01f))
+        turnRandomVector(&random, axis, 0.001f);
+    else
+        random.set(axis);
+
+    sead::Vector3f papa;
+    tryNormalizeOrZero(&random);
+    papa = random;
+    tryNormalizeOrZero(&didi);
+
+    sead::Quatf cuack;
+    makeQuatRotationLimit(&cuack, random, didi, radian);
+    outQuat->setMul(cuack, quat);
+    outQuat->normalize();
+    return papa.dot(didi) > 0.995f;
+}
+
 bool turnQuatXDirRadian(sead::Quatf* outQuat, const sead::Quatf& quat, const sead::Vector3f& dir,
                         f32 radian) {
     sead::Vector3f axis;
@@ -1576,6 +1611,10 @@ bool turnQuatZDirRadian(sead::Quatf* outQuat, const sead::Quatf& quat, const sea
     calcQuatFront(&axis, quat);
     return turnQuat(outQuat, quat, axis, dir, radian);
 }
+
+void turnQuatXDirRate(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
+void turnQuatYDirRate(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
+void turnQuatZDirRate(sead::Quatf*, const sead::Quatf&, const sead::Vector3f&, f32);
 
 bool turnQuatXDirWithYDirDegree(sead::Quatf* outQuat, const sead::Quatf& quat,
                                 const sead::Vector3f& axis, f32 degree) {
@@ -1681,6 +1720,24 @@ void calcBoxFacePoint(sead::Vector3f facePoints[4], const sead::BoundBox3f& boun
     default:
         return;
     }
+}
+
+void calcBoxFacePoint(sead::Vector3f vector[4], const sead::BoundBox3f& boundBox, s32 axis,
+                      const sead::Matrix34f& matrix) {
+    sead::Vector3f facePoints[4];
+    calcBoxFacePoint(facePoints, boundBox, axis);
+
+    for (s32 i = 0; i < 4; i++) {
+        vector[i] = facePoints[i];
+        vector[i].rotate(matrix);
+    }
+}
+
+void calcBoxFacePoint(sead::Vector3f vector[4], const sead::BoundBox3f& boundBox, s32 axis,
+                      const sead::Quatf& quat, const sead::Vector3f& vec) {
+    sead::Matrix34f matrix;
+    matrix.makeQT(quat, vec);
+    calcBoxFacePoint(vector, boundBox, axis, matrix);
 }
 
 void calcCirclePointPicking(sead::Vector2f* outPoint, f32 x, f32 y) {
