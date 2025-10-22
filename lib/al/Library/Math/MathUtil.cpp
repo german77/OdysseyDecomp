@@ -838,6 +838,36 @@ void calcHammersleyPoint(sead::Vector2f* outPoint, u32 i, u32 num) {
     outPoint->y = calcVanDerCorput(i);
 }
 
+s32 findMaxFromArray(const s32* array, s32 size) {
+    s32 max = array[0];
+
+    for (s32 i = 0; i < size; i++)
+        max = sead::Mathi::clampMin(max, array[i]);
+
+    return max;
+}
+
+void separateMinMax(sead::Vector3f* outMin, sead::Vector3f* outMax, const sead::Vector3f& vec) {
+    f32 minZ = outMin->z;
+    outMin->x = sead::Mathf::clampMax(outMin->x, vec.x);
+    outMin->y = sead::Mathf::clampMax(outMin->y, vec.y);
+    outMin->z = sead::Mathf::clampMax(minZ, vec.z);
+
+    f32 maxZ = outMax->z;
+    outMax->x = sead::Mathf::clampMin(outMax->x, vec.x);
+    outMax->y = sead::Mathf::clampMin(outMax->y, vec.y);
+    outMax->z = sead::Mathf::clampMin(maxZ, vec.z);
+}
+
+s32 findMinFromArray(const s32* array, s32 size) {
+    s32 min = array[0];
+
+    for (s32 i = 0; i < size; i++)
+        min = sead::Mathi::min(array[i], min);
+
+    return min;
+}
+
 f32 getRandom() {
     u32 random = (sead::GlobalRandom::instance()->getU32() >> 9) | 0x3F800000;
     return (*reinterpret_cast<f32*>(&random)) - 1;
