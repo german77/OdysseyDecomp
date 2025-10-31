@@ -123,3 +123,11 @@ f32 getHitTargetRadius(ScreenPointer* screenPointer, s32 index) {
 }
 
 }  // namespace al
+
+namespace alScreenPointFunction {
+
+void updateScreenPointAll(al::LiveActor* actor) {
+    actor->getScreenPointKeeper()->update();
+}
+
+}  // namespace alScreenPointFunction
