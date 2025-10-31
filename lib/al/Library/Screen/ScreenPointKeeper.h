@@ -34,6 +34,8 @@ public:
     const ScreenPointTarget* getTarget(const char* targetName) const;
     bool isExistTarget(const char* targetName) const;
 
+    bool isTargetArrayFull() { return mScreenPointTargets.isFull(); }
+
 private:
     sead::PtrArray<ScreenPointTarget> mScreenPointTargets;
     ParameterIo* mParameterIo;
