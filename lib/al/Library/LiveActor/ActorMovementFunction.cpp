@@ -14,7 +14,7 @@
 #include "Library/Math/MathUtil.h"
 #include "Library/Matrix/MatrixUtil.h"
 #include "Library/Player/PlayerUtil.h"
-#include "Library/Screen/ScreenPoint.h"
+#include "Library/Screen/ScreenPointUtil.h"
 #include "Library/Se/SeKeeper.h"
 
 namespace al {
