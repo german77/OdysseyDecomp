@@ -43,6 +43,10 @@ SEAD_ENUM(YamlParamType,
             : Parameter(name, label, meta, obj, e) {}                                              \
                                                                                                    \
         Parameter##Name(const sead::SafeString& name, const sead::SafeString& label,               \
+                        const sead::SafeString& meta, ParameterObj* obj, bool e, Type& t)          \
+            : Parameter(name, label, meta, obj, e, t) {}                                           \
+                                                                                                   \
+        Parameter##Name(const sead::SafeString& name, const sead::SafeString& label,               \
                         const sead::SafeString& meta, ParameterList* list, bool e)                 \
             : Parameter(name, label, meta, list, e) {}                                             \
                                                                                                    \
@@ -118,6 +122,13 @@ public:
     }
 
     Parameter(const sead::SafeString& name, const sead::SafeString& label,
+              const sead::SafeString& meta, ParameterObj* obj, bool e, T& t)
+        : ParameterBase(e) {
+        initializeListNode(name, label, meta, obj, e);
+        setValue(t);
+    }
+
+    Parameter(const sead::SafeString& name, const sead::SafeString& label,
               const sead::SafeString& meta, ParameterList* list, bool e)
         : ParameterBase(e) {
         initializeListNode(name, label, meta, list, e);
@@ -142,6 +153,103 @@ public:
 
 private:
     T mValue = T();
+};
+
+template <>
+class Parameter<sead::Vector3f> : public ParameterBase {
+public:
+    // TODO: rename parameter bool e in constructor
+    Parameter(const sead::SafeString& name, const sead::SafeString& label,
+              const sead::SafeString& meta, ParameterObj* obj, bool e)
+        : ParameterBase(e) {
+        initializeListNode(name, label, meta, obj, e);
+        mValue = sead::Vector3f();
+    }
+
+    Parameter(const sead::SafeString& name, const sead::SafeString& label,
+              const sead::SafeString& meta, ParameterObj* obj, bool e, sead::Vector3f& t)
+        : ParameterBase(e) {
+        initializeListNode(name, label, meta, obj, e);
+        setValue(t);
+    }
+
+    Parameter(const sead::SafeString& name, const sead::SafeString& label,
+              const sead::SafeString& meta, ParameterList* list, bool e)
+        : ParameterBase(e) {
+        initializeListNode(name, label, meta, list, e);
+        mValue = sead::Vector3f();
+    }
+
+    const void* ptr() const override { return &mValue; };
+
+    void* ptr() override { return &mValue; };
+
+    s32 size() const override { return sizeof(sead::Vector3f); }
+
+    const char* getParamTypeStr() const override {
+        return YamlParamType::text(YamlParamType::Invalid);
+    }
+
+    YamlParamType getParamType() const override { return YamlParamType::Invalid; }
+
+    const sead::Vector3f& getValue() const { return mValue; }
+
+    void setValue(const sead::Vector3f& value) { mValue.set(value); }
+
+private:
+    sead::Vector3f mValue = sead::Vector3f();
+};
+
+template <>
+class Parameter<const char*> : public ParameterBase {
+public:
+    // TODO: rename parameter bool e in constructor
+    Parameter(const sead::SafeString& name, const sead::SafeString& label,
+              const sead::SafeString& meta, ParameterObj* obj, bool e)
+        : ParameterBase(e) {
+        initializeListNode(name, label, meta, obj, e);
+        mValue = nullptr;
+    }
+
+    Parameter(const sead::SafeString& name, const sead::SafeString& label,
+              const sead::SafeString& meta, ParameterObj* obj, bool e, const char* t)
+        : ParameterBase(e) {
+        initializeListNode(name, label, meta, obj, e);
+        setValue(t);
+    }
+
+    Parameter(const sead::SafeString& name, const sead::SafeString& label,
+              const sead::SafeString& meta, ParameterList* list, bool e)
+        : ParameterBase(e) {
+        initializeListNode(name, label, meta, list, e);
+        mValue = nullptr;
+    }
+
+    const void* ptr() const override { return &mValue; };
+
+    void* ptr() override { return &mValue; };
+
+    s32 size() const override { return sizeof(sead::Vector3f); }
+
+    const char* getParamTypeStr() const override {
+        return YamlParamType::text(YamlParamType::Invalid);
+    }
+
+    YamlParamType getParamType() const override { return YamlParamType::Invalid; }
+
+    const char* getValue() const { return mValue; }
+
+    void setValue(const char* value) {
+        if (!value) {
+            mValue = "";
+            return;
+        }
+
+        mValue = value;
+    }
+
+private:
+    const char* mValue = nullptr;
 };
 
 PARAM_TYPE_DEF(Bool, bool)
