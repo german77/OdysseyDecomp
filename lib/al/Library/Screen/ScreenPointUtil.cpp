@@ -1,67 +1,64 @@
-#include "Library/Screen/ScreenPointerUtil.h"
+#include "Library/Screen/ScreenPointUtil.h"
 
 #include "Library/LiveActor/ActorInitInfo.h"
 #include "Library/LiveActor/ActorPoseUtil.h"
 #include "Library/LiveActor/LiveActor.h"
+#include "Library/Screen/ScreenPoint.h"
 #include "Library/Screen/ScreenPointDirector.h"
 #include "Library/Screen/ScreenPointKeeper.h"
 #include "Library/Screen/ScreenPointTarget.h"
-#include "Library/Screen/ScreenPointer.h"
 
 namespace al {
 
 s32 compareScreenPointTarget(const ScreenPointTargetHitInfo* targetHitInfoA,
                              const ScreenPointTargetHitInfo* targetHitInfoB) {
-    if (targetHitInfoA->directPointDistance - targetHitInfoB->directPointDistance < 0.0f)
+    if (targetHitInfoA->directPoint - targetHitInfoB->directPoint < 0.0f)
         return -1;
-    if (targetHitInfoA->directPointDistance - targetHitInfoB->directPointDistance > 0.0f)
+    if (targetHitInfoA->directPoint - targetHitInfoB->directPoint > 0.0f)
         return 1;
 
-    return targetHitInfoA->screenPointDistance < targetHitInfoB->screenPointDistance ? -1 :
-           targetHitInfoA->screenPointDistance > targetHitInfoB->screenPointDistance ? 1 :
-                                                                                       0;
+    return targetHitInfoA->screenPoint < targetHitInfoB->screenPoint ? -1 :
+           targetHitInfoA->screenPoint > targetHitInfoB->screenPoint ? 1 :
+                                                                       0;
 }
 
-// NON_MATCHING: https://decomp.me/scratch/bBeTv
 s32 compareScreenPointTargetPriorDirectPoint(const ScreenPointTargetHitInfo* targetHitInfoA,
                                              const ScreenPointTargetHitInfo* targetHitInfoB) {
-    f32 screenA = targetHitInfoA->screenPointDistance;
-    f32 screenB = targetHitInfoB->screenPointDistance;
+    f32 AA = targetHitInfoA->screenPoint;
+    f32 BB = targetHitInfoB->screenPoint;
 
-    if (screenB <= 0.0f && screenA > 0.0f)
+    if (BB > 0.0f && AA <= 0.0f)
         return -1;
-    if (screenB > 0.0f && screenA <= 0.0f)
+    if (BB <= 0.0f && AA > 0.0f)
         return 1;
 
-    f32 diffDirect = targetHitInfoA->directPointDistance - targetHitInfoB->directPointDistance;
-
-    if (screenB <= 0.0f && screenA < 0.0f) {
-        if (diffDirect < 0.0f)
+    f32 NN = targetHitInfoA->directPoint;
+    f32 CC = targetHitInfoB->directPoint;
+    f32 diffb = NN - CC;
+    if (AA <= 0.0f && BB < 0.0f) {
+        if (diffb < 0.0f)
             return -1;
-        if (diffDirect > 0.0f)
+        if (diffb > 0.0f)
             return 1;
-
-        if (screenA < screenB)
+        if (AA < BB)
             return -1;
-        if (screenB < screenA)
-            return 1;
-        return 0;
+        return BB < AA ? 1 : 0;
     }
 
-    if (screenA < screenB)
+    if (AA < BB)
         return -1;
-    if (screenB < screenA)
+    if (AA > BB)
+        return 1;
+    if (diffb < 0.0f)
+        return -1;
+    if (diffb > 0.0f)
         return 1;
 
-    if (diffDirect < 0.0f)
-        return -1;
-    if (diffDirect > 0.0f)
-        return 1;
     return 0;
 }
 
 bool isExistScreenPointTargetKeeper(LiveActor* actor) {
-    return actor->getScreenPointKeeper() != nullptr;
+    return actor->getScreenPointKeeper();
 }
 
 bool isScreenPointTargetArrayFull(LiveActor* actor) {
@@ -84,30 +81,30 @@ ScreenPointTarget* addScreenPointTarget(LiveActor* actor, const ActorInitInfo& i
     return target;
 }
 
-bool hitCheckSegmentScreenPointTarget(ScreenPointer* screenPointer, const sead::Vector3f& posStart,
-                                      const sead::Vector3f& posEnd) {
-    return screenPointer->hitCheckSegment(posStart, posEnd);
+bool hitCheckSegmentScreenPointTarget(ScreenPointer* screenPointer, const sead::Vector3f& a,
+                                      const sead::Vector3f& b) {
+    return screenPointer->hitCheckSegment(a, b);
 }
 
-bool hitCheckScreenCircleScreenPointTarget(ScreenPointer* screenPointer, const sead::Vector2f& pos,
-                                           f32 radius, f32 screenRadius) {
-    return screenPointer->hitCheckScreenCircle(pos, radius, screenRadius);
+bool hitCheckScreenCircleScreenPointTarget(ScreenPointer* screenPointer, const sead::Vector2f& a,
+                                           f32 b, f32 c) {
+    return screenPointer->hitCheckScreenCircle(a, b, c);
 }
 
-bool hitCheckLayoutCircleScreenPointTarget(ScreenPointer* screenPointer, const sead::Vector2f& pos,
-                                           f32 radius, f32 layoutRadius,
-                                           s32 (*cmp)(const ScreenPointTargetHitInfo*,
-                                                      const ScreenPointTargetHitInfo*)) {
-    return screenPointer->hitCheckLayoutCircle(pos, radius, layoutRadius, cmp);
+bool hitCheckLayoutCircleScreenPointTarget(ScreenPointer* screenPointer, const sead::Vector2f& a,
+                                           f32 b, f32 c,
+                                           s32 (*d)(const ScreenPointTargetHitInfo*,
+                                                    const ScreenPointTargetHitInfo*)) {
+    return screenPointer->hitCheckLayoutCircle(a, b, c, d);
 }
 
 bool isHitScreenPointTarget(ScreenPointer* screenPointer, const ScreenPointTarget* target) {
     return screenPointer->isHitTarget(target);
 }
 
-bool sendMsgScreenPointTarget(const SensorMsg& message, ScreenPointer* screenPointer,
+void sendMsgScreenPointTarget(const SensorMsg& message, ScreenPointer* screenPointer,
                               ScreenPointTarget* target) {
-    return target->getActor()->receiveMsgScreenPoint(&message, screenPointer, target);
+    target->getActor()->receiveMsgScreenPoint(&message, screenPointer, target);
 }
 
 s32 getHitTargetNum(ScreenPointer* screenPointer) {
@@ -123,3 +120,11 @@ f32 getHitTargetRadius(ScreenPointer* screenPointer, s32 index) {
 }
 
 }  // namespace al
+
+namespace alScreenPointFunction {
+
+void updateScreenPointAll(al::LiveActor* actor) {
+    actor->getScreenPointKeeper()->update();
+}
+
+}  // namespace alScreenPointFunction
