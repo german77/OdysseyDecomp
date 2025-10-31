@@ -118,6 +118,13 @@ public:
     }
 
     Parameter(const sead::SafeString& name, const sead::SafeString& label,
+              const sead::SafeString& meta, ParameterObj* obj, bool e, const T& t)
+        : ParameterBase(e) {
+        initializeListNode(name, label, meta, obj, e);
+        setValue(t);
+    }
+
+    Parameter(const sead::SafeString& name, const sead::SafeString& label,
               const sead::SafeString& meta, ParameterList* list, bool e)
         : ParameterBase(e) {
         initializeListNode(name, label, meta, list, e);
@@ -140,19 +147,86 @@ public:
 
     void setValue(const T& value) { mValue = value; }
 
-private:
+protected:
     T mValue = T();
 };
 
+class ParameterF32 : public Parameter<f32> {
+public:
+    ParameterF32(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterObj* obj, bool e)
+        : Parameter(name, label, meta, obj, e) {}
+
+    ParameterF32(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterObj* obj, bool e, f32 t)
+        : Parameter(name, label, meta, obj, e, t) {}
+
+    ParameterF32(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterList* list, bool e)
+        : Parameter(name, label, meta, list, e) {}
+
+    const char* getParamTypeStr() const override { return YamlParamType::text(YamlParamType::F32); }
+
+    YamlParamType getParamType() const override { return YamlParamType::F32; }
+};
+
+class ParameterV3f : public Parameter<sead::Vector3f> {
+public:
+    ParameterV3f(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterObj* obj, bool e)
+        : Parameter(name, label, meta, obj, e) {}
+
+    ParameterV3f(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterObj* obj, bool e, const sead::Vector3f& t)
+        : Parameter(name, label, meta, obj, e,t) {
+        }
+
+    ParameterV3f(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterList* list, bool e)
+        : Parameter(name, label, meta, list, e) {}
+
+    const char* getParamTypeStr() const override { return YamlParamType::text(YamlParamType::V3f); }
+
+    YamlParamType getParamType() const override { return YamlParamType::V3f; }
+
+    void setValue(const sead::Vector3f& value) { mValue.set(value); }
+};
+
+
+class ParameterStringRef : public Parameter<const char*> {
+public:
+    ParameterStringRef(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterObj* obj, bool e)
+        : Parameter(name, label, meta, obj, e) {}
+
+    ParameterStringRef(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterObj* obj, bool e, const char* t)
+        : Parameter(name, label, meta, obj, e,t){}
+
+    ParameterStringRef(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterList* list, bool e)
+        : Parameter(name, label, meta, list, e) {}
+
+    const char* getParamTypeStr() const override { return YamlParamType::text(YamlParamType::StringRef); }
+
+    YamlParamType getParamType() const override { return YamlParamType::StringRef; }
+
+    void setValue(const char* value){
+        if (!value) {
+            mValue = "";
+            return;
+        }
+
+        mValue = value;
+    }
+};
+
 PARAM_TYPE_DEF(Bool, bool)
-PARAM_TYPE_DEF(F32, f32)
 PARAM_TYPE_DEF(S32, s32)
 PARAM_TYPE_DEF(U32, u32)
 PARAM_TYPE_DEF(V2f, sead::Vector2f)
-PARAM_TYPE_DEF(V3f, sead::Vector3f)
 PARAM_TYPE_DEF(V4f, sead::Vector4f)
 PARAM_TYPE_DEF(C4f, sead::Color4f)
-PARAM_TYPE_DEF(StringRef, const char*)
 PARAM_TYPE_DEF(String32, sead::FixedSafeString<32>)
 PARAM_TYPE_DEF(String64, sead::FixedSafeString<64>)
 PARAM_TYPE_DEF(String128, sead::FixedSafeString<128>)

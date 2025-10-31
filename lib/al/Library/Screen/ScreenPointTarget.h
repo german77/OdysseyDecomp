@@ -8,6 +8,9 @@ namespace al {
 class LiveActor;
 class ParameterObj;
 class ScreenPointCheckGroup;
+class ParameterF32;
+class ParameterStringRef;
+class ParameterV3f;
 
 class ScreenPointTarget {
 public:
@@ -37,14 +40,23 @@ public:
     const sead::Vector3f& getTargetPos() const { return mTargetPos; }
 
 private:
-    void* filler;
+    bool mBa;
+    bool mBb;
     ParameterObj* mParameterObj;
-    char filler2[0x28];
-    sead::Vector3f* _38;
+    ParameterStringRef* mParameterBase;
+    ParameterF32* mParameterBase2;
+    ParameterV3f* mParameterBase3;
+    ParameterStringRef* mParameterBase4;
+    f32 bloat;
+    char filler2[0x4];
+    const sead::Vector3f* _38;
     sead::Matrix34f* mJointMtx;
     sead::Vector3f _48;
     sead::Vector3f mTargetPos;
     LiveActor* mActor;
     ScreenPointCheckGroup* mCheckGroup;
 };
+
+static_assert(sizeof(ScreenPointTarget) == 0x70);
+
 }  // namespace al

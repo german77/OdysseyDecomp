@@ -1,76 +1,133 @@
 #include "Library/Screen/ScreenPointerUtil.h"
 
 #include "Library/LiveActor/ActorInitInfo.h"
+#include "Library/LiveActor/ActorPoseUtil.h"
 #include "Library/LiveActor/LiveActor.h"
-#include "Library/Math/MathUtil.h"
 #include "Library/Screen/ScreenPointDirector.h"
+#include "Library/Screen/ScreenPointKeeper.h"
 #include "Library/Screen/ScreenPointTarget.h"
-#include "Library/Screen/ScreenPointUtil.h"
+#include "Library/Screen/ScreenPointer.h"
 
 namespace al {
 
-ScreenPointer::ScreenPointer(const al::ActorInitInfo& info, const char* name) {
-    targetHitInfo.allocBuffer(0x400, nullptr);
-    mDirector = info.screenPointDirector;
+s32 compareScreenPointTarget(const ScreenPointTargetHitInfo* targetHitInfoA,
+                             const ScreenPointTargetHitInfo* targetHitInfoB) {
+    if (targetHitInfoA->directPointDistance - targetHitInfoB->directPointDistance < 0.0f)
+        return -1;
+    if (targetHitInfoA->directPointDistance - targetHitInfoB->directPointDistance > 0.0f)
+        return 1;
+
+    return targetHitInfoA->screenPointDistance < targetHitInfoB->screenPointDistance ? -1 :
+           targetHitInfoA->screenPointDistance > targetHitInfoB->screenPointDistance ? 1 :
+                                                                                       0;
 }
 
-bool ScreenPointer::hitCheckSegment(const sead::Vector3f& a, const sead::Vector3f& b) {
-    return mDirector->hitCheckSegment(this, &targetHitInfo, 0x400, a, b);
-}
+// NON_MATCHING: https://decomp.me/scratch/bBeTv
+s32 compareScreenPointTargetPriorDirectPoint(const ScreenPointTargetHitInfo* targetHitInfoA,
+                                             const ScreenPointTargetHitInfo* targetHitInfoB) {
+    f32 screenA = targetHitInfoA->screenPointDistance;
+    f32 screenB = targetHitInfoB->screenPointDistance;
 
-bool ScreenPointer::hitCheckScreenCircle(const sead::Vector2f& a, f32 b, f32 c) {
-    return mDirector->hitCheckScreenCircle(this, &targetHitInfo, 0x400, a, b, c);
-}
+    if (screenB <= 0.0f && screenA > 0.0f)
+        return -1;
+    if (screenB > 0.0f && screenA <= 0.0f)
+        return 1;
 
-bool ScreenPointer::hitCheckLayoutCircle(const sead::Vector2f& a, f32 b, f32 c,
-                                         s32 (*d)(const ScreenPointTargetHitInfo*,
-                                                  const ScreenPointTargetHitInfo*)) {
-    return mDirector->hitCheckLayoutCircle(this, &targetHitInfo, 0x400, a, b, c, d);
-}
+    f32 diffDirect = targetHitInfoA->directPointDistance - targetHitInfoB->directPointDistance;
 
-bool ScreenPointer::recheckAndSortSegment(const sead::Vector3f& a, const sead::Vector3f& b) {
-    s32 size = targetHitInfo.size();
-    for (s32 i = 0; i < size; i++) {
-        ScreenPointTarget* target = targetHitInfo[i]->target;
-        f32 targetRadius = target->getTargetRadius();
+    if (screenB <= 0.0f && screenA < 0.0f) {
+        if (diffDirect < 0.0f)
+            return -1;
+        if (diffDirect > 0.0f)
+            return 1;
 
-        if ((target->getTargetPos() - a).length() <= targetRadius)
-            continue;
-
-        sead::Vector3f aa = sead::Vector3f::zero;
-        sead::Vector3f nn = sead::Vector3f::zero;
-        bool s =
-            checkHitSegmentSphereNearDepth(target->getTargetPos(), a, b, targetRadius, &aa, &nn);
-
-        sead::Vector3f closestSegmentPoint;
-        calcClosestSegmentPoint(&closestSegmentPoint, a, b, target->getTargetPos());
-
-        targetHitInfo[i]->screenPoint =
-            (target->getTargetPos() - closestSegmentPoint).length() - targetRadius;
-
-        if (s)
-            targetHitInfo[i]->directPoint = (aa - a).length();
-        else
-            targetHitInfo[i]->directPoint = (closestSegmentPoint - a).length();
-
-        targetHitInfo[i]->aa.set(aa);
-        targetHitInfo[i]->bb.set(nn);
+        if (screenA < screenB)
+            return -1;
+        if (screenB < screenA)
+            return 1;
+        return 0;
     }
 
-    targetHitInfo.sort(compareScreenPointTargetPriorDirectPoint);
-    return true;
+    if (screenA < screenB)
+        return -1;
+    if (screenB < screenA)
+        return 1;
+
+    if (diffDirect < 0.0f)
+        return -1;
+    if (diffDirect > 0.0f)
+        return 1;
+    return 0;
 }
 
-ScreenPointTarget* ScreenPointer::getHitTarget(s32 index) const {
-    return targetHitInfo(index)->target;
+bool isExistScreenPointTargetKeeper(LiveActor* actor) {
+    return actor->getScreenPointKeeper();
 }
 
-bool ScreenPointer::isHitTarget(const ScreenPointTarget* target) const {
-    for (s32 i = 0; i < targetHitInfo.size(); i++)
-        if (getHitTarget(i) == target)
-            return true;
+bool isScreenPointTargetArrayFull(LiveActor* actor) {
+    return actor->getScreenPointKeeper()->isTargetArrayFull();
+}
 
-    return false;
+bool isExistScreenPointTarget(LiveActor* actor, const char* name) {
+    return actor->getScreenPointKeeper()->isExistTarget(name);
+}
+
+ScreenPointTarget* addScreenPointTarget(LiveActor* actor, const ActorInitInfo& initInfo,
+                                        const char* targetName, f32 radius, const char* jointName,
+                                        const sead::Vector3f& vb) {
+    ScreenPointTarget* target = actor->getScreenPointKeeper()->addTarget(
+        actor, initInfo, targetName, radius, getTransPtr(actor), jointName, vb);
+
+    ScreenPointDirector* director = initInfo.screenPointDirector;
+    director->registerTarget(target);
+    director->setCheckGroup(target);
+    return target;
+}
+
+bool hitCheckSegmentScreenPointTarget(ScreenPointer* screenPointer, const sead::Vector3f& a,
+                                      const sead::Vector3f& b) {
+    return screenPointer->hitCheckSegment(a, b);
+}
+
+bool hitCheckScreenCircleScreenPointTarget(ScreenPointer* screenPointer,
+                                           const sead::Vector2f& a, f32 b, f32 c) {
+    return screenPointer->hitCheckScreenCircle(a, b, c);
+}
+
+bool hitCheckLayoutCircleScreenPointTarget(ScreenPointer* screenPointer,
+                                           const sead::Vector2f& a, f32 b, f32 c,
+                                           s32 (*d)(const ScreenPointTargetHitInfo*,
+                                                    const ScreenPointTargetHitInfo*)) {
+    return screenPointer->hitCheckLayoutCircle(a, b, c, d);
+}
+
+bool isHitScreenPointTarget(ScreenPointer* screenPointer, const ScreenPointTarget* target) {
+    return screenPointer->isHitTarget(target);
+}
+
+bool sendMsgScreenPointTarget(const SensorMsg& message, ScreenPointer* screenPointer,
+                              ScreenPointTarget* target) {
+    return target->getActor()->receiveMsgScreenPoint(&message, screenPointer, target);
+}
+
+s32 getHitTargetNum(ScreenPointer* screenPointer) {
+    return screenPointer->getHitTargetNum();
+}
+
+const sead::Vector3f& getHitTargetPos(ScreenPointer* screenPointer, s32 index) {
+    return screenPointer->getHitTarget(index)->getTargetPos();
+}
+
+f32 getHitTargetRadius(ScreenPointer* screenPointer, s32 index) {
+    return screenPointer->getHitTarget(index)->getTargetRadius();
 }
 
 }  // namespace al
+
+namespace alScreenPointFunction {
+
+void updateScreenPointAll(al::LiveActor* actor) {
+    actor->getScreenPointKeeper()->update();
+}
+
+}  // namespace alScreenPointFunction
