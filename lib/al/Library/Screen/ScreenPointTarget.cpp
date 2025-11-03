@@ -13,16 +13,13 @@ ScreenPointTarget::ScreenPointTarget(LiveActor* actor, const char* nameA, f32 vb
     mBa = false;
     mBb = true;
     mParameterObj = new ParameterObj();
-    mParameterBase = new ParameterStringRef("Name", "Name", "", mParameterObj, true);
-    setTargetName(nameA);
+    mParameterBase = new ParameterStringRef("Name", "Name", "", mParameterObj, true,nameA);
 
-    mParameterBase2 = new ParameterF32("Radius", "Radius", "", mParameterObj, true, vbloat);
+    mParameterBase2 = new ParameterF32("Radius", "Radius", "", mParameterObj, true,vbloat);
 
-    mParameterBase3 = new ParameterV3f("Offset", "Offset", "", mParameterObj, true);
-    setTargetFollowPosOffset(posB);
+    mParameterBase3 = new ParameterV3f("Offset", "Offset", "", mParameterObj, true,posB);
 
-    mParameterBase4 = new ParameterStringRef("Joint", "Joint", "", mParameterObj, true);
-    setJointName(nameB);
+    mParameterBase4 = new ParameterStringRef("Joint", "Joint", "", mParameterObj, true,nameB);
 
     bloat = 1.0f;
     _38 = posA;

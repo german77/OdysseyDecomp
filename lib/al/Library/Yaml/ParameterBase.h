@@ -43,10 +43,6 @@ SEAD_ENUM(YamlParamType,
             : Parameter(name, label, meta, obj, e) {}                                              \
                                                                                                    \
         Parameter##Name(const sead::SafeString& name, const sead::SafeString& label,               \
-                        const sead::SafeString& meta, ParameterObj* obj, bool e, Type& t)          \
-            : Parameter(name, label, meta, obj, e, t) {}                                           \
-                                                                                                   \
-        Parameter##Name(const sead::SafeString& name, const sead::SafeString& label,               \
                         const sead::SafeString& meta, ParameterList* list, bool e)                 \
             : Parameter(name, label, meta, list, e) {}                                             \
                                                                                                    \
@@ -122,7 +118,7 @@ public:
     }
 
     Parameter(const sead::SafeString& name, const sead::SafeString& label,
-              const sead::SafeString& meta, ParameterObj* obj, bool e, T& t)
+              const sead::SafeString& meta, ParameterObj* obj, bool e, const T& t)
         : ParameterBase(e) {
         initializeListNode(name, label, meta, obj, e);
         setValue(t);
@@ -151,95 +147,71 @@ public:
 
     void setValue(const T& value) { mValue = value; }
 
-private:
+protected:
     T mValue = T();
 };
 
-template <>
-class Parameter<sead::Vector3f> : public ParameterBase {
+class ParameterF32 : public Parameter<f32> {
 public:
-    // TODO: rename parameter bool e in constructor
-    Parameter(const sead::SafeString& name, const sead::SafeString& label,
-              const sead::SafeString& meta, ParameterObj* obj, bool e)
-        : ParameterBase(e) {
-        initializeListNode(name, label, meta, obj, e);
-        mValue = sead::Vector3f();
-    }
+    ParameterF32(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterObj* obj, bool e)
+        : Parameter(name, label, meta, obj, e) {}
 
-    Parameter(const sead::SafeString& name, const sead::SafeString& label,
-              const sead::SafeString& meta, ParameterObj* obj, bool e, sead::Vector3f& t)
-        : ParameterBase(e) {
-        initializeListNode(name, label, meta, obj, e);
-        setValue(t);
-    }
+    ParameterF32(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterObj* obj, bool e, f32 t)
+        : Parameter(name, label, meta, obj, e, t) {}
 
-    Parameter(const sead::SafeString& name, const sead::SafeString& label,
-              const sead::SafeString& meta, ParameterList* list, bool e)
-        : ParameterBase(e) {
-        initializeListNode(name, label, meta, list, e);
-        mValue = sead::Vector3f();
-    }
+    ParameterF32(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterList* list, bool e)
+        : Parameter(name, label, meta, list, e) {}
 
-    const void* ptr() const override { return &mValue; };
+    const char* getParamTypeStr() const override { return YamlParamType::text(YamlParamType::F32); }
 
-    void* ptr() override { return &mValue; };
-
-    s32 size() const override { return sizeof(sead::Vector3f); }
-
-    const char* getParamTypeStr() const override {
-        return YamlParamType::text(YamlParamType::Invalid);
-    }
-
-    YamlParamType getParamType() const override { return YamlParamType::Invalid; }
-
-    const sead::Vector3f& getValue() const { return mValue; }
-
-    void setValue(const sead::Vector3f& value) { mValue.set(value); }
-
-private:
-    sead::Vector3f mValue = sead::Vector3f();
+    YamlParamType getParamType() const override { return YamlParamType::F32; }
 };
 
-template <>
-class Parameter<const char*> : public ParameterBase {
+class ParameterV3f : public Parameter<sead::Vector3f> {
 public:
-    // TODO: rename parameter bool e in constructor
-    Parameter(const sead::SafeString& name, const sead::SafeString& label,
-              const sead::SafeString& meta, ParameterObj* obj, bool e)
-        : ParameterBase(e) {
-        initializeListNode(name, label, meta, obj, e);
-        mValue = nullptr;
-    }
+    ParameterV3f(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterObj* obj, bool e)
+        : Parameter(name, label, meta, obj, e) {}
 
-    Parameter(const sead::SafeString& name, const sead::SafeString& label,
-              const sead::SafeString& meta, ParameterObj* obj, bool e, const char* t)
-        : ParameterBase(e) {
-        initializeListNode(name, label, meta, obj, e);
-        setValue(t);
-    }
+    ParameterV3f(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterObj* obj, bool e, const sead::Vector3f& t)
+        : Parameter(name, label, meta, obj, e,t) {
+        }
 
-    Parameter(const sead::SafeString& name, const sead::SafeString& label,
-              const sead::SafeString& meta, ParameterList* list, bool e)
-        : ParameterBase(e) {
-        initializeListNode(name, label, meta, list, e);
-        mValue = nullptr;
-    }
+    ParameterV3f(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterList* list, bool e)
+        : Parameter(name, label, meta, list, e) {}
 
-    const void* ptr() const override { return &mValue; };
+    const char* getParamTypeStr() const override { return YamlParamType::text(YamlParamType::V3f); }
 
-    void* ptr() override { return &mValue; };
+    YamlParamType getParamType() const override { return YamlParamType::V3f; }
 
-    s32 size() const override { return sizeof(sead::Vector3f); }
+    void setValue(const sead::Vector3f& value) { mValue.set(value); }
+};
 
-    const char* getParamTypeStr() const override {
-        return YamlParamType::text(YamlParamType::Invalid);
-    }
 
-    YamlParamType getParamType() const override { return YamlParamType::Invalid; }
+class ParameterStringRef : public Parameter<const char*> {
+public:
+    ParameterStringRef(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterObj* obj, bool e)
+        : Parameter(name, label, meta, obj, e) {}
 
-    const char* getValue() const { return mValue; }
+    ParameterStringRef(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterObj* obj, bool e, const char* t)
+        : Parameter(name, label, meta, obj, e,t){}
 
-    void setValue(const char* value) {
+    ParameterStringRef(const sead::SafeString& name, const sead::SafeString& label,
+                 const sead::SafeString& meta, ParameterList* list, bool e)
+        : Parameter(name, label, meta, list, e) {}
+
+    const char* getParamTypeStr() const override { return YamlParamType::text(YamlParamType::StringRef); }
+
+    YamlParamType getParamType() const override { return YamlParamType::StringRef; }
+
+    void setValue(const char* value){
         if (!value) {
             mValue = "";
             return;
@@ -247,20 +219,14 @@ public:
 
         mValue = value;
     }
-
-private:
-    const char* mValue = nullptr;
 };
 
 PARAM_TYPE_DEF(Bool, bool)
-PARAM_TYPE_DEF(F32, f32)
 PARAM_TYPE_DEF(S32, s32)
 PARAM_TYPE_DEF(U32, u32)
 PARAM_TYPE_DEF(V2f, sead::Vector2f)
-PARAM_TYPE_DEF(V3f, sead::Vector3f)
 PARAM_TYPE_DEF(V4f, sead::Vector4f)
 PARAM_TYPE_DEF(C4f, sead::Color4f)
-PARAM_TYPE_DEF(StringRef, const char*)
 PARAM_TYPE_DEF(String32, sead::FixedSafeString<32>)
 PARAM_TYPE_DEF(String64, sead::FixedSafeString<64>)
 PARAM_TYPE_DEF(String128, sead::FixedSafeString<128>)
