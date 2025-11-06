@@ -46,12 +46,17 @@ u32 getVirtualDisplayHeight();
 u32 getSubDisplayWidth();
 u32 getSubDisplayHeight();
 
-bool isInScreen(const sead::Vector2f&, f32);
+bool isInScreen(const sead::Vector2f& screenPos, f32 tolerance);
+void calcScreenPosFromLayoutPos(sead::Vector2f* outScreenPos, const sead::Vector2f& layoutPos);
+void calcLayoutPosFromScreenPos(sead::Vector2f* outLayoutPos, const sead::Vector2f& screenPos);
+// Always returns true
+bool calcWorldPosFromScreen(sead::Vector3f* outWorldPos, const sead::Vector2f& screenPos,
+                            const sead::Matrix34f& viewMtx, f32 scale);
+void calcWorldPosFromScreenPos(sead::Vector3f* outWorldPos, const IUseCamera* camera,
+                               const sead::Vector2f& screenPos, f32 scale);
+void calcWorldPosFromLayoutPos(sead::Vector3f* outWorldPos, const IUseCamera* camera,
+                               const sead::Vector2f& layoutPos, f32 scale);
 
-bool calcWorldPosFromScreen(sead::Vector3f* output, const sead::Vector2f&, const sead::Matrix34f&,
-                            f32);  // Always returns true
-void calcWorldPosFromScreenPos(sead::Vector3f* output, const IUseCamera*, const sead::Vector2f&,
-                               f32);
 void calcWorldPosFromScreenPos(sead::Vector3f* output, const IUseCamera*, const sead::Vector2f&,
                                const sead::Vector3f&);
 void calcWorldPosFromScreenPos(sead::Vector3f* output, const SceneCameraInfo*,
@@ -63,11 +68,9 @@ void calcWorldPosFromScreenPosSub(sead::Vector3f* output, const IUseCamera*, con
 void calcWorldPosFromScreenPosSub(sead::Vector3f* output, const IUseCamera*, const sead::Vector2f&,
                                   const sead::Vector3f&);
 void calcWorldPosFromLayoutPos(sead::Vector3f* output, const IUseCamera*, const sead::Vector2f&,
-                               f32);
-void calcWorldPosFromLayoutPos(sead::Vector3f* output, const IUseCamera*, const sead::Vector2f&,
                                const sead::Vector3f&);
 void calcWorldPosFromLayoutPos(sead::Vector3f* output, const SceneCameraInfo*,
-                               const sead::Vector2f&, s32, s32);
+                               const sead::Vector2f&, f32, s32);
 void calcWorldPosFromLayoutPos(sead::Vector3f* output, const SceneCameraInfo*,
                                const sead::Vector2f&, const sead::Vector3f&, s32);
 void calcWorldPosFromLayoutPosSub(sead::Vector3f* output, const IUseCamera*, const sead::Vector2f&,
@@ -77,11 +80,9 @@ void calcWorldPosFromLayoutPosSub(sead::Vector3f* output, const IUseCamera*, con
 
 void calcScreenPosFromWorldPos(sead::Vector2f* output, const IUseCamera*, const sead::Vector3f&);
 void calcScreenPosFromWorldPosSub(sead::Vector2f* output, const IUseCamera*, const sead::Vector3f&);
-void calcScreenPosFromLayoutPos(sead::Vector2f* output, const sead::Vector2f&);
 f32 calcScreenRadiusFromWorldRadius(const sead::Vector3f&, const IUseCamera*, f32);
 f32 calcScreenRadiusFromWorldRadiusSub(const sead::Vector3f&, const IUseCamera*, f32);
 
-void calcLayoutPosFromScreenPos(sead::Vector2f* output, const sead::Vector2f&);
 void calcLayoutPosFromWorldPos(sead::Vector2f* output, const IUseCamera*, const sead::Vector3f&);
 void calcLayoutPosFromWorldPos(sead::Vector3f* output, const IUseCamera*, const sead::Vector3f&);
 void calcLayoutPosFromWorldPos(sead::Vector2f* output, const SceneCameraInfo*,
