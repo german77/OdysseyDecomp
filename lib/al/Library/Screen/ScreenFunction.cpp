@@ -55,9 +55,9 @@ void calcScreenPosFromLayoutPos(sead::Vector2f* outScreenPos, const sead::Vector
 }
 
 inline void calcScreenPosFromLayoutPosSub(sead::Vector2f* outScreenPos,
-                                          const sead::Vector2f& layoutPosSub) {
-    outScreenPos->x = layoutPosSub.x + getSubDisplayWidth() / 2.0f;
-    outScreenPos->y = -layoutPosSub.y + getSubDisplayHeight() / 2.0f;
+                                          const sead::Vector2f& layoutPos) {
+    outScreenPos->x = layoutPos.x + getSubDisplayWidth() / 2.0f;
+    outScreenPos->y = -layoutPos.y + getSubDisplayHeight() / 2.0f;
 }
 
 void calcLayoutPosFromScreenPos(sead::Vector2f* outLayoutPos, const sead::Vector2f& screenPos) {
@@ -103,6 +103,19 @@ void calcWorldPosFromScreenPos(sead::Vector3f* outWorldPos, const IUseCamera* ca
     calcWorldPosFromLayoutPos(outWorldPos, camera, layoutPos, scale);
 }
 
+inline void normalizeCamera(sead::Vector3f* cameraPos, f32 zz) {
+    if (zz < -0.0f) {
+        const f32 inv_len = zz / cameraPos->z;
+        cameraPos->x *= inv_len;
+        cameraPos->y *= inv_len;
+        cameraPos->z *= inv_len;
+    }
+}
+
+inline sead::Vector2f port(const sead::Viewport& viewPort, const sead::Vector2f& layoutPos) {
+    return {layoutPos.x / viewPort.getHalfSizeX(), layoutPos.y / viewPort.getHalfSizeY()};
+}
+
 void calcWorldPosFromLayoutPos(sead::Vector3f* outWorldPos, const IUseCamera* camera,
                                const sead::Vector2f& layoutPos, f32 scale) {
     sead::Vector3f cameraPos;
@@ -111,14 +124,12 @@ void calcWorldPosFromLayoutPos(sead::Vector3f* outWorldPos, const IUseCamera* ca
     const sead::LookAtCamera& lookAt = getLookAtCamera(camera, 0);
     const sead::Projection& projection = getProjectionSead(camera, 0);
 
-    f32 x = viewPort.getHalfSizeX();
-    f32 y = viewPort.getHalfSizeY();
-    projection.screenPosToCameraPos(&cameraPos, {layoutPos.x / x, layoutPos.y / y});
+    sead::Vector2f screenPos = layoutPos;
+    screenPos.x /= viewPort.getHalfSizeX();
+    screenPos.y /= viewPort.getHalfSizeY();
+    projection.screenPosToCameraPos(&cameraPos, screenPos);
 
-    if (scale > 0.0f) {
-        f32 size = -scale / cameraPos.z;
-        cameraPos *= size;
-    }
+    normalizeCamera(&cameraPos, -scale);
 
     lookAt.cameraPosToWorldPosByMatrix(outWorldPos, cameraPos);
 }
@@ -134,9 +145,9 @@ void calcWorldPosFromLayoutPos(sead::Vector3f* output, const IUseCamera*, const 
                                const sead::Vector3f&);
 
 void calcWorldPosFromScreenPosSub(sead::Vector3f* outWorldPos, const IUseCamera* camera,
-                                  const sead::Vector2f& screenPosSub, f32 scale) {
-    sead::Vector2f layoutPosSub = {screenPosSub.x, -screenPosSub.y};
-    calcWorldPosFromLayoutPosSub(outWorldPos, camera, layoutPosSub, scale);
+                                  const sead::Vector2f& screenPos, f32 scale) {
+    sead::Vector2f layoutPos = {screenPos.x, -screenPos.y};
+    calcWorldPosFromLayoutPosSub(outWorldPos, camera, layoutPos, scale);
 }
 
 void calcWorldPosFromLayoutPosSub(sead::Vector3f* output, const IUseCamera*, const sead::Vector2f&,
@@ -153,9 +164,36 @@ void calcWorldPosFromLayoutPosSub(sead::Vector3f* output, const IUseCamera*, con
 }  // namespace al
 
 namespace ScreenFunction {
-void calcWorldPositionFromCenterScreen(sead::Vector3f*, const sead::Vector2f&,
-                                       const sead::Vector3f&, const sead::Camera&,
-                                       const sead::Projection&, const sead::Viewport&);
+
+inline void normalizeCamera(sead::Vector3f* cameraPos, f32 zz) {
+    if (zz < -0.0f) {
+        const f32 inv_len = zz / cameraPos->z;
+        cameraPos->x *= inv_len;
+        cameraPos->y *= inv_len;
+        cameraPos->z *= inv_len;
+    }
+}
+
+void calcWorldPositionFromCenterScreen(sead::Vector3f* outWorldPos, const sead::Vector2f& layoutPos,
+                                       const sead::Vector3f& worldPos, const sead::Camera& camera,
+                                       const sead::Projection& projection,
+                                       const sead::Viewport& viewPort) {
+    sead::Vector3f worldCameraPos;
+    camera.worldPosToCameraPosByMatrix(&worldCameraPos, worldPos);
+    f32 cameraZ = worldCameraPos.z;
+
+    sead::Vector2f screenPos = layoutPos;
+    sead::Vector3f cameraPos;
+    screenPos.x /= viewPort.getHalfSizeX();
+    screenPos.y /= viewPort.getHalfSizeY();
+
+    projection.screenPosToCameraPos(&cameraPos, screenPos);
+
+    normalizeCamera(&cameraPos, cameraZ);
+
+    camera.cameraPosToWorldPosByMatrix(outWorldPos, cameraPos);
+}
+
 }  // namespace ScreenFunction
 
 // Note: New file?
