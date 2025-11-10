@@ -45,13 +45,12 @@ u32 getLayoutDisplayWidth();
 u32 getLayoutDisplayHeight();
 u32 getVirtualDisplayWidth();
 u32 getVirtualDisplayHeight();
-
 bool isInScreen(const sead::Vector2f& screenPos, f32 tolerance);
 
 void calcScreenPosFromLayoutPos(sead::Vector2f* outScreenPos, const sead::Vector2f& layoutPos);
 void calcLayoutPosFromScreenPos(sead::Vector2f* outLayoutPos, const sead::Vector2f& screenPos);
 bool calcWorldPosFromScreen(sead::Vector3f* outWorldPos, const sead::Vector2f& screenPos,
-                            const sead::Matrix34f& viewMtx, f32 zPos);
+                            const sead::Matrix34f& viewMtx, f32 zPos);  // Always returns true
 void calcWorldPosFromScreenPos(sead::Vector3f* outWorldPos, const IUseCamera* camera,
                                const sead::Vector2f& screenPos, f32 zPos);
 void calcWorldPosFromLayoutPos(sead::Vector3f* outWorldPos, const IUseCamera* camera,
