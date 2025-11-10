@@ -3,7 +3,10 @@
 #include <gfx/seadProjection.h>
 
 #include "Library/Camera/CameraUtil.h"
+#include "Library/Camera/CameraViewInfo.h"
+#include "Library/Camera/SceneCameraInfo.h"
 #include "Library/Math/MathUtil.h"
+#include "Library/Projection/Projection.h"
 
 namespace al {
 
@@ -66,16 +69,16 @@ void calcLayoutPosFromScreenPos(sead::Vector2f* outLayoutPos, const sead::Vector
 }
 
 bool calcWorldPosFromScreen(sead::Vector3f* outWorldPos, const sead::Vector2f& screenPos,
-                            const sead::Matrix34f& viewMtx, f32 scale) {
+                            const sead::Matrix34f& viewMtx, f32 zPos) {
     sead::Vector2f pos = screenPos;
     f32 screenScale = 360.0f * sead::Mathf::tan(sead::Mathf::pi() / 8.0f);
-    scale = scale >= 0.0f ? scale : screenScale;
+    zPos = zPos >= 0.0f ? zPos : screenScale;
 
     if (!outWorldPos)
         return true;
 
-    f32 rate = scale / screenScale;
-    f32 negScale = -scale;
+    f32 rate = zPos / screenScale;
+    f32 negScale = -zPos;
     sead::Vector2f pos3{rate * (pos.x - getDisplayWidth() / 2.0f),
                         -(rate * (pos.y - getDisplayHeight() / 2.0f))};
 
@@ -97,10 +100,10 @@ bool calcWorldPosFromScreen(sead::Vector3f* outWorldPos, const sead::Vector2f& s
 }
 
 void calcWorldPosFromScreenPos(sead::Vector3f* outWorldPos, const IUseCamera* camera,
-                               const sead::Vector2f& screenPos, f32 scale) {
+                               const sead::Vector2f& screenPos, f32 zPos) {
     sead::Vector2f layoutPos = {screenPos.x - getDisplayWidth() / 2.0f,
                                 -(screenPos.y - getDisplayHeight() / 2.0f)};
-    calcWorldPosFromLayoutPos(outWorldPos, camera, layoutPos, scale);
+    calcWorldPosFromLayoutPos(outWorldPos, camera, layoutPos, zPos);
 }
 
 inline void normalizeCamera(sead::Vector3f* cameraPos, f32 zz) {
@@ -112,55 +115,110 @@ inline void normalizeCamera(sead::Vector3f* cameraPos, f32 zz) {
     }
 }
 
-inline sead::Vector2f port(const sead::Viewport& viewPort, const sead::Vector2f& layoutPos) {
-    return {layoutPos.x / viewPort.getHalfSizeX(), layoutPos.y / viewPort.getHalfSizeY()};
-}
-
 void calcWorldPosFromLayoutPos(sead::Vector3f* outWorldPos, const IUseCamera* camera,
-                               const sead::Vector2f& layoutPos, f32 scale) {
+                               const sead::Vector2f& layoutPos, f32 zPos) {
+    sead::Vector2f screenPos;
     sead::Vector3f cameraPos;
     sead::Viewport viewPort(0.0f, 0.0f, getProjectionSead(camera, 0).getAspect() * 720.0f, 720.0f);
 
     const sead::LookAtCamera& lookAt = getLookAtCamera(camera, 0);
     const sead::Projection& projection = getProjectionSead(camera, 0);
 
-    sead::Vector2f screenPos = layoutPos;
+    screenPos = layoutPos;
     screenPos.x /= viewPort.getHalfSizeX();
     screenPos.y /= viewPort.getHalfSizeY();
     projection.screenPosToCameraPos(&cameraPos, screenPos);
 
-    normalizeCamera(&cameraPos, -scale);
+    normalizeCamera(&cameraPos, -zPos);
 
     lookAt.cameraPosToWorldPosByMatrix(outWorldPos, cameraPos);
 }
 
 void calcWorldPosFromScreenPos(sead::Vector3f* outWorldPos, const IUseCamera* camera,
-                               const sead::Vector2f& screenPos, const sead::Vector3f& scale) {
+                               const sead::Vector2f& screenPos, const sead::Vector3f& worldPos) {
     sead::Vector2f layoutPos = {screenPos.x - getDisplayWidth() / 2.0f,
                                 -(screenPos.y - getDisplayHeight() / 2.0f)};
-    calcWorldPosFromLayoutPos(outWorldPos, camera, layoutPos, scale);
+    calcWorldPosFromLayoutPos(outWorldPos, camera, layoutPos, worldPos);
 }
 
-void calcWorldPosFromLayoutPos(sead::Vector3f* output, const IUseCamera*, const sead::Vector2f&,
-                               const sead::Vector3f&);
+void calcWorldPosFromLayoutPos(sead::Vector3f* outWorldPos, const IUseCamera* camera,
+                               const sead::Vector2f& layoutPos, const sead::Vector3f& worldPos) {
+    sead::Vector2f screenPos;
+    sead::Vector3f cameraPos;
+    sead::Vector3f worldCameraPos;
+    sead::Viewport viewPort(0.0f, 0.0f, getProjectionSead(camera, 0).getAspect() * 720.0f, 720.0f);
+
+    const sead::LookAtCamera& lookAt = getLookAtCamera(camera, 0);
+    const sead::Projection& projection = getProjectionSead(camera, 0);
+
+    lookAt.worldPosToCameraPosByMatrix(&worldCameraPos, worldPos);
+    f32 cameraZ = worldCameraPos.z;
+
+    screenPos = layoutPos;
+    screenPos.x /= viewPort.getHalfSizeX();
+    screenPos.y /= viewPort.getHalfSizeY();
+    projection.screenPosToCameraPos(&cameraPos, screenPos);
+
+    normalizeCamera(&cameraPos, cameraZ);
+
+    lookAt.cameraPosToWorldPosByMatrix(outWorldPos, cameraPos);
+}
 
 void calcWorldPosFromScreenPosSub(sead::Vector3f* outWorldPos, const IUseCamera* camera,
-                                  const sead::Vector2f& screenPos, f32 scale) {
+                                  const sead::Vector2f& screenPos, f32 zPos) {
     sead::Vector2f layoutPos = {screenPos.x, -screenPos.y};
-    calcWorldPosFromLayoutPosSub(outWorldPos, camera, layoutPos, scale);
+    calcWorldPosFromLayoutPosSub(outWorldPos, camera, layoutPos, zPos);
 }
 
-void calcWorldPosFromLayoutPosSub(sead::Vector3f* output, const IUseCamera*, const sead::Vector2f&,
-                                  f32);
+void calcWorldPosFromLayoutPosSub(sead::Vector3f* outWorldPos, const IUseCamera* camera,
+                                  const sead::Vector2f& layoutPos, f32 zPos) {
+    sead::Vector2f screenPos;
+    sead::Vector3f cameraPos;
+    sead::Vector3f worldCameraPos;
+    sead::Viewport viewPort(0.0f, 0.0f, 0.0f, 0.0f);
+
+    const sead::LookAtCamera& lookAt = getLookAtCamera(camera, getViewNumMax(camera) - 1);
+    const sead::Projection& projection = getProjectionSead(camera, getViewNumMax(camera) - 1);
+
+    screenPos = layoutPos;
+    screenPos.x /= viewPort.getHalfSizeX();
+    screenPos.y /= viewPort.getHalfSizeY();
+    projection.screenPosToCameraPos(&cameraPos, screenPos);
+
+    normalizeCamera(&cameraPos, -zPos);
+
+    lookAt.cameraPosToWorldPosByMatrix(outWorldPos, cameraPos);
+}
 
 void calcWorldPosFromScreenPosSub(sead::Vector3f* outWorldPos, const IUseCamera* camera,
-                                  const sead::Vector2f& screenPosSub, const sead::Vector3f& scale) {
+                                  const sead::Vector2f& screenPosSub, const sead::Vector3f& zPos) {
     sead::Vector2f layoutPosSub = {screenPosSub.x, -screenPosSub.y};
-    calcWorldPosFromLayoutPosSub(outWorldPos, camera, layoutPosSub, scale);
+    calcWorldPosFromLayoutPosSub(outWorldPos, camera, layoutPosSub, zPos);
 }
 
-void calcWorldPosFromLayoutPosSub(sead::Vector3f* output, const IUseCamera*, const sead::Vector2f&,
-                                  const sead::Vector3f&);
+void calcWorldPosFromLayoutPosSub(sead::Vector3f* outWorldPos, const IUseCamera* camera,
+                                  const sead::Vector2f& layoutPos, const sead::Vector3f& worldPos) {
+    sead::Vector2f screenPos;
+    sead::Vector3f cameraPos;
+    sead::Vector3f worldCameraPos;
+    sead::Viewport viewPort(0.0f, 0.0f, 0.0f, 0.0f);
+
+    const sead::LookAtCamera& lookAt = getLookAtCamera(camera, getViewNumMax(camera) - 1);
+    const sead::Projection& projection = getProjectionSead(camera, getViewNumMax(camera) - 1);
+
+    lookAt.worldPosToCameraPosByMatrix(&worldCameraPos, worldPos);
+    f32 cameraZ = worldCameraPos.z;
+
+    screenPos = layoutPos;
+    screenPos.x /= viewPort.getHalfSizeX();
+    screenPos.y /= viewPort.getHalfSizeY();
+    projection.screenPosToCameraPos(&cameraPos, screenPos);
+
+    normalizeCamera(&cameraPos, cameraZ);
+
+    lookAt.cameraPosToWorldPosByMatrix(outWorldPos, cameraPos);
+}
+
 }  // namespace al
 
 namespace ScreenFunction {
@@ -178,12 +236,14 @@ void calcWorldPositionFromCenterScreen(sead::Vector3f* outWorldPos, const sead::
                                        const sead::Vector3f& worldPos, const sead::Camera& camera,
                                        const sead::Projection& projection,
                                        const sead::Viewport& viewPort) {
+    sead::Vector2f screenPos;
+    sead::Vector3f cameraPos;
     sead::Vector3f worldCameraPos;
+
     camera.worldPosToCameraPosByMatrix(&worldCameraPos, worldPos);
     f32 cameraZ = worldCameraPos.z;
 
-    sead::Vector2f screenPos = layoutPos;
-    sead::Vector3f cameraPos;
+    screenPos = layoutPos;
     screenPos.x /= viewPort.getHalfSizeX();
     screenPos.y /= viewPort.getHalfSizeY();
 
@@ -340,14 +400,14 @@ f32 calcLayoutRadiusFromWorldRadius(const sead::Vector3f& worldPos, const IUseCa
 }
 
 bool calcCameraPosToWorldPosDirFromScreenPos(sead::Vector3f* outCameraPos, const IUseCamera* camera,
-                                             const sead::Vector2f& screenPos, f32 scale) {
+                                             const sead::Vector2f& screenPos, f32 zPos) {
     SceneCameraInfo* cameraInfo = getSceneCameraInfo(camera);
 
     sead::Vector2f layoutPos = {screenPos.x - getDisplayWidth() / 2.0f,
                                 -(screenPos.y - getDisplayHeight() / 2.0f)};
 
     sead::Vector3f worldPos;
-    calcWorldPosFromLayoutPos(&worldPos, cameraInfo, layoutPos, scale, 0);
+    calcWorldPosFromLayoutPos(&worldPos, cameraInfo, layoutPos, zPos, 0);
 
     outCameraPos->setSub(worldPos, getCameraPos(cameraInfo, 0));
     return tryNormalizeOrZero(outCameraPos);
@@ -355,14 +415,14 @@ bool calcCameraPosToWorldPosDirFromScreenPos(sead::Vector3f* outCameraPos, const
 
 bool calcCameraPosToWorldPosDirFromScreenPos(sead::Vector3f* outCameraPos, const IUseCamera* camera,
                                              const sead::Vector2f& screenPos,
-                                             const sead::Vector3f& scale) {
+                                             const sead::Vector3f& zPos) {
     SceneCameraInfo* cameraInfo = getSceneCameraInfo(camera);
 
     sead::Vector2f layoutPos = {screenPos.x - getDisplayWidth() / 2.0f,
                                 -(screenPos.y - getDisplayHeight() / 2.0f)};
 
     sead::Vector3f worldPos;
-    calcWorldPosFromLayoutPos(&worldPos, cameraInfo, layoutPos, scale, 0);
+    calcWorldPosFromLayoutPos(&worldPos, cameraInfo, layoutPos, zPos, 0);
 
     outCameraPos->setSub(worldPos, getCameraPos(cameraInfo, 0));
     return tryNormalizeOrZero(outCameraPos);
@@ -371,12 +431,12 @@ bool calcCameraPosToWorldPosDirFromScreenPos(sead::Vector3f* outCameraPos, const
 bool calcCameraPosToWorldPosDirFromScreenPos(sead::Vector3f* outCameraPos,
                                              const SceneCameraInfo* camera,
                                              const sead::Vector2f& screenPos,
-                                             const sead::Vector3f& scale, s32 viewIdx) {
+                                             const sead::Vector3f& zPos, s32 viewIdx) {
     sead::Vector2f layoutPos = {screenPos.x - (viewIdx == 1 ? 0.0f : 640.0f),
                                 -(screenPos.y - (viewIdx == 1 ? 0.0f : 360.0f))};
 
     sead::Vector3f worldPos;
-    calcWorldPosFromLayoutPos(&worldPos, camera, layoutPos, scale, viewIdx);
+    calcWorldPosFromLayoutPos(&worldPos, camera, layoutPos, zPos, viewIdx);
 
     outCameraPos->setSub(worldPos, getCameraPos(camera, viewIdx));
     return tryNormalizeOrZero(outCameraPos);
@@ -384,11 +444,11 @@ bool calcCameraPosToWorldPosDirFromScreenPos(sead::Vector3f* outCameraPos,
 
 void calcCameraPosToWorldPosDirFromScreenPosSub(sead::Vector3f* outCameraPos,
                                                 const IUseCamera* camera,
-                                                const sead::Vector2f& screenPos, f32 scale) {
+                                                const sead::Vector2f& screenPos, f32 zPos) {
     sead::Vector2f layoutPos = {screenPos.x, -screenPos.y};
 
     sead::Vector3f worldPos;
-    calcWorldPosFromLayoutPosSub(&worldPos, camera, layoutPos, scale);
+    calcWorldPosFromLayoutPosSub(&worldPos, camera, layoutPos, zPos);
 
     outCameraPos->setSub(worldPos, getCameraPos(camera, getViewNumMax(camera) - 1));
     tryNormalizeOrZero(outCameraPos);
@@ -397,11 +457,11 @@ void calcCameraPosToWorldPosDirFromScreenPosSub(sead::Vector3f* outCameraPos,
 void calcCameraPosToWorldPosDirFromScreenPosSub(sead::Vector3f* outCameraPos,
                                                 const IUseCamera* camera,
                                                 const sead::Vector2f& screenPos,
-                                                const sead::Vector3f& scale) {
+                                                const sead::Vector3f& zPos) {
     sead::Vector2f layoutPos = {screenPos.x, -screenPos.y};
 
     sead::Vector3f worldPos;
-    calcWorldPosFromLayoutPosSub(&worldPos, camera, layoutPos, scale);
+    calcWorldPosFromLayoutPosSub(&worldPos, camera, layoutPos, zPos);
 
     outCameraPos->setSub(worldPos, getCameraPos(camera, getViewNumMax(camera) - 1));
     tryNormalizeOrZero(outCameraPos);
@@ -440,7 +500,27 @@ void calcLineCameraToWorldPosFromScreenPos(sead::Vector3f* outLineCamera,
 
 void calcLineCameraToWorldPosFromScreenPosSub(sead::Vector3f* outLineCamera,
                                               sead::Vector3f* outWorldPos, const IUseCamera* camera,
-                                              const sead::Vector2f& screenPos, f32 near, f32 far);
+                                              const sead::Vector2f& _screenPos, f32 near, f32 far) {
+    sead::Vector2f screenPos = {_screenPos.x, -_screenPos.y};
+    sead::Vector3f cameraPos;
+    sead::Viewport viewPort(0.0f, 0.0f, 0.0f, 0.0f);
+
+    const sead::LookAtCamera& lookAt = getLookAtCamera(camera, getViewNumMax(camera) - 1);
+    const sead::Projection& projection = getProjectionSead(camera, getViewNumMax(camera) - 1);
+
+    screenPos.x /= viewPort.getHalfSizeX();
+    screenPos.y /= viewPort.getHalfSizeY();
+    projection.screenPosToCameraPos(&cameraPos, screenPos);
+
+    sead::Vector3f worldPos;
+    lookAt.cameraPosToWorldPosByMatrix(&worldPos, cameraPos);
+
+    worldPos -= getCameraPos(camera, getViewNumMax(camera) - 1);
+    tryNormalizeOrZero(&worldPos);
+
+    outLineCamera->set(getCameraPos(camera, getViewNumMax(camera) - 1) + worldPos * near);
+    outWorldPos->set((far - near) * worldPos);
+}
 
 void calcLineCameraToWorldPosFromScreenPosSub(sead::Vector3f* outLineCamera,
                                               sead::Vector3f* outWorldPos, const IUseCamera* camera,
@@ -449,27 +529,46 @@ void calcLineCameraToWorldPosFromScreenPosSub(sead::Vector3f* outLineCamera,
                                              getNear(camera, 0), getFar(camera, 0));
 }
 
-void calcWorldPosFromLayoutPos(sead::Vector3f* output, const SceneCameraInfo*,
-                               const sead::Vector2f&, f32, s32);
+void calcWorldPosFromLayoutPos(sead::Vector3f* outWorldPos, const SceneCameraInfo* cameraInfo,
+                               const sead::Vector2f& layoutPos, f32 zPos, s32 viewIdx) {
+    sead::Vector2f screenPos;
+    sead::Vector3f cameraPos;
+    f32 viewPortHeight = (viewIdx == 1 ? 0.0f : 720.0f);
+    sead::Viewport viewPort(
+        0.0f, 0.0f, cameraInfo->getViewAt(viewIdx)->getProjection().getAspect() * viewPortHeight,
+        viewPortHeight);
+
+    const sead::LookAtCamera& lookAt = getLookAtCamera(cameraInfo, viewIdx);
+    const sead::Projection& projection = getProjectionSead(cameraInfo, viewIdx);
+
+    screenPos = layoutPos;
+    screenPos.x /= viewPort.getHalfSizeX();
+    screenPos.y /= viewPort.getHalfSizeY();
+    projection.screenPosToCameraPos(&cameraPos, screenPos);
+
+    normalizeCamera(&cameraPos, -zPos);
+
+    lookAt.cameraPosToWorldPosByMatrix(outWorldPos, cameraPos);
+}
 
 void calcWorldPosFromLayoutPos(sead::Vector3f* output, const SceneCameraInfo*,
                                const sead::Vector2f&, const sead::Vector3f&, s32);
 
 void calcWorldPosFromScreenPos(sead::Vector3f* outWorldPos, const SceneCameraInfo* cameraInfo,
-                               const sead::Vector2f& screenPos, f32 scale, s32 viewIdx) {
+                               const sead::Vector2f& screenPos, f32 zPos, s32 viewIdx) {
     sead::Vector2f layoutPos = {screenPos.x - (viewIdx == 1 ? 0.0f : 640.0f),
                                 -(screenPos.y - (viewIdx == 1 ? 0.0f : 360.0f))};
 
-    calcWorldPosFromLayoutPos(outWorldPos, cameraInfo, layoutPos, scale, viewIdx);
+    calcWorldPosFromLayoutPos(outWorldPos, cameraInfo, layoutPos, zPos, viewIdx);
 }
 
 void calcWorldPosFromScreenPos(sead::Vector3f* outWorldPos, const SceneCameraInfo* cameraInfo,
-                               const sead::Vector2f& screenPos, const sead::Vector3f& scale,
+                               const sead::Vector2f& screenPos, const sead::Vector3f& zPos,
                                s32 viewIdx) {
     sead::Vector2f layoutPos = {screenPos.x - (viewIdx == 1 ? 0.0f : 640.0f),
                                 -(screenPos.y - (viewIdx == 1 ? 0.0f : 360.0f))};
 
-    calcWorldPosFromLayoutPos(outWorldPos, cameraInfo, layoutPos, scale, viewIdx);
+    calcWorldPosFromLayoutPos(outWorldPos, cameraInfo, layoutPos, zPos, viewIdx);
 }
 
 void calcLayoutPosFromWorldPos(sead::Vector2f* outLayoutPos, const SceneCameraInfo* cameraInfo,
