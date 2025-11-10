@@ -413,6 +413,19 @@ bool calcCameraPosToWorldPosDirFromScreenPos(sead::Vector3f* outCameraPos, const
     return tryNormalizeOrZero(outCameraPos);
 }
 
+bool calcCameraPosToWorldPosDirFromScreenPos(sead::Vector3f* outCameraPos,
+                                             const SceneCameraInfo* cameraInfo,
+                                             const sead::Vector2f& screenPos, f32 zPos,
+                                             s32 viewIdx) {
+    sead::Vector2f layoutPos = {screenPos.x - (viewIdx == 1 ? 0.0f : 640.0f),
+                                -(screenPos.y - (viewIdx == 1 ? 0.0f : 360.0f))};
+    sead::Vector3f worldPos;
+    calcWorldPosFromLayoutPos(&worldPos, cameraInfo, layoutPos, zPos, viewIdx);
+
+    outCameraPos->setSub(worldPos, getCameraPos(cameraInfo, viewIdx));
+    return tryNormalizeOrZero(outCameraPos);
+}
+
 bool calcCameraPosToWorldPosDirFromScreenPos(sead::Vector3f* outCameraPos, const IUseCamera* camera,
                                              const sead::Vector2f& screenPos,
                                              const sead::Vector3f& zPos) {
@@ -551,8 +564,31 @@ void calcWorldPosFromLayoutPos(sead::Vector3f* outWorldPos, const SceneCameraInf
     lookAt.cameraPosToWorldPosByMatrix(outWorldPos, cameraPos);
 }
 
-void calcWorldPosFromLayoutPos(sead::Vector3f* output, const SceneCameraInfo*,
-                               const sead::Vector2f&, const sead::Vector3f&, s32);
+void calcWorldPosFromLayoutPos(sead::Vector3f* outWorldPos, const SceneCameraInfo* cameraInfo,
+                               const sead::Vector2f& layoutPos, const sead::Vector3f& worldPos,
+                               s32 viewIdx) {
+    sead::Vector2f screenPos;
+    sead::Vector3f cameraPos;
+    f32 viewPortHeight = (viewIdx == 1 ? 0.0f : 720.0f);
+    sead::Viewport viewPort(
+        0.0f, 0.0f, cameraInfo->getViewAt(viewIdx)->getProjection().getAspect() * viewPortHeight,
+        viewPortHeight);
+
+    const sead::LookAtCamera& lookAt = getLookAtCamera(cameraInfo, viewIdx);
+    const sead::Projection& projection = getProjectionSead(cameraInfo, viewIdx);
+
+    lookAt.worldPosToCameraPosByMatrix(&cameraPos, worldPos);
+    f32 cameraZ = cameraPos.z;
+
+    screenPos = layoutPos;
+    screenPos.x /= viewPort.getHalfSizeX();
+    screenPos.y /= viewPort.getHalfSizeY();
+    projection.screenPosToCameraPos(&cameraPos, screenPos);
+
+    normalizeCamera(&cameraPos, cameraZ);
+
+    lookAt.cameraPosToWorldPosByMatrix(outWorldPos, cameraPos);
+}
 
 void calcWorldPosFromScreenPos(sead::Vector3f* outWorldPos, const SceneCameraInfo* cameraInfo,
                                const sead::Vector2f& screenPos, f32 zPos, s32 viewIdx) {
@@ -578,16 +614,18 @@ void calcLayoutPosFromWorldPos(sead::Vector2f* outLayoutPos, const SceneCameraIn
         .projectByMatrix(outLayoutPos, worldPos, getProjectionSead(cameraInfo, viewIdx), viewPort);
 }
 
-void calcLineCameraToWorldPosFromScreenPos(sead::Vector3f* output1, sead::Vector3f* output2,
-                                           const SceneCameraInfo*, const sead::Vector2f&, f32, f32,
-                                           s32);
+void calcLineCameraToWorldPosFromScreenPos(sead::Vector3f* outLineCamera,
+                                           sead::Vector3f* outWorldPos,
+                                           const SceneCameraInfo* cameraInfo,
+                                           const sead::Vector2f& screenPos, f32 near, f32 far,
+                                           s32 viewIdx);
 
-void calcLineCameraToWorldPosFromScreenPos(sead::Vector3f* output1, sead::Vector3f* output2,
-                                           const SceneCameraInfo*, const sead::Vector2f&, s32);
+void calcLineCameraToWorldPosFromScreenPos(sead::Vector3f* outLineCamera,
+                                           sead::Vector3f* outWorldPos,
+                                           const SceneCameraInfo* cameraInfo,
+                                           const sead::Vector2f& screenPos, s32 viewIdx) {
+    calcLineCameraToWorldPosFromScreenPos(outLineCamera, outWorldPos, cameraInfo, screenPos,
+                                          getNear(cameraInfo, 0), getFar(cameraInfo, 0), viewIdx);
+}
 
-void calcWorldPosFromScreenPos(sead::Vector3f* output, const SceneCameraInfo*,
-                               const sead::Vector2f&, f32, s32);
-
-bool calcCameraPosToWorldPosDirFromScreenPos(sead::Vector3f* output, const SceneCameraInfo*,
-                                             const sead::Vector2f&, f32, s32);
 }  // namespace al
