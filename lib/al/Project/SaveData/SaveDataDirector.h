@@ -1,7 +1,10 @@
 #pragma once
 
 #include <basis/seadTypes.h>
+<<<<<<< HEAD
 #include <container/seadBuffer.h>
+=======
+>>>>>>> b7cb3671 (Library/SaveData: Implement SaveDataFunction)
 #include <prim/seadSafeString.h>
 
 namespace al {
@@ -39,6 +42,7 @@ public:
     s32 getFSErrorCode() const { return mFileSystemErrorCode; }
 
 private:
+<<<<<<< HEAD
     SaveDataSequenceBase* mRunningSequence = nullptr;
     SaveDataSequenceInitDir* mInitDirSequence = nullptr;
     SaveDataSequenceFormat* mFormatSequence = nullptr;
@@ -51,6 +55,21 @@ private:
     AsyncFunctorThread* mSaveDataThread = nullptr;
     s32 mResult = 0;
     s32 mFileSystemErrorCode = 0;
+=======
+    SaveDataSequenceBase* _0;
+    SaveDataSequenceInitDir* mInitDirSequence;
+    SaveDataSequenceFormat* mFormatSequence;
+    SaveDataSequenceRead* mReadSequence;
+    SaveDataSequenceWrite* mWriteSequence;
+    bool mIsInitialized;
+    bool _29;
+    void* filler;
+    u8* mWorkBuffer;
+    sead::FixedSafeString<64> _40;
+    AsyncFunctorThread* _98;
+    s32 mResult;
+    s32 mFileSystemErrorCode;
+>>>>>>> b7cb3671 (Library/SaveData: Implement SaveDataFunction)
 };
 
 static_assert(sizeof(SaveDataDirector) == 0xa8);
