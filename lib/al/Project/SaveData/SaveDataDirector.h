@@ -50,7 +50,7 @@ private:
     sead::FixedSafeString<64> mCurrentFileName;
     AsyncFunctorThread* mSaveDataThread = nullptr;
     s32 mResult = 0;
-    s32 mFileSystemErrorCode = 0;
+    s32 mFileSystemErrorCode = 0;)
 };
 
 static_assert(sizeof(SaveDataDirector) == 0xa8);
