@@ -10,7 +10,7 @@ class SaveDataSequenceInitDir : public SaveDataSequenceBase {
 public:
     SaveDataSequenceInitDir(u8);
 
-    s32 threadFunc(const char* arg) override;
+    s32 threadFunc(const char* fileName) override;
 
     void start(u8*, u32, u32);
 
