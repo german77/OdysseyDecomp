@@ -3,14 +3,14 @@
 #include <filedevice/nin/seadNinSaveFileDeviceNin.h>
 #include <filedevice/seadFileDevice.h>
 
-#include "Project/SaveData/SaveDataDirector.h"
+#include "Project/SaveData/SaveDataFunction.h"
 
 namespace al {
 
 SaveDataSequenceRead::SaveDataSequenceRead(u8 a) : _19(a) {}
 
-inline bool isSaveDataCorrupted(u8* buffer, u32 version, u32 bufferSize) {
-    SaveDataHeader* header = SaveDataFunction::getSaveDataHeader(buffer);
+inline bool isSaveDataCorrupted(const u8* buffer, u32 version, u32 bufferSize) {
+    const SaveDataFunction::SaveDataHeader* header = SaveDataFunction::getSaveDataHeader(buffer);
     if (header->version != version)
         return true;
 

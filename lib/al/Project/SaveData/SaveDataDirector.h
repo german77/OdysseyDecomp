@@ -50,25 +50,9 @@ private:
     sead::FixedSafeString<64> mCurrentFileName;
     AsyncFunctorThread* mSaveDataThread = nullptr;
     s32 mResult = 0;
-    s32 mFileSystemErrorCode = 0;)
+    s32 mFileSystemErrorCode = 0;
 };
 
 static_assert(sizeof(SaveDataDirector) == 0xa8);
 
-struct SaveDataHeader {
-    u32 checkSum;
-    u32 version;
-    u32 fileSize;
-};
-
-static_assert(sizeof(SaveDataHeader) == 0xc);
-
 }  // namespace al
-
-namespace al::SaveDataFunction {
-
-SaveDataHeader* getSaveDataHeader(u8*);
-SaveDataHeader* getSaveDataHeader(const u8*);
-u32 calcSaveDataCheckSum(const u8*);
-s32 makeInvalidResult();
-}  // namespace al::SaveDataFunction

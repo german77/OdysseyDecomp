@@ -10,7 +10,7 @@ class SaveDataSequenceFormat : public SaveDataSequenceBase {
 public:
     SaveDataSequenceFormat();
 
-    s32 threadFunc(const char* arg) override;
+    s32 threadFunc(const char* fileName) override;
 
     void start(s32, s32);
 

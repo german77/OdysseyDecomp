@@ -3,7 +3,7 @@
 #include <filedevice/nin/seadNinSaveFileDeviceNin.h>
 #include <filedevice/seadFileDevice.h>
 
-#include "Project/SaveData/SaveDataDirector.h"
+#include "Project/SaveData/SaveDataFunction.h"
 
 namespace al {
 SaveDataSequenceWrite::SaveDataSequenceWrite(u8 a) : _16(a) {}
@@ -28,7 +28,7 @@ void SaveDataSequenceWrite::start(u8* buffer, u32 bufferSize, u32 version, bool 
     mBufferSize = bufferSize;
     mIsFlushNeeded = isFlushNeeded;
 
-    SaveDataHeader* header = SaveDataFunction::getSaveDataHeader(buffer);
+    SaveDataFunction::SaveDataHeader* header = SaveDataFunction::getSaveDataHeader(buffer);
     header->version = version;
     header->fileSize = bufferSize;
     header->checkSum = SaveDataFunction::calcSaveDataCheckSum(buffer);
