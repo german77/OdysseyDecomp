@@ -113,7 +113,7 @@ public:
     void setPlayingFileId(s32 fileId);
     void initializeData();
     void initializeDataCommon();
-    void resetTempSaveData(bool isSwap);
+    void resetTempSaveData(bool isSwapTempSaveData);
     void initializeDataId(s32 fileId);
     void readByamlData(s32 fileId, const char* fileName);
     s32 tryFindEmptyFileId() const;
