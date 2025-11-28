@@ -164,7 +164,7 @@ public:
     void setOriginalHintTrans(s32);
     PlayerHitPointData* getPlayerHitPointData() const;
     void startDemoStage(const char*);
-    void changeNextStage(const char*);
+    void changeNextStage(const ChangeStageInfo*, s32);
     void returnPrevStage();
     void changeNextStageWithDemoWorldWarp(const char*);
     void changeNextStageWithWorldWarpHole(const char*);
@@ -465,6 +465,8 @@ public:
     bool isEnableCapMessageLifeOneKidsMode() const { return mIsEnableCapMessageLifeOneKidsMode; }
 
     void disableCapMessageLifeOneKidsMode() { mIsEnableCapMessageLifeOneKidsMode = false; }
+
+    GameProgressData* getGameProgressData() { return mGameProgressData; }
 
 private:
     char _000[0x18];
