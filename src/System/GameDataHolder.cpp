@@ -4,8 +4,8 @@
 
 #include "Library/Base/StringUtil.h"
 #include "Library/Resource/ResourceFunction.h"
-#include "Library/Yaml/ByamlIter.h"
 #include "Library/SaveData/SaveDataFunction.h"
+#include "Library/Yaml/ByamlIter.h"
 
 #include "Scene/QuestInfoHolder.h"
 #include "Sequence/GameSequenceInfo.h"
@@ -369,14 +369,23 @@ bool GameDataHolder::tryReadByamlDataCommon(const u8* byamlData) {
 }
 
 void GameDataHolder::readFromSaveDataBufferCommonFileOnlyLanguage() {
-  sead::RamReadStream readStream(al::getSaveDataWorkBuffer(),0x400,0);
+    sead::RamReadStream readStream(al::getSaveDataWorkBuffer(), 0x400, sead::Stream::Modes::Binary);
 
-  const char* memBlock;
-  readStream->readMemBlock(memBlock,0x38);
+    struct SaveDataBuffer {
+        s32 a;
+        s32 b;
+        s32 c;
+        char language[0x2c];
+    };
 
-  if (readMemBlock == 0) {
-      mLanguage.format("%s",readMemBlock);
-  }
+    static_assert(sizeof(SaveDataBuffer) == 0x38);
+
+    SaveDataBuffer buffer;
+    memset(&buffer,0,0x38);
+    readStream.readMemBlock((void*)&buffer, sizeof(SaveDataBuffer));
+
+    if (buffer.a == 0)
+        mLanguage.format("%s", buffer.language);
 }
 
 void GameDataHolder::writeToSaveBuffer(const char* fileName) {}
