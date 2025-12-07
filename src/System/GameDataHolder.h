@@ -111,7 +111,7 @@ public:
     ~GameDataHolder() override;
 
     const char* getSceneObjName() const override;
-    al::MessageSystem* getMessageSystem() const override;
+    const al::MessageSystem* getMessageSystem() const override;
 
     void setPlayingFileId(s32 fileId);
     void initializeData();
@@ -170,6 +170,7 @@ public:
     void readFromSaveDataBuffer(const char* fileName);
     bool tryReadByamlDataCommon(const u8* byamlData);
     void readFromSaveDataBufferCommonFileOnlyLanguage();
+    void writeToSaveDataBuffer(char const* fileName);
     void writeToSaveBuffer(const char* fileName);
     void updateSaveInfoForDisp(const char* fileName);
     void updateSaveTimeForDisp(const char* fileName);
@@ -233,29 +234,29 @@ public:
     GameConfigData* getGameConfigData() const { return mGameConfigData; }
 
 private:
-    al::MessageSystem* mMessageSystem;
-    GameDataFile** mFiles;
-    GameDataFile* mPlayingFile;
-    GameDataFile* mNextFile;
-    s32 mPlayingFileId;
-    SaveDataAccessSequence* mSaveDataAccessSequence;
-    bool mIsRequireSave;
-    u32 mRequireSaveFrame;
-    bool mIsInvalidSaveForMoonGet;
-    bool _49;  // related to changeNextStage(WithWorldDemoWarp)
-    bool _4a;  // related to endStage
+    const al::MessageSystem* mMessageSystem=nullptr;
+    GameDataFile** mFiles=nullptr;
+    GameDataFile* mPlayingFile=nullptr;
+    GameDataFile* mNextFile=nullptr;
+    s32 mPlayingFileId=0;
+    SaveDataAccessSequence* mSaveDataAccessSequence=nullptr;
+    bool mIsRequireSave=false;
+    u32 mRequireSaveFrame=0;
+    bool mIsInvalidSaveForMoonGet=false;
+    bool _49=false;  // related to changeNextStage(WithWorldDemoWarp)
+    bool _4a=false; // related to endStage
     sead::FixedSafeString<32> mLanguage;
-    u64 mPlayTimeAcrossFiles;
-    sead::Heap* mSaveDataWriteThread;
-    const u8* mSaveDataWorkBuffer;
-    GameConfigData* mGameConfigData;
-    TempSaveData* mTempSaveData;
-    TempSaveData* mTempSaveDataBackup;
-    CapMessageBossData* mCapMessageBossData;
-    void* _c0;
-    void* _c8;
-    TemporaryScenarioCameraHolder* mTemporaryScenarioCameraHolder;
-    bool* mIsPlayAlreadyScenarioStartCamera;
+    u64 mPlayTimeAcrossFiles=0;
+    sead::Heap* mSaveDataWriteThread=nullptr;
+    const u8* mSaveDataWorkBuffer=nullptr;
+    GameConfigData* mGameConfigData=nullptr;
+    TempSaveData* mTempSaveData=nullptr;
+    TempSaveData* mTempSaveDataBackup=nullptr;
+    CapMessageBossData* mCapMessageBossData=nullptr;
+    void* _c0=nullptr;
+    s32 _c8=0;
+    TemporaryScenarioCameraHolder* mTemporaryScenarioCameraHolder=nullptr;
+    bool* mIsPlayAlreadyScenarioStartCamera=nullptr;
     sead::PtrArray<StageLockInfo> mStageLockList;
     sead::PtrArray<ShopItem::ItemInfo> mShopItemList;
     sead::PtrArray<ShopItem::ItemInfo> mShopItemListE3;
@@ -265,36 +266,36 @@ private:
     sead::PtrArray<ShopItem::ItemInfo> mItemSticker;
     sead::PtrArray<HackObjInfo> mHackObjList;
     sead::PtrArray<sead::FixedSafeString<64>> _160;
-    void* _170;
-    s32 _178;
-    AchievementInfoReader* mAchievementInfoReader;
-    AchievementHolder* mAchievementHolder;
-    WorldList* mWorldList;
+    void* _170=nullptr;
+    s32 _178=0;
+    AchievementInfoReader* mAchievementInfoReader=nullptr;
+    AchievementHolder* mAchievementHolder=nullptr;
+    WorldList* mWorldList=nullptr;
     sead::PtrArray<ChangeStageItem> mChangeStageList;
     sead::PtrArray<sead::FixedSafeString<128>> mExStageList;
     sead::PtrArray<InvalidOpenMapInfo> mInvalidOpenMapList;
     sead::PtrArray<sead::FixedSafeString<128>> mShowHackTutorialList;
-    bool* mIsShowBindTutorial;
-    MapDataHolder* mMapDataHolder;
+    bool* mIsShowBindTutorial=nullptr;
+    MapDataHolder* mMapDataHolder=nullptr;
     sead::PtrArray<WorldItemTypeInfo> mWorldItemTypeInfo;
-    s32* mCoinCollectNumMax;
-    s32* mWorldWarpHoleDestIds;
-    WorldWarpHoleInfo* mWorldWarpHoleInfos;
-    s32 mWorldWarpHoleInfoNum;
-    UniqObjInfo* mLocationName;
-    bool _220;
-    s32 _224;
-    bool mIsValidCheckpointWarp;
-    sead::Vector3f mStageMapPlayerPos;
-    sead::Vector3f* mCoinTransForDeadPlayer;
-    s32 mDeadPlayerCoinIdx;
-    bool _244;
-    bool mIsSeparatePlay;
-    bool mIsPlayDemoLavaErupt;
-    QuestInfoHolder* mQuestInfoHolder;
-    bool mIsExistKoopaShip;
-    GameSequenceInfo* mSequenceInfo;
-    TimeBalloonSequenceInfo* mTimeBalloonSequenceInfo;
+    s32* mCoinCollectNumMax=nullptr;
+    s32* mWorldWarpHoleDestIds=nullptr;
+    WorldWarpHoleInfo* mWorldWarpHoleInfos=nullptr;
+    s32 mWorldWarpHoleInfoNum=0;
+    UniqObjInfo* mLocationName=nullptr;
+    bool _220=false;
+    s32 _224=0;
+    bool mIsValidCheckpointWarp=true;
+    sead::Vector3f mStageMapPlayerPos=sead::Vector3f::zero;
+    sead::Vector3f* mCoinTransForDeadPlayer=nullptr;
+    s32 mDeadPlayerCoinIdx=0;
+    bool _244=false;
+    bool mIsSeparatePlay=false;
+    bool mIsPlayDemoLavaErupt=false;
+    QuestInfoHolder* mQuestInfoHolder=nullptr;
+    bool mIsExistKoopaShip=false;
+    GameSequenceInfo* mSequenceInfo=nullptr;
+    TimeBalloonSequenceInfo* mTimeBalloonSequenceInfo=nullptr;
 };
 
 static_assert(sizeof(GameDataHolder) == 0x268);

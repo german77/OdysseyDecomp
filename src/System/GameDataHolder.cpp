@@ -8,6 +8,7 @@
 #include "Library/Resource/ResourceFunction.h"
 #include "Library/SaveData/SaveDataFunction.h"
 #include "Library/Yaml/ByamlIter.h"
+#include "Library/Message/LanguageUtil.h"
 
 #include "Item/Coin.h"
 #include "Scene/QuestInfoHolder.h"
@@ -25,9 +26,11 @@
 #include "Util/ScenePrepoFunction.h"
 #include "Util/SpecialBuildUtil.h"
 
-GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem) {}
+GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem) :mMessageSystem(messageSystem){}
 
-GameDataHolder::GameDataHolder() {}
+GameDataHolder::GameDataHolder() {
+    setLanguage(al::getLanguageString());
+}
 
 GameDataHolder::~GameDataHolder() = default;
 
@@ -35,7 +38,9 @@ const char* GameDataHolder::getSceneObjName() const {
     return "ゲームデータ保持";
 }
 
-al::MessageSystem* GameDataHolder::getMessageSystem() const {}
+const al::MessageSystem* GameDataHolder::getMessageSystem() const {
+    return mMessageSystem;
+}
 
 void GameDataHolder::setPlayingFileId(s32 fileId) {
     mPlayingFile = getGameDataFile(fileId);
@@ -152,7 +157,7 @@ void GameDataHolder::setRequireSaveFalse() {
 }
 
 void GameDataHolder::setRequireSaveFrame() {
-    if (!isRequireSave()) {
+    if (!mIsRequireSave || mRequireSaveFrame > 0) {
         mRequireSaveFrame = 60;
         mIsRequireSave = true;
     }
@@ -257,7 +262,7 @@ void GameDataHolder::setCheckpointId(const al::PlacementId* placementId) {
 }
 
 const char* GameDataHolder::tryGetRestartPointIdString() const {
-    mPlayingFile->tryGetRestartPointIdString();
+    return mPlayingFile->tryGetRestartPointIdString();
 }
 
 void GameDataHolder::endStage() {
@@ -320,15 +325,20 @@ s32 GameDataHolder::getPlayingFileId() const {
     for (s32 i = 0; i < 5; i++)
         if (mPlayingFile == getGameDataFile(i))
             return i;
+
     return -1;
 }
 
 s32 GameDataHolder::getPlayingOrNextFileId() const {
-    GameDataFile* gameDataFile = mNextFile ?: mPlayingFile;
+    GameDataFile* gameDataFile = mPlayingFile;
+
+    if (mNextFile)
+        gameDataFile = mNextFile;
 
     for (s32 i = 0; i < 5; i++)
         if (gameDataFile == getGameDataFile(i))
             return i;
+
     return -1;
 }
 
@@ -342,11 +352,10 @@ void GameDataHolder::receiveSetPlayingFileIdMsg() {
 }
 
 GameDataFile* GameDataHolder::findGameDataFile(const char* fileName) const {
-    for (s32 i = 0; i < 5; i++) {
-        al::StringTmp<32> gameDataFilename{"%s%d.bin", "File", i};
-        if (al::isEqualString(fileName, gameDataFilename))
+    for (s32 i = 0; i < 5; i++)
+        if (al::isEqualString(fileName, al::StringTmp<32>("%s%d.bin", "File", i + 1)))
             return getGameDataFile(i);
-    }
+
     return nullptr;
 }
 
@@ -395,13 +404,41 @@ void GameDataHolder::readFromSaveDataBufferCommonFileOnlyLanguage() {
         mLanguage.format("%s", buffer.language);
 }
 
+void GameDataHolder::writeToSaveDataBuffer(const char* fileName) {}
+
 void GameDataHolder::writeToSaveBuffer(const char* fileName) {}
 
-void GameDataHolder::updateSaveInfoForDisp(const char* fileName) {}
+void GameDataHolder::updateSaveInfoForDisp(const char* fileName) {
+    if (al::isEqualString(fileName, "Common.bin"))
+        return;
 
-void GameDataHolder::updateSaveTimeForDisp(const char* fileName) {}
+    findGameDataFile(fileName)->updateSaveInfoForDisp();
+}
 
-s32 GameDataHolder::findUnlockShineNum(bool* isCountTotal, s32 worldId) const {}
+void GameDataHolder::updateSaveTimeForDisp(const char* fileName) {
+    if (al::isEqualString(fileName, "Common.bin"))
+        return;
+
+    findGameDataFile(fileName)->updateSaveTimeForDisp();
+}
+
+s32 GameDataHolder::findUnlockShineNum(bool* isCountTotal, s32 worldId) const {
+    s32 worldNumMax = 0;
+    for (s32 i = 0; i < mStageLockList.size(); i++) {
+        if (mStageLockList[i]->shineNumInfoNum > 0) {
+            for (s32 e = 0; e < mStageLockList[i]->shineNumInfoNum; e++) {
+                if (worldId != e + worldNumMax)
+                    continue;
+
+                if (mStageLockList[i]->isCountTotal && isCountTotal)
+                    *isCountTotal = true;
+                return mStageLockList[i]->shineNumInfo[e];
+            }
+            worldNumMax += mStageLockList[i]->shineNumInfoNum;
+        }
+    }
+    return -1;
+}
 
 s32 GameDataHolder::calcBeforePhaseWorldNumMax(s32 worldId) const {
     s32 worldNumMax = -1;
@@ -598,15 +635,15 @@ bool GameDataHolder::checkIsOpenWorldWarpHoleInScenario(s32 worldId, s32 scenari
 }
 
 void GameDataHolder::setLocationName(const al::PlacementInfo* placementInfo) {
-    mLocationName->set(getCurrentStageName(), placementInfo);
+    mLocationName->set(GameDataFunction::getCurrentStageName(const_cast<GameDataHolder*>(this)),
+                       placementInfo);
 }
 
 bool GameDataHolder::isPrevLocation(const al::PlacementInfo* placementInfo) const {
     UniqObjInfo objInfo;
 
-    const char* stageName =
-        GameDataFunction::getCurrentStageName(const_cast<GameDataHolder*>(this));
-    objInfo.set(stageName, placementInfo);
+    objInfo.set(GameDataFunction::getCurrentStageName(const_cast<GameDataHolder*>(this)),
+                placementInfo);
 
     return mLocationName->isEqual(objInfo);
 }
