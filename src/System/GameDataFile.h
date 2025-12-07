@@ -396,6 +396,7 @@ public:
     bool isEnableOpenMoonRock(s32) const;
     bool tryWriteByByaml(al::ByamlWriter*) const;
 
+    s64 getSaveDataIdForPrepo() const {return mSaveDataIdForPrepo;}
     bool isHintNpcFirstTalk() const { return mIsHintNpcFirstTalk; }
 
     void hintNpcFirstTalk() { mIsHintNpcFirstTalk = true; }
