@@ -4,6 +4,9 @@
 #include <math/seadVector.h>
 #include <prim/seadSafeString.h>
 
+#include "Library/HostIO/HioNode.h"
+#include "Library/Message/IUseMessageSystem.h"
+#include "Library/Scene/ISceneObj.h"
 #include "Library/Scene/GameDataHolderBase.h"
 
 #include "Scene/SceneObjFactory.h"
