@@ -1,5 +1,7 @@
 #include "System/GameDataHolder.h"
 
+#include <heap/seadFrameHeap.h>
+#include <heap/seadHeap.h>
 #include <stream/seadRamStream.h>
 
 #include "Library/Base/StringUtil.h"
@@ -9,8 +11,12 @@
 #include "Library/Resource/ResourceFunction.h"
 #include "Library/SaveData/SaveDataFunction.h"
 #include "Library/Yaml/ByamlIter.h"
+#include "Library/Yaml/Writer/ByamlWriter.h"
+#include "Library/Yaml/ByamlUtil.h"
 
 #include "Item/Coin.h"
+#include "Npc/AchievementHolder.h"
+#include "Npc/AchievementInfoReader.h"
 #include "Scene/QuestInfoHolder.h"
 #include "Sequence/GameSequenceInfo.h"
 #include "System/CapMessageBossData.h"
@@ -27,7 +33,105 @@
 #include "Util/SpecialBuildUtil.h"
 
 GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
-    : mMessageSystem(messageSystem) {}
+    : mMessageSystem(messageSystem) {
+    setLanguage(al::getLanguageString());
+    mSaveDataWriteThread =
+        sead::FrameHeap::create(0x200000, "セーブデータByamlIter書き込み用", nullptr, 8,
+                                sead::FrameHeap::cHeapDirection_Forward, false);
+    mSaveDataWorkBuffer = new u8[0x200000];
+    mGameConfigData = new GameConfigData();
+    mGameConfigData->init();
+
+    mWorldList = new WorldList();
+
+    al::ByamlIter changeStageListIter(
+        al::tryGetBymlFromArcName("SystemData/WorldList", "ChangeStageList"));
+    s32 changeStageListSize = changeStageListIter.getSize();
+    mChangeStageList.allocBuffer(changeStageListSize, nullptr);
+
+    for (s32 i = 0; i < changeStageListSize; i++) {
+        al::ByamlIter iter;
+        changeStageListIter.tryGetIterByIndex(&iter, i);
+        const char* srcStageName = nullptr;
+        iter.tryGetStringByKey(&srcStageName, "SrcStageName");
+        const char* srcLabel = nullptr;
+        iter.tryGetStringByKey(&srcLabel, "SrcLabel");
+        const char* destStageName = nullptr;
+        iter.tryGetStringByKey(&destStageName, "DestStageName");
+        const char* destLabel = nullptr;
+        iter.tryGetStringByKey(&destLabel, "DestLabel");
+
+        ChangeStageItem* stageItem = new ChangeStageItem();
+        stageItem->srcStageName.format("%s", srcStageName);
+        stageItem->srcLabel.format("%s", srcLabel);
+        stageItem->destStageName.format("%s", destStageName);
+        stageItem->destLabel.format("%s", destLabel);
+
+        mChangeStageList.pushBack(stageItem);
+    }
+
+    al::ByamlIter exStageListIter(al::tryGetBymlFromArcName("SystemData/WorldList", "ExStageList"));
+    s32 exStageListSize = exStageListIter.getSize();
+    mExStageList.allocBuffer(exStageListSize, nullptr);
+
+    for (s32 i = 0; i < changeStageListSize; i++) {
+        const char* name = nullptr;
+        exStageListIter.tryGetStringByIndex(&name, i);
+
+        ExStageItem* stageItem = new ExStageItem();
+        stageItem->name.format("%s", name);
+
+        mExStageList.pushBack(stageItem);
+    }
+
+    al::ByamlIter invalidOpenMapListIter(
+        al::tryGetBymlFromArcName("SystemData/WorldList", "InvalidOpenMapList"));
+    s32 invalidOpenMapListSize = invalidOpenMapListIter.getSize();
+    mInvalidOpenMapList.allocBuffer(invalidOpenMapListSize, nullptr);
+
+    for (s32 i = 0; i < invalidOpenMapListSize; i++) {
+        al::ByamlIter iter;
+        invalidOpenMapListIter.tryGetIterByIndex(&iter, i);
+
+        InvalidOpenMapInfo* mapInfo = new InvalidOpenMapInfo();
+
+        iter.tryGetStringByKey(&mapInfo->name, "Name");
+        iter.tryGetIntByKey(&mapInfo->scenario, "Scenario");
+
+        mInvalidOpenMapList.pushBack(mapInfo);
+    }
+
+    al::ByamlIter stageLockListIter(
+        al::tryGetBymlFromArcName("SystemData/WorldList", "StageLockList"));
+    stageLockListIter.tryGetIterByKey(&stageLockListIter, "StageLockList");
+    s32 stageLockListSize = stageLockListIter.getSize();
+
+    mIsPlayAlreadyScenarioStartCamera = new bool[0x10];
+    mAchievementInfoReader = new AchievementInfoReader();
+    mAchievementInfoReader->init();
+
+    mAchievementHolder = new AchievementHolder();
+    mAchievementHolder->init();
+
+    mStageLockList.allocBuffer(stageLockListSize, nullptr);
+
+    for (s32 i = 0; i < stageLockListSize; i++) {
+        al::ByamlIter iter;
+        stageLockListIter.tryGetIterByIndex(&iter, i);
+        StageLockInfo* lockInfo = new StageLockInfo();
+
+      al::tryGetByamlBool(&lockInfo->isCountTotal,iter,"IsCountTotal");
+      al::tryGetByamlBool(&lockInfo->isCrash,iter,"IsCrash");
+
+        al::ByamlIter shineInfoIter;
+        iter.tryGetIterByKey(&shineInfoIter, "ShineNumInfo");
+        lockInfo->shineNumInfoNum=shineInfoIter.getSize();
+        lockInfo->shineNumInfo=new s32[lockInfo->shineNumInfoNum];
+
+        // COMPLETE ME
+        mStageLockList.pushBack(lockInfo);
+    }
+}
 
 GameDataHolder::GameDataHolder() {
     setLanguage(al::getLanguageString());
@@ -376,7 +480,7 @@ struct SaveDataBuffer {
     s32 a;
     s32 b;
     s32 playingFileId;
-    char language[0x24];
+    char language[0x20];
     u64 playTime;
 };
 
@@ -386,39 +490,38 @@ void GameDataHolder::readFromSaveDataBuffer(const char* fileName) {
     u8* saveDataBuffer = al::getSaveDataWorkBuffer();
     memset(mSaveDataWorkBuffer, 0, 0x200000);
 
-    if (!al::isEqualString("Common.bin", fileName)) {
+    if (al::isEqualString("Common.bin", fileName)) {
+        sead::RamReadStream readStream(saveDataBuffer, 0x400, sead::Stream::Modes::Binary);
+        initializeDataCommon();
+
+        SaveDataBuffer buffer;
+        memset(&buffer, 0, 0x38);
+        readStream.readMemBlock((void*)&buffer, sizeof(SaveDataBuffer));
+
+        if (buffer.a != 0) {
+            initializeDataCommon();
+            return;
+        }
+
+        mLanguage.format("%s", buffer.language);
+        mPlayTimeAcrossFiles = buffer.playTime;
+        s32 id = sead::Mathi::clampMin(buffer.playingFileId, 0);
+        setPlayingFileId(id);
+
+        s32 saveDataSize = 0;
+        readStream.readS32(saveDataSize);
+        if (saveDataSize > 0x200000)
+            return;
+
+        readStream.readMemBlock((void*)mSaveDataWorkBuffer, saveDataSize);
+        tryReadByamlDataCommon(mSaveDataWorkBuffer);
+    } else {
         GameDataFile* dataFile = findGameDataFile(fileName);
         sead::RamReadStream readStream(saveDataBuffer, 0x200000, sead::Stream::Modes::Binary);
         dataFile->initializeData();
         if (!dataFile->readFromStream(&readStream, mSaveDataWorkBuffer))
             dataFile->initializeData();
-        return;
     }
-
-    sead::RamReadStream readStream(saveDataBuffer, 0x400, sead::Stream::Modes::Binary);
-    initializeDataCommon();
-
-    SaveDataBuffer buffer;
-    memset(&buffer, 0, 0x38);
-    readStream.readMemBlock((void*)&buffer, sizeof(SaveDataBuffer));
-
-    if (buffer.a != 0) {
-        initializeDataCommon();
-        return;
-    }
-
-    mLanguage.format("%s", buffer.language);
-    mPlayTimeAcrossFiles = buffer.playTime;
-    s32 id = sead::Mathi::clampMin(buffer.playingFileId, 0);
-    setPlayingFileId(id);
-
-    s32 value = 0;
-    readStream.readS32(value);
-    if (value > 0x200000)
-        return;
-
-    readStream.readMemBlock((void*)mSaveDataWorkBuffer, value);
-    tryReadByamlDataCommon(mSaveDataWorkBuffer);
 }
 
 bool GameDataHolder::tryReadByamlDataCommon(const u8* byamlData) {
@@ -441,7 +544,38 @@ void GameDataHolder::readFromSaveDataBufferCommonFileOnlyLanguage() {
         mLanguage.format("%s", buffer.language);
 }
 
-void GameDataHolder::writeToSaveDataBuffer(const char* fileName) {}
+void GameDataHolder::writeToSaveDataBuffer(const char* fileName) {
+    u8* saveDataBuffer = al::getSaveDataWorkBuffer();
+    mSaveDataWriteThread->freeAll();
+
+    if (al::isEqualString(fileName, "Common.bin")) {
+        sead::RamWriteStream writeStream(saveDataBuffer, 0x400, sead::Stream::Modes::Binary);
+
+        SaveDataBuffer buffer;
+        memset(&buffer, 0, 0x38);
+
+        buffer.playingFileId = sead::Mathi::clampMin(getPlayingOrNextFileId(), 0);
+        buffer.b = 0;
+        al::copyString(buffer.language, getLanguage(), 0x20);
+        buffer.playTime = mPlayTimeAcrossFiles;
+        writeStream.writeMemBlock(&buffer, sizeof(SaveDataBuffer));
+
+        al::ByamlWriter byamlWriter{mSaveDataWriteThread, false};
+        byamlWriter.pushHash();
+        mGameConfigData->write(&byamlWriter);
+        byamlWriter.pop();
+        writeStream.writeS32(byamlWriter.calcPackSize());
+        byamlWriter.write(&writeStream);
+    } else {
+        GameDataFile* dataFile = findGameDataFile(fileName);
+        sead::RamWriteStream writeStream(saveDataBuffer, 0x200000, sead::Stream::Modes::Binary);
+
+        dataFile->updateSaveTime();
+        dataFile->writeToStream(&writeStream, mSaveDataWriteThread);
+    }
+
+    setRequireSaveFalse();
+}
 
 void GameDataHolder::updateSaveInfoForDisp(const char* fileName) {
     if (al::isEqualString(fileName, "Common.bin"))
