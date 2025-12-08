@@ -171,7 +171,6 @@ public:
     bool tryReadByamlDataCommon(const u8* byamlData);
     void readFromSaveDataBufferCommonFileOnlyLanguage();
     void writeToSaveDataBuffer(char const* fileName);
-    void writeToSaveBuffer(const char* fileName);
     void updateSaveInfoForDisp(const char* fileName);
     void updateSaveTimeForDisp(const char* fileName);
     s32 findUnlockShineNum(bool* isCountTotal, s32 worldId) const;
@@ -248,7 +247,7 @@ private:
     sead::FixedSafeString<32> mLanguage;
     u64 mPlayTimeAcrossFiles=0;
     sead::Heap* mSaveDataWriteThread=nullptr;
-    const u8* mSaveDataWorkBuffer=nullptr;
+    u8* mSaveDataWorkBuffer=nullptr;
     GameConfigData* mGameConfigData=nullptr;
     TempSaveData* mTempSaveData=nullptr;
     TempSaveData* mTempSaveDataBackup=nullptr;
