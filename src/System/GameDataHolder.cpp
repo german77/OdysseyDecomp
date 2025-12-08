@@ -5,10 +5,10 @@
 #include "Library/Base/StringUtil.h"
 #include "Library/LiveActor/ActorFlagFunction.h"
 #include "Library/LiveActor/ActorPoseUtil.h"
+#include "Library/Message/LanguageUtil.h"
 #include "Library/Resource/ResourceFunction.h"
 #include "Library/SaveData/SaveDataFunction.h"
 #include "Library/Yaml/ByamlIter.h"
-#include "Library/Message/LanguageUtil.h"
 
 #include "Item/Coin.h"
 #include "Scene/QuestInfoHolder.h"
@@ -26,7 +26,8 @@
 #include "Util/ScenePrepoFunction.h"
 #include "Util/SpecialBuildUtil.h"
 
-GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem) :mMessageSystem(messageSystem){}
+GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
+    : mMessageSystem(messageSystem) {}
 
 GameDataHolder::GameDataHolder() {
     setLanguage(al::getLanguageString());
@@ -54,9 +55,7 @@ void GameDataHolder::initializeData() {
         getGameDataFile(i)->initializeData();
 
     initializeDataCommon();
-    mPlayingFile = getGameDataFile(0);
-    resetTempSaveData(false);
-    mPlayingFileId = 0;
+    setPlayingFileId(0);
 }
 
 void GameDataHolder::initializeDataCommon() {
@@ -81,7 +80,7 @@ void GameDataHolder::initializeDataCommon() {
         mCoinTransForDeadPlayer[i].set(sead::Vector3f::zero);
 
     mDeadPlayerCoinIdx = 0;
-    mLocationName->clear();
+    resetLocationName();
     mQuestInfoHolder->clearAll();
     mSequenceInfo->init();
 }
@@ -105,7 +104,7 @@ void GameDataHolder::resetTempSaveData(bool isSwapTempSaveData) {
         getGameDataFile(i)->resetTempData();
 
     mCapMessageBossData->init();
-    mLocationName->clear();
+    resetLocationName();
     resetScenarioStartCamera();
 
     mQuestInfoHolder->clearAll();
@@ -118,7 +117,7 @@ void GameDataHolder::initializeDataId(s32 fileId) {
 
 void GameDataHolder::readByamlData(s32 fileId, const char* fileName) {
     resetTempSaveData(false);
-    getGameDataFile(fileId)->initializeData();
+    initializeDataId(fileId);
 
     const u8* bymlData = al::getBymlFromArcName("DebugData/DebugSaveData", fileName);
     getGameDataFile(fileId)->tryReadByamlData(bymlData);
@@ -373,7 +372,54 @@ void GameDataHolder::resetTempSaveDataInSameScenario() {
     mIsExistKoopaShip = false;
 }
 
-void GameDataHolder::readFromSaveDataBuffer(const char* fileName) {}
+struct SaveDataBuffer {
+    s32 a;
+    s32 b;
+    s32 playingFileId;
+    char language[0x24];
+    u64 playTime;
+};
+
+static_assert(sizeof(SaveDataBuffer) == 0x38);
+
+void GameDataHolder::readFromSaveDataBuffer(const char* fileName) {
+    u8* saveDataBuffer = al::getSaveDataWorkBuffer();
+    memset(mSaveDataWorkBuffer, 0, 0x200000);
+
+    if (!al::isEqualString("Common.bin", fileName)) {
+        GameDataFile* dataFile = findGameDataFile(fileName);
+        sead::RamReadStream readStream(saveDataBuffer, 0x200000, sead::Stream::Modes::Binary);
+        dataFile->initializeData();
+        if (!dataFile->readFromStream(&readStream, mSaveDataWorkBuffer))
+            dataFile->initializeData();
+        return;
+    }
+
+    sead::RamReadStream readStream(saveDataBuffer, 0x400, sead::Stream::Modes::Binary);
+    initializeDataCommon();
+
+    SaveDataBuffer buffer;
+    memset(&buffer, 0, 0x38);
+    readStream.readMemBlock((void*)&buffer, sizeof(SaveDataBuffer));
+
+    if (buffer.a != 0) {
+        initializeDataCommon();
+        return;
+    }
+
+    mLanguage.format("%s", buffer.language);
+    mPlayTimeAcrossFiles = buffer.playTime;
+    s32 id = sead::Mathi::clampMin(buffer.playingFileId, 0);
+    setPlayingFileId(id);
+
+    s32 value = 0;
+    readStream.readS32(value);
+    if (value > 0x200000)
+        return;
+
+    readStream.readMemBlock((void*)mSaveDataWorkBuffer, value);
+    tryReadByamlDataCommon(mSaveDataWorkBuffer);
+}
 
 bool GameDataHolder::tryReadByamlDataCommon(const u8* byamlData) {
     if (alByamlLocalUtil::verifiByaml(byamlData)) {
@@ -387,15 +433,6 @@ bool GameDataHolder::tryReadByamlDataCommon(const u8* byamlData) {
 void GameDataHolder::readFromSaveDataBufferCommonFileOnlyLanguage() {
     sead::RamReadStream readStream(al::getSaveDataWorkBuffer(), 0x400, sead::Stream::Modes::Binary);
 
-    struct SaveDataBuffer {
-        s32 a;
-        s32 b;
-        s32 c;
-        char language[0x2c];
-    };
-
-    static_assert(sizeof(SaveDataBuffer) == 0x38);
-
     SaveDataBuffer buffer;
     memset(&buffer, 0, 0x38);
     readStream.readMemBlock((void*)&buffer, sizeof(SaveDataBuffer));
@@ -405,8 +442,6 @@ void GameDataHolder::readFromSaveDataBufferCommonFileOnlyLanguage() {
 }
 
 void GameDataHolder::writeToSaveDataBuffer(const char* fileName) {}
-
-void GameDataHolder::writeToSaveBuffer(const char* fileName) {}
 
 void GameDataHolder::updateSaveInfoForDisp(const char* fileName) {
     if (al::isEqualString(fileName, "Common.bin"))
@@ -549,21 +584,31 @@ s32 GameDataHolder::getCoinCollectNumMax(s32 worldId) const {
     return mCoinCollectNumMax[worldId];
 }
 
-bool GameDataHolder::isInvalidOpenMapStage(const char* stageName, s32 scenarioNo) const {}
+bool GameDataHolder::isInvalidOpenMapStage(const char* stageName, s32 scenarioNo) const {
+    s32 size = mInvalidOpenMapList.size();
+    for (s32 i = 0; i < size; i++) {
+        auto* list = mInvalidOpenMapList[i];
+        if (al::isEqualString(stageName, list->name)) {
+            if (list->scenario < 0 || list->scenario == scenarioNo)
+                return true;
+        }
+    }
+    return false;
+}
 
 void GameDataHolder::setShowBindTutorial(const char* bindName) {
-    if (al::isEqualString("SphinxRide", bindName)) {
-        mIsShowBindTutorial[0] = true;
+    s32 index;
+
+    if (al::isEqualString("SphinxRide", bindName))
+        index = 0;
+    else if (al::isEqualString("Motorcycle", bindName))
+        index = 1;
+    else if (al::isEqualString("WorldWarpHole", bindName))
+        index = 2;
+    else
         return;
-    }
-    if (al::isEqualString("Motorcycle", bindName)) {
-        mIsShowBindTutorial[1] = true;
-        return;
-    }
-    if (al::isEqualString("WorldWarpHole", bindName)) {
-        mIsShowBindTutorial[2] = true;
-        return;
-    }
+
+    mIsShowBindTutorial[index] = true;
 }
 
 s32 GameDataHolder::tryCalcWorldWarpHoleSrcId(s32 destId) const {
@@ -591,7 +636,7 @@ s32 GameDataHolder::calcWorldWarpHoleIdFromWorldId(s32 worldId) const {
     }
 
     for (s32 i = 0; i < mWorldList->getWorldNum(); i++)
-        if (mPlayingFile->getGameProgressData()->getWorldIdForWorldWarpHole(i) == worldId)
+        if (calcWorldIdFromWorldWarpHoleId(i) == worldId)
             return i;
 
     return -1;
