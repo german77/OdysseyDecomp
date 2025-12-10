@@ -253,7 +253,7 @@ private:
     sead::FixedSafeString<32> mLanguage;
     u64 mPlayTimeAcrossFiles = 0;
     sead::Heap* mSaveDataWriteThread = nullptr;
-    u8* mSaveDataWorkBuffer=nullptr;
+    u8* mSaveDataWorkBuffer = nullptr;
     GameConfigData* mGameConfigData = nullptr;
     TempSaveData* mTempSaveData = nullptr;
     TempSaveData* mTempSaveDataBackup = nullptr;
