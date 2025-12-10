@@ -1,7 +1,5 @@
 #pragma once
 
-
 namespace al {
-class GameDataHolderBase {
-};
+class GameDataHolderBase {};
 }  // namespace al
