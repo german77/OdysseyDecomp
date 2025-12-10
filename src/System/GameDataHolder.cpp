@@ -9,6 +9,7 @@
 #include "Library/LiveActor/ActorFlagFunction.h"
 #include "Library/LiveActor/ActorPoseUtil.h"
 #include "Library/Message/LanguageUtil.h"
+#include "Library/Message/MessageHolder.h"
 #include "Library/Resource/ResourceFunction.h"
 #include "Library/SaveData/SaveDataFunction.h"
 #include "Library/Yaml/ByamlIter.h"
@@ -26,6 +27,7 @@
 #include "System/GameDataFile.h"
 #include "System/GameDataFunction.h"
 #include "System/GameProgressData.h"
+#include "System/MapDataHolder.h"
 #include "System/SaveDataAccessFunction.h"
 #include "System/SaveDataAccessSequence.h"
 #include "System/TempSaveData.h"
@@ -257,13 +259,168 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
         lockInfo->shineNumInfoNum = shineInfoIter.getSize();
         lockInfo->shineNumInfo = new s32[lockInfo->shineNumInfoNum];
 
-        // COMPLETE ME
+        for (s32 j = 0; j < lockInfo->shineNumInfoNum; j++)
+            shineInfoIter.tryGetIntByIndex(&lockInfo->shineNumInfo[j], j);
+
         mStageLockList.pushBack(lockInfo);
     }
 
     initializeShopItemList(mShopItemList, "ItemList");
     if (rs::isModeE3Rom() || rs::isModeE3LiveRom())
         initializeShopItemList(mShopItemListE3, "ItemListE3");
+
+    initializeItemList(mItemCloth, "ItemCloth");
+    initializeItemList(mItemCap, "ItemCap");
+    initializeItemList(mItemGift, "ItemGift");
+    initializeItemList(mItemSticker, "ItemSticker");
+
+    mWorldsForNewReleaseShop.allocBuffer(mShopItemList.size(),nullptr);
+
+    for (s32 i = 0; i < mShopItemList.size(); i++) {
+        if (!al::isEqualString(mShopItemList[i]->clearWorld, "")) {
+            bool found = false;
+            for (s32 j = 0; j < mWorldsForNewReleaseShop.size(); j++) {
+                if (mWorldsForNewReleaseShop[j]->isEqual(mShopItemList[i]->clearWorld)) {
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                sead::FixedSafeString<64>* newWorld = new sead::FixedSafeString<64>();
+                newWorld->copy(mShopItemList[i]->clearWorld);
+                mWorldsForNewReleaseShop.pushBack(newWorld);
+            }
+        }
+    }
+
+    al::ByamlIter hackObjListIter(al::findResourceYaml(
+        al::findOrCreateResource("SystemData/HackObjList", nullptr), "HackObjList", nullptr));
+    s32 hackObjListSize = hackObjListIter.getSize();
+    mHackObjList.allocBuffer(hackObjListSize, nullptr);
+
+    for (s32 i = 0; i < hackObjListSize; i++) {
+        al::ByamlIter iter;
+        stageLockListIter.tryGetIterByIndex(&iter, i);
+        HackObjInfo* objInfo = new HackObjInfo();
+
+        objInfo->hackName = al::tryGetByamlKeyStringOrNULL(iter, "HackName");
+        objInfo->isNoCollisionMsg = al::tryGetByamlKeyBoolOrFalse(iter, "IsNoCollisionMsg");
+        objInfo->isNoCollisionMsg = al::tryGetByamlKeyBoolOrFalse(iter, "IsNoCollisionMsg");
+        objInfo->isUsePlayerCollision = al::tryGetByamlKeyBoolOrFalse(iter, "IsUsePlayerCollision");
+        objInfo->isUseCollisionPartsFilterActor =
+            al::tryGetByamlKeyBoolOrFalse(iter, "IsUseCollisionPartsFilterActor");
+        objInfo->tutorialName = al::tryGetByamlKeyStringOrNULL(iter, "TutorialName");
+        al::tryGetByamlF32(&objInfo->guideHeight, iter, "GuideHeight");
+        al::tryGetByamlBool(&objInfo->isGuideEnable, iter, "IsGuideEnable");
+        al::tryGetByamlF32(&objInfo->stayGravityMargine, iter, "StayGravityMargine");
+
+        mHackObjList.pushBack(objInfo);
+    }
+
+    s32 tutoralLabelNum = al::getSystemMessageLabelNum(this, "Tutorial");
+    mShowHackTutorialList.allocBuffer(tutoralLabelNum, nullptr);
+
+    for (s32 i = 0; i < mShowHackTutorialList.capacity(); i++) {
+        ShowHackTutorialInfo* info = new ShowHackTutorialInfo();
+
+        mShowHackTutorialList.pushBack(info);
+    }
+
+    mFiles = new GameDataFile*[5];
+    for (s32 i = 0; i < 5; i++)
+        mFiles[i] = new GameDataFile(this);
+    mSequenceInfo = new GameSequenceInfo();
+    mTempSaveData = new TempSaveData();
+    mTempSaveDataBackup = new TempSaveData();
+    mCapMessageBossData = new CapMessageBossData();
+    mIsShowBindTutorial = new bool[3];
+    mLocationName = new UniqObjInfo();
+    mCoinTransForDeadPlayer = new sead::Vector3f[10];
+    mQuestInfoHolder = new QuestInfoHolder(0x40);
+    mMapDataHolder = new MapDataHolder(this);
+
+    al::ByamlIter worldItemTypeListIter(
+        al::tryGetBymlFromArcName("SystemData/WorldList", "WorldItemTypeList"));
+    s32 worldItemTypeListSize = worldItemTypeListIter.getSize();
+
+    mWorldItemTypeInfo.allocBuffer(worldItemTypeListSize, nullptr);
+
+    for (s32 i = 0; i < worldItemTypeListSize; i++)
+        mWorldItemTypeInfo.pushBack(new WorldItemTypeInfo());
+    for (s32 i = 0; i < worldItemTypeListSize; i++) {
+        al::ByamlIter iter;
+        s32 shine = -1;
+        const char* coinCollect = "";
+        worldItemTypeListIter.tryGetIterByIndex(&iter, i);
+
+        iter.tryGetStringByKey(&coinCollect, "CoinCollect");
+        iter.tryGetIntByKey(&shine, "Shine");
+        const char* worldName = al::getByamlKeyString(iter, "WorldName");
+        s32 worldIndex = mWorldList->tryFindWorldIndexByDevelopName(worldName);
+        mWorldItemTypeInfo[worldIndex]->coinCollect.format("CoinCollect%s", coinCollect);
+        mWorldItemTypeInfo[worldIndex]->coinCollectEmpty.format("CoinCollectEmpty%s", coinCollect);
+        mWorldItemTypeInfo[worldIndex]->coinCollect2D.format("CoinCollect2D_%s", coinCollect);
+        mWorldItemTypeInfo[worldIndex]->coinCollectEmpty2D.format("CoinCollectEmpty2D_%s",
+                                                                  coinCollect);
+        mWorldItemTypeInfo[worldIndex]->shineAnimFrame = shine;
+    }
+
+    mCoinCollectNumMax = new s32[mWorldList->getWorldNum()];
+
+    al::ByamlIter collectCoinNumIter(
+        al::tryGetBymlFromArcName("SystemData/WorldList", "CollectCoinNum"));
+
+    for (s32 i = 0; i < collectCoinNumIter.getSize(); i++) {
+        al::ByamlIter iter;
+        collectCoinNumIter.tryGetIterByIndex(&iter, i);
+
+        s32 collectCoinNum = al::getByamlKeyInt(iter, "CollectCoinNum");
+        s32 worldIndex =
+            mWorldList->tryFindWorldIndexByDevelopName(al::getByamlKeyString(iter, "WorldName"));
+        mCoinCollectNumMax[worldIndex] = collectCoinNum;
+    }
+
+    mWorldWarpHoleDestIds = new s32[mWorldList->getWorldNum()];
+
+    al::ByamlIter worldWarpHoleInfoIter(
+        al::tryGetBymlFromArcName("SystemData/WorldList", "WorldWarpHoleInfo"));
+    al::ByamlIter worldLinkInfoIter;
+    al::getByamlIterByKey(&worldLinkInfoIter, worldWarpHoleInfoIter, "WorldLinkInfo");
+
+    for (s32 i = 0; i < mWorldList->getWorldNum(); i++) {
+        s32 destId = -1;
+
+        worldLinkInfoIter.tryGetIntByKey(&destId, al::StringTmp<32>("%d", i).cstr());
+        mWorldWarpHoleDestIds[i] = destId;
+    }
+
+    al::ByamlIter worldWarpHoleInfoIter2;
+    al::getByamlIterByKey(&worldWarpHoleInfoIter2, worldWarpHoleInfoIter, "WorldWarpHoleInfo");
+    mWorldWarpHoleInfoNum = worldWarpHoleInfoIter2.getSize();
+
+    if (mWorldWarpHoleInfoNum > 0) {
+            mWorldWarpHoleInfos = new WorldWarpHoleInfo[mWorldWarpHoleInfoNum];
+            for (s32 i = 0; i < mWorldWarpHoleInfoNum; i++) {
+                al::ByamlIter infoIter;
+                worldWarpHoleInfoIter2.tryGetIterByIndex(&infoIter, i);
+
+                const char* stageName;
+                infoIter.tryGetStringByKey(&stageName, "StageName");
+                mWorldWarpHoleInfos[i].stageName.format("%s",stageName);
+
+
+                const char* name;
+                infoIter.tryGetStringByKey(&stageName, "Name");
+                mWorldWarpHoleInfos[i].name.format("%s",stageName);
+
+                mWorldWarpHoleInfos[i].worldId = al::getByamlKeyInt(infoIter,"WorldId");
+                mWorldWarpHoleInfos[i].scenarioNo = al::tryGetByamlKeyIntOrZero(infoIter,"ScenarioNo");
+            }
+        }
+
+    setPlayingFileId(0);
+    initializeData();
 }
 
 GameDataHolder::GameDataHolder() {
@@ -308,7 +465,7 @@ void GameDataHolder::initializeDataCommon() {
     mCapMessageBossData->init();
 
     for (s32 i = 0; i < mShowHackTutorialList.size(); i++)
-        mShowHackTutorialList[i]->clear();
+        mShowHackTutorialList[i]->label.clear();
 
     for (s32 i = 0; i < 3; i++)
         mIsShowBindTutorial[i] = false;
@@ -817,10 +974,10 @@ bool GameDataHolder::tryFindLinkDestStageInfo(const char** destStageName, const 
 
 bool GameDataHolder::isShowHackTutorial(const char* hackName, const char* suffix) const {
     for (s32 i = 0; i < mShowHackTutorialList.size(); i++) {
-        if (mShowHackTutorialList[i]->isEmpty())
+        if (mShowHackTutorialList[i]->label.isEmpty())
             continue;
 
-        if (mShowHackTutorialList[i]->isEqual(al::StringTmp<128>{"%s%s", hackName, suffix}))
+        if (mShowHackTutorialList[i]->label.isEqual(al::StringTmp<128>{"%s%s", hackName, suffix}))
             return true;
     }
     return false;
@@ -831,8 +988,8 @@ void GameDataHolder::setShowHackTutorial(const char* hackName, const char* suffi
         return;
 
     for (s32 i = 0; i < mShowHackTutorialList.size(); i++) {
-        if (mShowHackTutorialList[i]->isEmpty()) {
-            mShowHackTutorialList[i]->format("%s%s", hackName, suffix);
+        if (mShowHackTutorialList[i]->label.isEmpty()) {
+            mShowHackTutorialList[i]->label.format("%s%s", hackName, suffix);
             return;
         }
     }
@@ -952,7 +1109,50 @@ s32 GameDataHolder::calcWorldIdFromWorldWarpHoleId(s32 worldWarpHoleId) const {
 
 void GameDataHolder::calcWorldWarpHoleLabelAndStageName(sead::BufferedSafeString* label,
                                                         sead::BufferedSafeString* stageName,
-                                                        const char* srcLabel, s32 worldId) const {}
+                                                        const char* srcLabel, s32 worldId) const {
+    label->clear();
+    s32 warpHoleId = calcWorldWarpHoleIdFromWorldId(worldId);
+    if (warpHoleId == -1)
+        return;
+
+    if (al::isEqualSubString(srcLabel, "Come")) {
+        s32 srcId = tryCalcWorldWarpHoleSrcId(warpHoleId);
+        if (srcId == -1) {
+            for (s32 i = 0; i < mWorldList->getWorldNum(); i++) {
+                sead::FixedSafeString<128> nmp;
+                nmp.format("%s%s%d", "Come", "From", i);
+
+                if (al::isEqualString(nmp.cstr(), srcLabel)) {
+                    srcId = i;
+                    break;
+                }
+            }
+            if (srcId == -1)
+                return;
+        }
+
+        warpHoleId = calcWorldIdFromWorldWarpHoleId(srcId);
+        if (warpHoleId == -1)
+            return;
+
+        const WorldWarpHoleInfo* warpHoleInfo = findWorldWarpHoleInfo(warpHoleId, worldId, "Go");
+        label->format("%s", warpHoleInfo->name.cstr());
+        stageName->format("%s", warpHoleInfo->stageName.cstr());
+        mPlayingFile->setWarpHoleWorldId(warpHoleInfo->worldId);
+
+    } else {
+        warpHoleId = mPlayingFile->getGameProgressData()->getWorldIdForWorldWarpHole(
+            calcWorldWarpHoleDestId(warpHoleId));
+        if (warpHoleId == -1)
+            return;
+
+        const WorldWarpHoleInfo* warpHoleInfo =
+            findWorldWarpHoleInfo(warpHoleId, calcWorldWarpHoleIdFromWorldId(worldId), "Come");
+        label->format("%s", warpHoleInfo->name.cstr());
+        stageName->format("%s", warpHoleInfo->stageName.cstr());
+        mPlayingFile->setWarpHoleWorldId(warpHoleInfo->worldId);
+    }
+}
 
 const GameDataHolder::WorldWarpHoleInfo*
 GameDataHolder::findWorldWarpHoleInfo(s32 worldId, s32 scenarioNo, const char* name) const {

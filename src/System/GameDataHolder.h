@@ -61,6 +61,12 @@ public:
 
     static_assert(sizeof(ExStageItem) == 0x98);
 
+    struct ShowHackTutorialInfo {
+        sead::FixedSafeString<128> label;
+    };
+
+    static_assert(sizeof(ShowHackTutorialInfo) == 0x98);
+
     struct WorldWarpHoleInfo {
         sead::FixedSafeString<128> stageName;
         s32 worldId;
@@ -81,32 +87,32 @@ public:
     static_assert(sizeof(WorldItemTypeInfo) == 0x268);
 
     struct StageLockInfo {
-        s32* shineNumInfo;
-        s32 shineNumInfoNum;
-        bool isCountTotal;
-        bool isCrash;
+        s32* shineNumInfo=nullptr;
+        s32 shineNumInfoNum=0;
+        bool isCountTotal=false;
+        bool isCrash=false;
     };
 
     static_assert(sizeof(StageLockInfo) == 0x10);
 
     struct HackObjInfo {
-        const char* hackName;
-        f32 guideHeight;
-        f32 stayGravityMargine;
-        bool isScare;
-        bool isNoCollisionMsg;
-        bool isNoSeparateCameraInput;
-        bool isUsePlayerCollision;
-        bool isUseCollisionPartsFilterActor;
-        bool isGuideEnable;
-        const char* tutorialName;
+        const char* hackName=nullptr;
+        f32 guideHeight=200.0f;
+        f32 stayGravityMargine=0.0f;
+        bool isScare=false;
+        bool isNoCollisionMsg=false;
+        bool isNoSeparateCameraInput=false;
+        bool isUsePlayerCollision=false;
+        bool isUseCollisionPartsFilterActor=false;
+        bool isGuideEnable=true;
+        const char* tutorialName=nullptr;
     };
 
     static_assert(sizeof(HackObjInfo) == 0x20);
 
     struct InvalidOpenMapInfo {
-        const char* name;
-        s32 scenario;
+        const char* name=nullptr;
+        s32 scenario=0;
     };
 
     static_assert(sizeof(InvalidOpenMapInfo) == 0x10);
@@ -279,7 +285,7 @@ private:
     sead::PtrArray<ChangeStageItem> mChangeStageList;
     sead::PtrArray<ExStageItem> mExStageList;
     sead::PtrArray<InvalidOpenMapInfo> mInvalidOpenMapList;
-    sead::PtrArray<sead::FixedSafeString<128>> mShowHackTutorialList;
+    sead::PtrArray<ShowHackTutorialInfo> mShowHackTutorialList;
     bool* mIsShowBindTutorial = nullptr;
     MapDataHolder* mMapDataHolder = nullptr;
     sead::PtrArray<WorldItemTypeInfo> mWorldItemTypeInfo;
