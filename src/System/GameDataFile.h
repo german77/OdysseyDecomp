@@ -463,6 +463,8 @@ public:
 
     ShopTalkData* getShopTalkData() const { return mShopTalkData; }
 
+    void setWarpHoleWorldId(s32 worldId) { mWarpHoleWorldId = worldId; }
+
     bool isEnableCapMessageLifeOneKidsMode() const { return mIsEnableCapMessageLifeOneKidsMode; }
 
     void disableCapMessageLifeOneKidsMode() { mIsEnableCapMessageLifeOneKidsMode = false; }
@@ -581,7 +583,9 @@ private:
     s32 mWorldMapNum;
     FixedHeapArray<s32, sNumWorlds> mWorldWarpIndex;
     s32 mWorldWarpNum;
-    char _b5c[0x9];
+    char _b5c[0x4];
+    s32 mWarpHoleWorldId;
+    bool _b64;
     bool mIsEnableCapMessageLifeOneKidsMode;
     char _b66[0x2];
 
