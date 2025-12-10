@@ -34,7 +34,8 @@
 #include "Util/ScenePrepoFunction.h"
 #include "Util/SpecialBuildUtil.h"
 
-void initializeShopItemList(sead::PtrArray<ShopItem::ShopItemInfo>& shopItemList, const char* name) {
+void initializeShopItemList(sead::PtrArray<ShopItem::ShopItemInfo>& shopItemList,
+                            const char* name) {
     if (!al::isExistArchive("SystemData/ItemList"))
         return;
 
@@ -582,7 +583,13 @@ void GameDataHolder::requestSetPlayingFileId(s32 fileId) {
 }
 
 void GameDataHolder::receiveSetPlayingFileIdMsg() {
-    mPlayingFileId = getPlayingFileId();
+    mPlayingFile = mNextFile;
+    mNextFile = nullptr;
+
+    s32 fileId = getPlayingFileId();
+    if (fileId != -1)
+        mPlayingFileId = fileId;
+
     resetTempSaveData(false);
 }
 
@@ -794,11 +801,42 @@ bool GameDataHolder::checkNeedTreasureMessageStage(const char* stageName) const 
 
 bool GameDataHolder::tryFindLinkDestStageInfo(const char** destStageName, const char** destLabel,
                                               const char* srcStageName,
-                                              const char* srcLabel) const {}
+                                              const char* srcLabel) const {
+    for (s32 i = 0; i < mChangeStageList.size(); i++) {
+        if (!al::isEqualString(srcStageName, mChangeStageList[i]->srcStageName.cstr()))
+            continue;
+        if (!al::isEqualString(srcLabel, mChangeStageList[i]->srcLabel.cstr()))
+            continue;
 
-bool GameDataHolder::isShowHackTutorial(const char* hackName, const char* suffix) const {}
+        *destLabel = mChangeStageList[i]->destLabel.cstr();
+        *destStageName = mChangeStageList[i]->destStageName.cstr();
+        return true;
+    }
+    return false;
+}
 
-void GameDataHolder::setShowHackTutorial(const char* hackName, const char* suffix) {}
+bool GameDataHolder::isShowHackTutorial(const char* hackName, const char* suffix) const {
+    for (s32 i = 0; i < mShowHackTutorialList.size(); i++) {
+        if (mShowHackTutorialList[i]->isEmpty())
+            continue;
+
+        if (mShowHackTutorialList[i]->isEqual(al::StringTmp<128>{"%s%s", hackName, suffix}))
+            return true;
+    }
+    return false;
+}
+
+void GameDataHolder::setShowHackTutorial(const char* hackName, const char* suffix) {
+    if (isShowHackTutorial(hackName, suffix))
+        return;
+
+    for (s32 i = 0; i < mShowHackTutorialList.size(); i++) {
+        if (mShowHackTutorialList[i]->isEmpty()) {
+            mShowHackTutorialList[i]->format("%s%s", hackName, suffix);
+            return;
+        }
+    }
+}
 
 bool GameDataHolder::isShowBindTutorial(const char* bindName) const {
     s32 index;
