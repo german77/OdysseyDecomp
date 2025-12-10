@@ -5,16 +5,18 @@
 #include <stream/seadRamStream.h>
 
 #include "Library/Base/StringUtil.h"
+#include "Library/File/FileUtil.h"
 #include "Library/LiveActor/ActorFlagFunction.h"
 #include "Library/LiveActor/ActorPoseUtil.h"
 #include "Library/Message/LanguageUtil.h"
 #include "Library/Resource/ResourceFunction.h"
 #include "Library/SaveData/SaveDataFunction.h"
 #include "Library/Yaml/ByamlIter.h"
-#include "Library/Yaml/Writer/ByamlWriter.h"
 #include "Library/Yaml/ByamlUtil.h"
+#include "Library/Yaml/Writer/ByamlWriter.h"
 
 #include "Item/Coin.h"
+#include "Layout/ShopLayoutInfo.h"
 #include "Npc/AchievementHolder.h"
 #include "Npc/AchievementInfoReader.h"
 #include "Scene/QuestInfoHolder.h"
@@ -31,6 +33,132 @@
 #include "System/WorldList.h"
 #include "Util/ScenePrepoFunction.h"
 #include "Util/SpecialBuildUtil.h"
+
+void initializeShopItemList(sead::PtrArray<ShopItem::ShopItemInfo>& shopItemList, const char* name) {
+    if (!al::isExistArchive("SystemData/ItemList"))
+        return;
+
+    al::Resource* resource = al::findOrCreateResource("SystemData/ItemList", nullptr);
+    const u8* yaml = al::findResourceYaml(resource, name, nullptr);
+    al::ByamlIter iter(yaml);
+
+    s32 size = iter.getSize();
+    if (size <= 0)
+        return;
+
+    shopItemList.allocBuffer(size, nullptr);
+
+    for (s32 i = 0; i < size; i++) {
+        ShopItem::ShopItemInfo* itemInfo = new ShopItem::ShopItemInfo();
+        al::ByamlIter itemIter;
+        iter.tryGetIterByIndex(&itemIter, i);
+        itemInfo->info.index = i;
+
+        al::copyString(itemInfo->info.name, al::tryGetByamlKeyStringOrNULL(itemIter, "ItemName"),
+                       0x80);
+
+        const char* itemType = al::tryGetByamlKeyStringOrNULL(itemIter, "ItemType");
+        if (al::isEqualString(itemType, "Clothes"))
+            itemInfo->info.type = ShopItem::ItemType::Cloth;
+        else if (al::isEqualString(itemType, "Cap"))
+            itemInfo->info.type = ShopItem::ItemType::Cap;
+        else if (al::isEqualString(itemType, "Gift"))
+            itemInfo->info.type = ShopItem::ItemType::Gift;
+        else if (al::isEqualString(itemType, "Sticker"))
+            itemInfo->info.type = ShopItem::ItemType::Sticker;
+        else if (al::isEqualString(itemType, "UseItem"))
+            itemInfo->info.type = ShopItem::ItemType::UseItem;
+        else if (al::isEqualString(itemType, "Shine"))
+            itemInfo->info.type = ShopItem::ItemType::Shine;
+
+        al::tryGetByamlS32(&itemInfo->price, itemIter, "Price");
+
+        const char* coinType = al::tryGetByamlKeyStringOrNULL(itemIter, "coinType");
+        if (coinType) {
+            if (al::isEqualString(coinType, "Coin"))
+                itemInfo->coinType = ShopItem::CoinType::Coin;
+            else if (al::isEqualString(coinType, "Collect"))
+                itemInfo->coinType = ShopItem::CoinType::Collect;
+        }
+
+        const char* storeName = al::tryGetByamlKeyStringOrNULL(itemIter, "StoreName");
+        if (storeName && storeName[0] != '\0')
+            al::copyString(itemInfo->storeName, storeName, 0x80);
+
+        const char* clearWorld = al::tryGetByamlKeyStringOrNULL(itemIter, "ClearWorld");
+        if (clearWorld && clearWorld[0] != '\0')
+            al::copyString(itemInfo->clearWorld, clearWorld, 0x80);
+
+        al::tryGetByamlS32(&itemInfo->moonNum, itemIter, "MoonNum");
+
+        shopItemList.pushBack(itemInfo);
+    }
+}
+
+void initializeItemList(sead::PtrArray<ShopItem::ItemInfo>& shopItemList, const char* name) {
+    if (!al::isExistArchive("SystemData/ItemList"))
+        return;
+
+    al::Resource* resource = al::findOrCreateResource("SystemData/ItemList", nullptr);
+    const u8* yaml = al::findResourceYaml(resource, name, nullptr);
+    al::ByamlIter iter(yaml);
+
+    s32 size = iter.getSize();
+    if (size <= 0)
+        return;
+
+    shopItemList.allocBuffer(size, nullptr);
+
+    for (s32 i = 0; i < size; i++) {
+        ShopItem::ItemInfo* itemInfo = new ShopItem::ItemInfo();
+
+        al::ByamlIter itemIter;
+        iter.tryGetIterByIndex(&itemIter, i);
+        itemInfo->index = i;
+
+        const char* itemName = al::tryGetByamlKeyStringOrNULL(itemIter, "ItemName");
+        if (!itemName)
+            continue;
+
+        al::copyString(itemInfo->name, itemName, 0x80);
+
+        if (al::isEqualString(name, "ItemCap"))
+            itemInfo->type = ShopItem::ItemType::Cap;
+        else if (al::isEqualString(name, "ItemCloth"))
+            itemInfo->type = ShopItem::ItemType::Cloth;
+        else if (al::isEqualString(name, "ItemGift"))
+            itemInfo->type = ShopItem::ItemType::Gift;
+        else if (al::isEqualString(name, "ItemSticker"))
+            itemInfo->type = ShopItem::ItemType::Sticker;
+
+        al::ByamlIter amiiboIter;
+        if (itemIter.tryGetIterByKey(&amiiboIter, "Amiibo")) {
+            s32 amiiboSize = amiiboIter.getSize();
+            if (amiiboSize > 0) {
+                itemInfo->amiiboInfoList.tryAllocBuffer(amiiboSize, nullptr);
+
+                for (s32 j = 0; j < amiiboSize; j++) {
+                    al::ByamlIter amiiboJiter;
+                    amiiboIter.tryGetIterByIndex(&amiiboJiter, j);
+
+                    s32 characterId = -1;
+                    if (al::tryGetByamlS32(&characterId, amiiboJiter, "CharacterId"))
+                        itemInfo->amiiboInfoList[j].characterId = characterId;
+
+                    s32 numberingId = -1;
+                    if (al::tryGetByamlS32(&numberingId, amiiboJiter, "NumberingId"))
+                        itemInfo->amiiboInfoList[j].numberingId = numberingId;
+                }
+            }
+        }
+
+        bool isAOC;
+        if (itemIter.tryGetBoolByKey(&isAOC, "IsAOC"))
+            itemInfo->isAOC = isAOC;
+
+        shopItemList.pushBack(itemInfo);
+    }
+}
 
 GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
     : mMessageSystem(messageSystem) {
@@ -120,17 +248,21 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
         stageLockListIter.tryGetIterByIndex(&iter, i);
         StageLockInfo* lockInfo = new StageLockInfo();
 
-      al::tryGetByamlBool(&lockInfo->isCountTotal,iter,"IsCountTotal");
-      al::tryGetByamlBool(&lockInfo->isCrash,iter,"IsCrash");
+        al::tryGetByamlBool(&lockInfo->isCountTotal, iter, "IsCountTotal");
+        al::tryGetByamlBool(&lockInfo->isCrash, iter, "IsCrash");
 
         al::ByamlIter shineInfoIter;
         iter.tryGetIterByKey(&shineInfoIter, "ShineNumInfo");
-        lockInfo->shineNumInfoNum=shineInfoIter.getSize();
-        lockInfo->shineNumInfo=new s32[lockInfo->shineNumInfoNum];
+        lockInfo->shineNumInfoNum = shineInfoIter.getSize();
+        lockInfo->shineNumInfo = new s32[lockInfo->shineNumInfoNum];
 
         // COMPLETE ME
         mStageLockList.pushBack(lockInfo);
     }
+
+    initializeShopItemList(mShopItemList, "ItemList");
+    if (rs::isModeE3Rom() || rs::isModeE3LiveRom())
+        initializeShopItemList(mShopItemListE3, "ItemListE3");
 }
 
 GameDataHolder::GameDataHolder() {
@@ -650,7 +782,7 @@ bool GameDataHolder::isPlayAlreadyScenarioStartCamera(s32 questNo) const {
     return mIsPlayAlreadyScenarioStartCamera[questNo];
 }
 
-const sead::PtrArray<ShopItem::ItemInfo>& GameDataHolder::getShopItemInfoList() const {
+const sead::PtrArray<ShopItem::ShopItemInfo>& GameDataHolder::getShopItemInfoList() const {
     if (rs::isModeE3Rom() || rs::isModeE3LiveRom())
         return mShopItemListE3;
     return mShopItemList;

@@ -185,7 +185,7 @@ public:
     bool isBossAttackedHomeNext(s32 worldId) const;
     void playScenarioStartCamera(s32 questNo);
     bool isPlayAlreadyScenarioStartCamera(s32 questNo) const;
-    const sead::PtrArray<ShopItem::ItemInfo>& getShopItemInfoList() const;
+    const sead::PtrArray<ShopItem::ShopItemInfo>& getShopItemInfoList() const;
     bool checkNeedTreasureMessageStage(const char* stageName) const;
     bool tryFindLinkDestStageInfo(const char** destStageName, const char** destLabel,
                                   const char* srcStageName, const char* srcLabel) const;
@@ -253,7 +253,7 @@ private:
     sead::FixedSafeString<32> mLanguage;
     u64 mPlayTimeAcrossFiles = 0;
     sead::Heap* mSaveDataWriteThread = nullptr;
-    u8* mSaveDataWorkBuffer = nullptr;
+    u8* mSaveDataWorkBuffer=nullptr;
     GameConfigData* mGameConfigData = nullptr;
     TempSaveData* mTempSaveData = nullptr;
     TempSaveData* mTempSaveDataBackup = nullptr;
@@ -263,16 +263,16 @@ private:
     TemporaryScenarioCameraHolder* mTemporaryScenarioCameraHolder = nullptr;
     bool* mIsPlayAlreadyScenarioStartCamera = nullptr;
     sead::PtrArray<StageLockInfo> mStageLockList;
-    sead::PtrArray<ShopItem::ItemInfo> mShopItemList;
-    sead::PtrArray<ShopItem::ItemInfo> mShopItemListE3;
+    sead::PtrArray<ShopItem::ShopItemInfo> mShopItemList;
+    sead::PtrArray<ShopItem::ShopItemInfo> mShopItemListE3;
     sead::PtrArray<ShopItem::ItemInfo> mItemCloth;
     sead::PtrArray<ShopItem::ItemInfo> mItemCap;
     sead::PtrArray<ShopItem::ItemInfo> mItemGift;
     sead::PtrArray<ShopItem::ItemInfo> mItemSticker;
     sead::PtrArray<HackObjInfo> mHackObjList;
-    sead::PtrArray<sead::FixedSafeString<64>> _160;
-    void* _170 = nullptr;
-    s32 _178 = 0;
+    sead::PtrArray<sead::FixedSafeString<64>> mWorldsForNewReleaseShop;
+    int* mShopTalkDataInfos = nullptr;
+    s32 mShopTalkDataSize = 0;
     AchievementInfoReader* mAchievementInfoReader = nullptr;
     AchievementHolder* mAchievementHolder = nullptr;
     WorldList* mWorldList = nullptr;
