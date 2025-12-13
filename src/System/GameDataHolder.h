@@ -277,7 +277,7 @@ private:
     sead::PtrArray<ShopItem::ItemInfo> mItemSticker;
     sead::PtrArray<HackObjInfo> mHackObjList;
     sead::PtrArray<sead::FixedSafeString<64>> mWorldsForNewReleaseShop;
-    int* mShopTalkDataInfos = nullptr;
+    s32* mShopTalkDataInfos = nullptr;
     s32 mShopTalkDataSize = 0;
     AchievementInfoReader* mAchievementInfoReader = nullptr;
     AchievementHolder* mAchievementHolder = nullptr;
@@ -285,7 +285,7 @@ private:
     sead::PtrArray<ChangeStageItem> mChangeStageList;
     sead::PtrArray<ExStageItem> mExStageList;
     sead::PtrArray<InvalidOpenMapInfo> mInvalidOpenMapList;
-    sead::PtrArray<ShowHackTutorialInfo> mShowHackTutorialList;
+    sead::PtrArray<sead::FixedSafeString<128>> mShowHackTutorialList;
     bool* mIsShowBindTutorial = nullptr;
     MapDataHolder* mMapDataHolder = nullptr;
     sead::PtrArray<WorldItemTypeInfo> mWorldItemTypeInfo;
