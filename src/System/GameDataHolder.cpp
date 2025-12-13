@@ -205,11 +205,11 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
     s32 exStageListSize = exStageListIter.getSize();
     mExStageList.allocBuffer(exStageListSize, nullptr);
 
-    for (s32 i = 0; i < changeStageListSize; i++) {
+    for (s32 i = 0; i < exStageListSize; i++) {
         const char* name = nullptr;
         exStageListIter.tryGetStringByIndex(&name, i);
 
-        ExStageItem* stageItem = new ExStageItem();
+        ExStageItem* stageItem = new ExStageItem;
         stageItem->name.format("%s", name);
 
         mExStageList.pushBack(stageItem);
@@ -274,14 +274,14 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
     initializeItemList(mItemGift, "ItemGift");
     initializeItemList(mItemSticker, "ItemSticker");
 
-    mWorldsForNewReleaseShop.allocBuffer(mShopItemList.size(),nullptr);
-
+    s32 shopTalkDataSize = 0;
     for (s32 i = 0; i < mShopItemList.size(); i++) {
         if (!al::isEqualString(mShopItemList[i]->clearWorld, "")) {
             bool found = false;
             for (s32 j = 0; j < mWorldsForNewReleaseShop.size(); j++) {
                 if (mWorldsForNewReleaseShop[j]->isEqual(mShopItemList[i]->clearWorld)) {
                     found = true;
+                    shopTalkDataSize = i;
                     break;
                 }
             }
@@ -294,6 +294,17 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
         }
     }
 
+    mWorldsForNewReleaseShop.allocBuffer(mShopItemList.size(), nullptr);
+    mShopTalkDataInfos = new s32[shopTalkDataSize];
+
+    for (s32 i = 0; i < shopTalkDataSize; i++) {
+        s32 size = mShopItemList[i]->moonNum;
+        if (size == -1)
+            continue;
+        mShopTalkDataSize++;
+        mShopTalkDataInfos[mShopTalkDataSize] = size;
+    }
+
     al::ByamlIter hackObjListIter(al::findResourceYaml(
         al::findOrCreateResource("SystemData/HackObjList", nullptr), "HackObjList", nullptr));
     s32 hackObjListSize = hackObjListIter.getSize();
@@ -301,12 +312,14 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
 
     for (s32 i = 0; i < hackObjListSize; i++) {
         al::ByamlIter iter;
-        stageLockListIter.tryGetIterByIndex(&iter, i);
-        HackObjInfo* objInfo = new HackObjInfo();
+        hackObjListIter.tryGetIterByIndex(&iter, i);
+        HackObjInfo* objInfo = new HackObjInfo;
 
         objInfo->hackName = al::tryGetByamlKeyStringOrNULL(iter, "HackName");
+        objInfo->isScare = al::tryGetByamlKeyBoolOrFalse(iter, "IsScare");
         objInfo->isNoCollisionMsg = al::tryGetByamlKeyBoolOrFalse(iter, "IsNoCollisionMsg");
-        objInfo->isNoCollisionMsg = al::tryGetByamlKeyBoolOrFalse(iter, "IsNoCollisionMsg");
+        objInfo->isNoSeparateCameraInput =
+            al::tryGetByamlKeyBoolOrFalse(iter, "IsNoSeparateCameraInput");
         objInfo->isUsePlayerCollision = al::tryGetByamlKeyBoolOrFalse(iter, "IsUsePlayerCollision");
         objInfo->isUseCollisionPartsFilterActor =
             al::tryGetByamlKeyBoolOrFalse(iter, "IsUseCollisionPartsFilterActor");
@@ -322,8 +335,7 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
     mShowHackTutorialList.allocBuffer(tutoralLabelNum, nullptr);
 
     for (s32 i = 0; i < mShowHackTutorialList.capacity(); i++) {
-        ShowHackTutorialInfo* info = new ShowHackTutorialInfo();
-
+        sead::FixedSafeString<128>* info = new sead::FixedSafeString<128>("");
         mShowHackTutorialList.pushBack(info);
     }
 
@@ -350,7 +362,7 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
         mWorldItemTypeInfo.pushBack(new WorldItemTypeInfo());
     for (s32 i = 0; i < worldItemTypeListSize; i++) {
         al::ByamlIter iter;
-        s32 shine = -1;
+        s32 shine = 0;
         const char* coinCollect = "";
         worldItemTypeListIter.tryGetIterByIndex(&iter, i);
 
@@ -358,12 +370,12 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
         iter.tryGetIntByKey(&shine, "Shine");
         const char* worldName = al::getByamlKeyString(iter, "WorldName");
         s32 worldIndex = mWorldList->tryFindWorldIndexByDevelopName(worldName);
-        mWorldItemTypeInfo[worldIndex]->coinCollect.format("CoinCollect%s", coinCollect);
-        mWorldItemTypeInfo[worldIndex]->coinCollectEmpty.format("CoinCollectEmpty%s", coinCollect);
-        mWorldItemTypeInfo[worldIndex]->coinCollect2D.format("CoinCollect2D_%s", coinCollect);
-        mWorldItemTypeInfo[worldIndex]->coinCollectEmpty2D.format("CoinCollectEmpty2D_%s",
-                                                                  coinCollect);
-        mWorldItemTypeInfo[worldIndex]->shineAnimFrame = shine;
+        WorldItemTypeInfo* info = mWorldItemTypeInfo[worldIndex];
+        info->coinCollect.format("CoinCollect%s", coinCollect);
+        info->coinCollectEmpty.format("CoinCollectEmpty%s", coinCollect);
+        info->coinCollect2D.format("CoinCollect2D_%s", coinCollect);
+        info->coinCollectEmpty2D.format("CoinCollectEmpty2D_%s", coinCollect);
+        info->shineAnimFrame = shine;
     }
 
     mCoinCollectNumMax = new s32[mWorldList->getWorldNum()];
@@ -398,26 +410,17 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
     al::ByamlIter worldWarpHoleInfoIter2;
     al::getByamlIterByKey(&worldWarpHoleInfoIter2, worldWarpHoleInfoIter, "WorldWarpHoleInfo");
     mWorldWarpHoleInfoNum = worldWarpHoleInfoIter2.getSize();
+    mWorldWarpHoleInfos = new WorldWarpHoleInfo[mWorldWarpHoleInfoNum];
 
-    if (mWorldWarpHoleInfoNum > 0) {
-            mWorldWarpHoleInfos = new WorldWarpHoleInfo[mWorldWarpHoleInfoNum];
-            for (s32 i = 0; i < mWorldWarpHoleInfoNum; i++) {
-                al::ByamlIter infoIter;
-                worldWarpHoleInfoIter2.tryGetIterByIndex(&infoIter, i);
+    for (s32 i = 0; i < mWorldWarpHoleInfoNum; i++) {
+        al::ByamlIter infoIter;
+        al::getByamlIterByIndex(&infoIter, worldWarpHoleInfoIter2, i);
 
-                const char* stageName;
-                infoIter.tryGetStringByKey(&stageName, "StageName");
-                mWorldWarpHoleInfos[i].stageName.format("%s",stageName);
-
-
-                const char* name;
-                infoIter.tryGetStringByKey(&stageName, "Name");
-                mWorldWarpHoleInfos[i].name.format("%s",stageName);
-
-                mWorldWarpHoleInfos[i].worldId = al::getByamlKeyInt(infoIter,"WorldId");
-                mWorldWarpHoleInfos[i].scenarioNo = al::tryGetByamlKeyIntOrZero(infoIter,"ScenarioNo");
-            }
-        }
+        mWorldWarpHoleInfos[i].stageName.format("%s", al::getByamlKeyString(infoIter, "StageName"));
+        mWorldWarpHoleInfos[i].name.format("%s", al::getByamlKeyString(infoIter, "Name"));
+        mWorldWarpHoleInfos[i].worldId = al::getByamlKeyInt(infoIter, "WorldId");
+        mWorldWarpHoleInfos[i].scenarioNo = al::tryGetByamlKeyIntOrZero(infoIter, "ScenarioNo");
+    }
 
     setPlayingFileId(0);
     initializeData();
@@ -465,7 +468,7 @@ void GameDataHolder::initializeDataCommon() {
     mCapMessageBossData->init();
 
     for (s32 i = 0; i < mShowHackTutorialList.size(); i++)
-        mShowHackTutorialList[i]->label.clear();
+        mShowHackTutorialList[i]->clear();
 
     for (s32 i = 0; i < 3; i++)
         mIsShowBindTutorial[i] = false;
@@ -974,10 +977,10 @@ bool GameDataHolder::tryFindLinkDestStageInfo(const char** destStageName, const 
 
 bool GameDataHolder::isShowHackTutorial(const char* hackName, const char* suffix) const {
     for (s32 i = 0; i < mShowHackTutorialList.size(); i++) {
-        if (mShowHackTutorialList[i]->label.isEmpty())
+        if (mShowHackTutorialList[i]->isEmpty())
             continue;
 
-        if (mShowHackTutorialList[i]->label.isEqual(al::StringTmp<128>{"%s%s", hackName, suffix}))
+        if (mShowHackTutorialList[i]->isEqual(al::StringTmp<128>{"%s%s", hackName, suffix}))
             return true;
     }
     return false;
@@ -988,8 +991,8 @@ void GameDataHolder::setShowHackTutorial(const char* hackName, const char* suffi
         return;
 
     for (s32 i = 0; i < mShowHackTutorialList.size(); i++) {
-        if (mShowHackTutorialList[i]->label.isEmpty()) {
-            mShowHackTutorialList[i]->label.format("%s%s", hackName, suffix);
+        if (mShowHackTutorialList[i]->isEmpty()) {
+            mShowHackTutorialList[i]->format("%s%s", hackName, suffix);
             return;
         }
     }
