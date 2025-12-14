@@ -1759,24 +1759,68 @@ const char* axisIndexToString(s32 axisIndex) {
     }
 }
 
-bool checkHitSemilinePlane(sead::Vector3f* aa, const sead::Vector3f& bb, const sead::Vector3f& cc,
-                           const sead::Vector3f& dd, const sead::Vector3f& ff) {
-    f32 dot = cc.dot(ff);
-    if (dot < 0.0f) {
-        if (aa != nullptr) {
-            f32 rate = ff.dot(dd-bb)/dot;
-            aa->set(bb);
-            aa->add(cc * rate);
-        }
-        return true;
+void calcSphereMargeSpheres(sead::Vector3f*, f32*, const sead::Vector3f&, f32,
+                            const sead::Vector3f&, f32);
+
+bool calcCrossLinePoint(sead::Vector2f* outPoint, const sead::Vector2f& pointA,
+                        const sead::Vector2f& dirA, const sead::Vector2f& pointB,
+                        const sead::Vector2f& dirB) {
+    f32 det = dirB.y * dirA.x - dirA.y * dirB.x;
+    if (isNearZero(det))
+        return false;
+
+    f32 rate = (dirA.x * (pointA.y - pointB.y) + dirA.y * (pointB.x - pointA.x)) / det;
+
+    outPoint->x = dirB.x * rate + pointB.x;
+    outPoint->y = dirB.y * rate + pointB.y;
+
+    return true;
+}
+
+f32 calcSquaredDistanceSegmentToSegment(const sead::Vector3f&, const sead::Vector3f&,
+                                        const sead::Vector3f&, const sead::Vector3f&,
+                                        sead::Vector3f*, sead::Vector3f*);
+f32 calcSquaredDistancePointToSegment(const sead::Vector3f&, const sead::Vector3f&,
+                                      const sead::Vector3f&);
+f32 calcDistancePointToSegment(const sead::Vector3f&, const sead::Vector3f&, const sead::Vector3f&);
+void calcPerpendicFootToLineInside(sead::Vector3f*, const sead::Vector3f&, const sead::Vector3f&,
+                                   const sead::Vector3f&);
+void calcClosestSegmentPoint(sead::Vector3f*, const sead::Vector3f&, const sead::Vector3f&,
+                             const sead::Vector3f&);
+f32 calcCylinderRadiusDot(const sead::Vector3f&, const sead::Vector3f&, f32);
+
+bool checkHitSemilinePlane(sead::Vector3f* outHitPos, const sead::Vector3f& start,
+                           const sead::Vector3f& dir, const sead::Vector3f& planePoint,
+                           const sead::Vector3f& planeNormal) {
+    f32 dot = dir.dot(planeNormal);
+    if (dot >= 0.0f)
+        return false;
+
+    if (outHitPos != nullptr) {
+        f32 rate = planeNormal.dot(planePoint - start) / dot;
+        outHitPos->set(start);
+        outHitPos->add(dir * rate);
     }
-    return false;
+    return true;
 }
 
 bool checkHitSegmentPlane(sead::Vector3f*, const sead::Vector3f&, const sead::Vector3f&,
                           const sead::Vector3f&, const sead::Vector3f&, bool);
-bool checkHitLinePlane(sead::Vector3f*, const sead::Vector3f&, const sead::Vector3f&,
-                       const sead::Vector3f&, const sead::Vector3f&);
+
+bool checkHitLinePlane(sead::Vector3f* outHitPos, const sead::Vector3f& start,
+                       const sead::Vector3f& dir, const sead::Vector3f& planePoint,
+                       const sead::Vector3f& planeNormal) {
+    f32 dot = planeNormal.dot(dir);
+    if (isNearZero(dot))
+        return false;
+
+    if (outHitPos != nullptr) {
+        f32 rate = planeNormal.dot(planePoint - start) / dot;
+        outHitPos->set(start);
+        outHitPos->add(dir * rate);
+    }
+    return true;
+}
 
 bool checkHitSegmentSphere(const sead::Vector3f& start, const sead::Vector3f& end,
                            const sead::Vector3f& center, f32 radius, sead::Vector3f* outDir,
