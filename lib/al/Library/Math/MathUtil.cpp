@@ -2012,6 +2012,72 @@ f32 calcCylinderRadiusDot(const sead::Vector3f& vecA, const sead::Vector3f& vecB
     return sead::Mathf::sin(sead::Mathf::acos(cos)) * radius;
 }
 
+bool checkHitSegmentSphere(const sead::Vector3f& start, const sead::Vector3f& end,
+                           const sead::Vector3f& center, f32 radius, sead::Vector3f* outDir,
+                           sead::Vector3f* outPos) {
+    sead::Vector3f segDir = start - end;
+    sead::Vector3f endToCenter = center - end;
+
+    f32 dot = segDir.dot(endToCenter);
+    f32 radiusSqr = radius * radius;
+
+    if (dot < 0.0f) {
+        if ((end - start).squaredLength() < radiusSqr) {
+            tryNormalizeOrZero(&segDir);
+
+            if (outDir != nullptr)
+                outDir->set(segDir);
+            if (outPos != nullptr)
+                outPos->set(start - segDir * radius);
+            return true;
+        }
+
+        return false;
+    }
+
+    if (endToCenter.squaredLength() < dot) {
+        if ((center - start).squaredLength() < radiusSqr) {
+            segDir = start - center;
+            tryNormalizeOrZero(&segDir);
+
+            if (outDir != nullptr)
+                outDir->set(segDir);
+            if (outPos != nullptr)
+                outPos->set(start - segDir * radius);
+            return true;
+        }
+
+        return false;
+    }
+
+    if (isNearZero(endToCenter.squaredLength())) {
+        if (segDir.squaredLength() <= radiusSqr) {
+            tryNormalizeOrZero(&segDir);
+
+            if (outDir != nullptr)
+                outDir->set(segDir);
+            if (outPos != nullptr)
+                outPos->set(start - segDir * radius);
+            return true;
+        }
+        return false;
+    }
+
+    segDir = endToCenter * (dot / endToCenter.squaredLength()) - segDir;
+
+    if (segDir.squaredLength() <= radiusSqr) {
+        segDir = -segDir;
+        tryNormalizeOrZero(&segDir);
+
+        if (outDir != nullptr)
+            outDir->set(segDir);
+        if (outPos != nullptr)
+            outPos->set(start - segDir * radius);
+        return true;
+    }
+    return false;
+}
+
 }  // namespace al
 
 namespace Intersect {
