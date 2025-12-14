@@ -2022,13 +2022,53 @@ bool checkHitSemilinePlane(sead::Vector3f* aa, const sead::Vector3f& bb, const s
         }
         return true;
     }
-    return false;
+}
+
+f32 calcSquaredDistanceSegmentToSegment(const sead::Vector3f&, const sead::Vector3f&,
+                                        const sead::Vector3f&, const sead::Vector3f&,
+                                        sead::Vector3f*, sead::Vector3f*);
+f32 calcSquaredDistancePointToSegment(const sead::Vector3f&, const sead::Vector3f&,
+                                      const sead::Vector3f&);
+f32 calcDistancePointToSegment(const sead::Vector3f&, const sead::Vector3f&, const sead::Vector3f&);
+void calcPerpendicFootToLineInside(sead::Vector3f*, const sead::Vector3f&, const sead::Vector3f&,
+                                   const sead::Vector3f&);
+void calcClosestSegmentPoint(sead::Vector3f*, const sead::Vector3f&, const sead::Vector3f&,
+                             const sead::Vector3f&);
+f32 calcCylinderRadiusDot(const sead::Vector3f&, const sead::Vector3f&, f32);
+
+bool checkHitSemilinePlane(sead::Vector3f* outHitPos, const sead::Vector3f& start,
+                           const sead::Vector3f& dir, const sead::Vector3f& planePoint,
+                           const sead::Vector3f& planeNormal) {
+    f32 dot = dir.dot(planeNormal);
+    if (dot >= 0.0f)
+        return false;
+
+    if (outHitPos != nullptr) {
+        f32 rate = planeNormal.dot(planePoint - start) / dot;
+        outHitPos->set(start);
+        outHitPos->add(dir * rate);
+>>>>>>> 7f3d990e (match)
+    }
+    return true;
 }
 
 bool checkHitSegmentPlane(sead::Vector3f*, const sead::Vector3f&, const sead::Vector3f&,
                           const sead::Vector3f&, const sead::Vector3f&, bool);
-bool checkHitLinePlane(sead::Vector3f*, const sead::Vector3f&, const sead::Vector3f&,
-                       const sead::Vector3f&, const sead::Vector3f&);
+
+bool checkHitLinePlane(sead::Vector3f* outHitPos, const sead::Vector3f& start,
+                       const sead::Vector3f& dir, const sead::Vector3f& planePoint,
+                       const sead::Vector3f& planeNormal) {
+    f32 dot = planeNormal.dot(dir);
+    if (isNearZero(dot))
+        return false;
+
+    if (outHitPos != nullptr) {
+        f32 rate = planeNormal.dot(planePoint - start) / dot;
+        outHitPos->set(start);
+        outHitPos->add(dir * rate);
+    }
+    return true;
+}
 
 bool checkHitSegmentSphere(const sead::Vector3f& start, const sead::Vector3f& end,
                            const sead::Vector3f& center, f32 radius, sead::Vector3f* outDir,
