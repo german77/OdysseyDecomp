@@ -2011,6 +2011,24 @@ f32 calcCylinderRadiusDot(const sead::Vector3f& vecA, const sead::Vector3f& vecB
 
     return sead::Mathf::sin(sead::Mathf::acos(cos)) * radius;
 }
+bool checkHitSemilinePlane(sead::Vector3f* aa, const sead::Vector3f& bb, const sead::Vector3f& cc,
+                           const sead::Vector3f& dd, const sead::Vector3f& ff) {
+    f32 dot = cc.dot(ff);
+    if (dot < 0.0f) {
+        if (aa != nullptr) {
+            f32 rate = ff.dot(dd-bb)/dot;
+            aa->set(bb);
+            aa->add(cc * rate);
+        }
+        return true;
+    }
+    return false;
+}
+
+bool checkHitSegmentPlane(sead::Vector3f*, const sead::Vector3f&, const sead::Vector3f&,
+                          const sead::Vector3f&, const sead::Vector3f&, bool);
+bool checkHitLinePlane(sead::Vector3f*, const sead::Vector3f&, const sead::Vector3f&,
+                       const sead::Vector3f&, const sead::Vector3f&);
 
 bool checkHitSegmentSphere(const sead::Vector3f& start, const sead::Vector3f& end,
                            const sead::Vector3f& center, f32 radius, sead::Vector3f* outDir,
