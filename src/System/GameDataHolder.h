@@ -254,11 +254,12 @@ private:
     bool mIsRequireSave = false;
     u32 mRequireSaveFrame = 0;
     bool mIsInvalidSaveForMoonGet = false;
-    bool _49 = false;  // related to changeNextStage(WithWorldDemoWarp)
-    bool _4a = false;  // related to endStage
+    bool mIsStageChanging = false;  // Similar to mutex lock
+    bool mIsStageEnding = false;  // Similar to mutex lock
     sead::FixedSafeString<32> mLanguage;
+
     u64 mPlayTimeAcrossFiles = 0;
-    sead::Heap* mSaveDataWriteThread = nullptr;
+    sead::Heap* mSaveDataWriteHeap = nullptr;
     u8* mSaveDataWorkBuffer = nullptr;
     GameConfigData* mGameConfigData = nullptr;
     TempSaveData* mTempSaveData = nullptr;
@@ -266,6 +267,7 @@ private:
     CapMessageBossData* mCapMessageBossData = nullptr;
     void* _c0 = nullptr;
     s32 _c8 = 0;
+
     TemporaryScenarioCameraHolder* mTemporaryScenarioCameraHolder = nullptr;
     bool* mIsPlayAlreadyScenarioStartCamera = nullptr;
     sead::PtrArray<StageLockInfo> mStageLockList;
@@ -294,13 +296,13 @@ private:
     WorldWarpHoleInfo* mWorldWarpHoleInfos = nullptr;
     s32 mWorldWarpHoleInfoNum = 0;
     UniqObjInfo* mLocationName = nullptr;
-    bool _220 = false;
-    s32 _224 = 0;
+    bool mIsDisableExplainAmiibo = false;
+    s32 mSearchHintByAmiiboCount = 0;
     bool mIsValidCheckpointWarp = true;
     sead::Vector3f mStageMapPlayerPos = sead::Vector3f::zero;
     sead::Vector3f* mCoinTransForDeadPlayer = nullptr;
     s32 mDeadPlayerCoinIdx = 0;
-    bool _244 = false;
+    bool _244 = false; // Part of E3Sequence
     bool mIsSeparatePlay = false;
     bool mIsPlayDemoLavaErupt = false;
     QuestInfoHolder* mQuestInfoHolder = nullptr;

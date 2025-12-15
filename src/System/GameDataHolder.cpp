@@ -166,7 +166,7 @@ void initializeItemList(sead::PtrArray<ShopItem::ItemInfo>& shopItemList, const 
 GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
     : mMessageSystem(messageSystem) {
     setLanguage(al::getLanguageString());
-    mSaveDataWriteThread =
+    mSaveDataWriteHeap =
         sead::FrameHeap::create(0x200000, "セーブデータByamlIter書き込み用", nullptr, 8,
                                 sead::FrameHeap::cHeapDirection_Forward, false);
     mSaveDataWorkBuffer = new u8[0x200000];
@@ -302,7 +302,7 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
         if (size == -1)
             continue;
         mShopTalkDataSize++;
-        mShopTalkDataInfos[mShopTalkDataSize] = size;
+        mShopTalkDataInfos[mShopTalkDataSize++] = size;
     }
 
     al::ByamlIter hackObjListIter(al::findResourceYaml(
@@ -463,8 +463,8 @@ void GameDataHolder::initializeDataCommon() {
     mIsValidCheckpointWarp = true;
     mStageMapPlayerPos = sead::Vector3f::zero;
     mIsPlayDemoLavaErupt = false;
-    _220 = false;
-    _224 = 0;
+    mIsDisableExplainAmiibo = false;
+    mSearchHintByAmiiboCount = 0;
     mCapMessageBossData->init();
 
     for (s32 i = 0; i < mShowHackTutorialList.size(); i++)
@@ -584,11 +584,11 @@ const char* GameDataHolder::getLanguage() const {
 }
 
 void GameDataHolder::changeNextStage(const ChangeStageInfo* changeStageInfo, s32 raceType) {
-    if (_49)
+    if (mIsStageChanging)
         return;
 
     mPlayingFile->changeNextStage(changeStageInfo, raceType);
-    _49 = true;
+    mIsStageChanging = true;
     resetLocationName();
 }
 
@@ -597,30 +597,30 @@ void GameDataHolder::resetLocationName() {
 }
 
 void GameDataHolder::changeNextStageWithDemoWorldWarp(const char* stageName) {
-    if (_49)
+    if (mIsStageChanging)
         return;
 
     resetTempSaveData(false);
     mPlayingFile->changeNextStageWithDemoWorldWarp(stageName);
-    _49 = false;
+    mIsStageChanging = false;
 }
 
 bool GameDataHolder::tryChangeNextStageWithWorldWarpHole(const char* stageName) {
-    if (_49)
+    if (mIsStageChanging)
         return false;
 
     mPlayingFile->changeNextStageWithWorldWarpHole(stageName);
-    _49 = true;
+    mIsStageChanging = true;
     resetTempSaveData(true);
     return true;
 }
 
 void GameDataHolder::returnPrevStage() {
-    if (_49)
+    if (mIsStageChanging)
         return;
 
     mPlayingFile->returnPrevStage();
-    _49 = true;
+    mIsStageChanging = true;
     resetLocationName();
 }
 
@@ -662,7 +662,7 @@ const char* GameDataHolder::tryGetRestartPointIdString() const {
 }
 
 void GameDataHolder::endStage() {
-    if (_4a)
+    if (mIsStageEnding)
         return;
     mPlayingFile->endStage();
 }
@@ -845,7 +845,7 @@ void GameDataHolder::readFromSaveDataBufferCommonFileOnlyLanguage() {
 
 void GameDataHolder::writeToSaveDataBuffer(const char* fileName) {
     u8* saveDataBuffer = al::getSaveDataWorkBuffer();
-    mSaveDataWriteThread->freeAll();
+    mSaveDataWriteHeap->freeAll();
 
     if (al::isEqualString(fileName, "Common.bin")) {
         sead::RamWriteStream writeStream(saveDataBuffer, 0x400, sead::Stream::Modes::Binary);
@@ -859,7 +859,7 @@ void GameDataHolder::writeToSaveDataBuffer(const char* fileName) {
         buffer.playTime = mPlayTimeAcrossFiles;
         writeStream.writeMemBlock(&buffer, sizeof(SaveDataBuffer));
 
-        al::ByamlWriter byamlWriter{mSaveDataWriteThread, false};
+        al::ByamlWriter byamlWriter{mSaveDataWriteHeap, false};
         byamlWriter.pushHash();
         mGameConfigData->write(&byamlWriter);
         byamlWriter.pop();
@@ -870,7 +870,7 @@ void GameDataHolder::writeToSaveDataBuffer(const char* fileName) {
         sead::RamWriteStream writeStream(saveDataBuffer, 0x200000, sead::Stream::Modes::Binary);
 
         dataFile->updateSaveTime();
-        dataFile->writeToStream(&writeStream, mSaveDataWriteThread);
+        dataFile->writeToStream(&writeStream, mSaveDataWriteHeap);
     }
 
     setRequireSaveFalse();
