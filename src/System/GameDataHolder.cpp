@@ -274,36 +274,41 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
     initializeItemList(mItemGift, "ItemGift");
     initializeItemList(mItemSticker, "ItemSticker");
 
+    s32 sizer = mShopItemList.size();
     s32 shopTalkDataSize = 0;
-    for (s32 i = 0; i < mShopItemList.size(); i++) {
+    s32 shopItemSize = 0;
+    const char** nameList = new const char*[100];
+    for (s32 i = 0; i < sizer; i++) {
         if (!al::isEqualString(mShopItemList[i]->clearWorld, "")) {
             bool found = false;
-            for (s32 j = 0; j < mWorldsForNewReleaseShop.size(); j++) {
-                if (mWorldsForNewReleaseShop[j]->isEqual(mShopItemList[i]->clearWorld)) {
+            for (s32 j = 0; j < shopTalkDataSize; j++) {
+                if (al::isEqualString(nameList[j], mShopItemList[i]->clearWorld)) {
                     found = true;
-                    shopTalkDataSize = i;
                     break;
                 }
             }
 
             if (!found) {
-                sead::FixedSafeString<64>* newWorld = new sead::FixedSafeString<64>();
-                newWorld->copy(mShopItemList[i]->clearWorld);
-                mWorldsForNewReleaseShop.pushBack(newWorld);
+                nameList[shopTalkDataSize] = mShopItemList[i]->clearWorld;
+                shopTalkDataSize++;
             }
         }
+
+        if (mShopItemList[i]->moonNum != -1)
+            shopItemSize++;
     }
 
-    mWorldsForNewReleaseShop.allocBuffer(mShopItemList.size(), nullptr);
-    mShopTalkDataInfos = new s32[shopTalkDataSize];
-
+    mWorldsForNewReleaseShop.allocBuffer(shopTalkDataSize, nullptr);
     for (s32 i = 0; i < shopTalkDataSize; i++) {
-        s32 size = mShopItemList[i]->moonNum;
-        if (size == -1)
-            continue;
-        mShopTalkDataSize++;
-        mShopTalkDataInfos[mShopTalkDataSize++] = size;
+        sead::FixedSafeString<64>* newWorld = new sead::FixedSafeString<64>(nameList[i]);
+        mWorldsForNewReleaseShop.pushBack(newWorld);
     }
+
+    mShopTalkDataInfos = new s32[shopItemSize];
+
+    for (s32 i = 0; i < sizer; i++)
+        if (mShopItemList[i]->moonNum != -1)
+            mShopTalkDataInfos[mShopTalkDataSize++] = mShopItemList[i]->moonNum;
 
     al::ByamlIter hackObjListIter(al::findResourceYaml(
         al::findOrCreateResource("SystemData/HackObjList", nullptr), "HackObjList", nullptr));
@@ -358,8 +363,11 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
 
     mWorldItemTypeInfo.allocBuffer(worldItemTypeListSize, nullptr);
 
-    for (s32 i = 0; i < worldItemTypeListSize; i++)
-        mWorldItemTypeInfo.pushBack(new WorldItemTypeInfo());
+    for (s32 i = 0; i < worldItemTypeListSize; i++) {
+        WorldItemTypeInfo* info = new WorldItemTypeInfo();
+        mWorldItemTypeInfo.pushBack(info);
+    }
+
     for (s32 i = 0; i < worldItemTypeListSize; i++) {
         al::ByamlIter iter;
         s32 shine = 0;
