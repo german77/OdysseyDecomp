@@ -87,32 +87,32 @@ public:
     static_assert(sizeof(WorldItemTypeInfo) == 0x268);
 
     struct StageLockInfo {
-        s32* shineNumInfo=nullptr;
-        s32 shineNumInfoNum=0;
-        bool isCountTotal=false;
-        bool isCrash=false;
+        s32* shineNumInfo = nullptr;
+        s32 shineNumInfoNum = 0;
+        bool isCountTotal = false;
+        bool isCrash = false;
     };
 
     static_assert(sizeof(StageLockInfo) == 0x10);
 
     struct HackObjInfo {
-        const char* hackName=nullptr;
-        f32 guideHeight=200.0f;
-        f32 stayGravityMargine=0.0f;
-        bool isScare=false;
-        bool isNoCollisionMsg=false;
-        bool isNoSeparateCameraInput=false;
-        bool isUsePlayerCollision=false;
-        bool isUseCollisionPartsFilterActor=false;
-        bool isGuideEnable=true;
-        const char* tutorialName=nullptr;
+        const char* hackName = nullptr;
+        f32 guideHeight = 200.0f;
+        f32 stayGravityMargine = 0.0f;
+        bool isScare = false;
+        bool isNoCollisionMsg = false;
+        bool isNoSeparateCameraInput = false;
+        bool isUsePlayerCollision = false;
+        bool isUseCollisionPartsFilterActor = false;
+        bool isGuideEnable = true;
+        const char* tutorialName = nullptr;
     };
 
     static_assert(sizeof(HackObjInfo) == 0x20);
 
     struct InvalidOpenMapInfo {
-        const char* name=nullptr;
-        s32 scenario=0;
+        const char* name = nullptr;
+        s32 scenario = 0;
     };
 
     static_assert(sizeof(InvalidOpenMapInfo) == 0x10);
@@ -255,7 +255,7 @@ private:
     u32 mRequireSaveFrame = 0;
     bool mIsInvalidSaveForMoonGet = false;
     bool mIsStageChanging = false;  // Similar to mutex lock
-    bool mIsStageEnding = false;  // Similar to mutex lock
+    bool mIsStageEnding = false;    // Similar to mutex lock
     sead::FixedSafeString<32> mLanguage;
 
     u64 mPlayTimeAcrossFiles = 0;
@@ -302,7 +302,7 @@ private:
     sead::Vector3f mStageMapPlayerPos = sead::Vector3f::zero;
     sead::Vector3f* mCoinTransForDeadPlayer = nullptr;
     s32 mDeadPlayerCoinIdx = 0;
-    bool _244 = false; // Part of E3Sequence
+    bool _244 = false;  // Part of E3Sequence
     bool mIsSeparatePlay = false;
     bool mIsPlayDemoLavaErupt = false;
     QuestInfoHolder* mQuestInfoHolder = nullptr;
