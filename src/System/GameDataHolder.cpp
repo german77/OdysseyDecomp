@@ -275,9 +275,9 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
     initializeItemList(mItemSticker, "ItemSticker");
 
     s32 sizer = mShopItemList.size();
-    s32 shopTalkDataSize = 0;
     s32 shopItemSize = 0;
-    const char** nameList = new const char*[100];
+    s32 shopTalkDataSize = 0;
+    const char* nameList[10];
     for (s32 i = 0; i < sizer; i++) {
         if (!al::isEqualString(mShopItemList[i]->clearWorld, "")) {
             bool found = false;
@@ -289,8 +289,7 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
             }
 
             if (!found) {
-                nameList[shopTalkDataSize] = mShopItemList[i]->clearWorld;
-                shopTalkDataSize++;
+                nameList[shopTalkDataSize++] = mShopItemList[i]->clearWorld;
             }
         }
 
@@ -339,10 +338,8 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
     s32 tutoralLabelNum = al::getSystemMessageLabelNum(this, "Tutorial");
     mShowHackTutorialList.allocBuffer(tutoralLabelNum, nullptr);
 
-    for (s32 i = 0; i < mShowHackTutorialList.capacity(); i++) {
-        sead::FixedSafeString<128>* info = new sead::FixedSafeString<128>("");
-        mShowHackTutorialList.pushBack(info);
-    }
+    for (s32 i = 0; i < mShowHackTutorialList.capacity(); i++)
+        mShowHackTutorialList.pushBack(new sead::FixedSafeString<128>(""));
 
     mFiles = new GameDataFile*[5];
     for (s32 i = 0; i < 5; i++)
@@ -362,28 +359,29 @@ GameDataHolder::GameDataHolder(const al::MessageSystem* messageSystem)
     s32 worldItemTypeListSize = worldItemTypeListIter.getSize();
 
     mWorldItemTypeInfo.allocBuffer(worldItemTypeListSize, nullptr);
+    if (worldItemTypeListSize > 0) {
+        for (s32 i = 0; i < worldItemTypeListSize; i++) {
+            WorldItemTypeInfo* info = new WorldItemTypeInfo;
+            mWorldItemTypeInfo.pushBack(info);
+        }
 
-    for (s32 i = 0; i < worldItemTypeListSize; i++) {
-        WorldItemTypeInfo* info = new WorldItemTypeInfo();
-        mWorldItemTypeInfo.pushBack(info);
-    }
+        for (s32 i = 0; i < worldItemTypeListSize; i++) {
+            al::ByamlIter iter;
+            s32 shine = 0;
+            const char* coinCollect = "";
+            worldItemTypeListIter.tryGetIterByIndex(&iter, i);
 
-    for (s32 i = 0; i < worldItemTypeListSize; i++) {
-        al::ByamlIter iter;
-        s32 shine = 0;
-        const char* coinCollect = "";
-        worldItemTypeListIter.tryGetIterByIndex(&iter, i);
-
-        iter.tryGetStringByKey(&coinCollect, "CoinCollect");
-        iter.tryGetIntByKey(&shine, "Shine");
-        const char* worldName = al::getByamlKeyString(iter, "WorldName");
-        s32 worldIndex = mWorldList->tryFindWorldIndexByDevelopName(worldName);
-        WorldItemTypeInfo* info = mWorldItemTypeInfo[worldIndex];
-        info->coinCollect.format("CoinCollect%s", coinCollect);
-        info->coinCollectEmpty.format("CoinCollectEmpty%s", coinCollect);
-        info->coinCollect2D.format("CoinCollect2D_%s", coinCollect);
-        info->coinCollectEmpty2D.format("CoinCollectEmpty2D_%s", coinCollect);
-        info->shineAnimFrame = shine;
+            iter.tryGetStringByKey(&coinCollect, "CoinCollect");
+            iter.tryGetIntByKey(&shine, "Shine");
+            const char* worldName = al::getByamlKeyString(iter, "WorldName");
+            s32 worldIndex = mWorldList->tryFindWorldIndexByDevelopName(worldName);
+            WorldItemTypeInfo* info = mWorldItemTypeInfo[worldIndex];
+            info->coinCollect.format("CoinCollect%s", coinCollect);
+            info->coinCollectEmpty.format("CoinCollectEmpty%s", coinCollect);
+            info->coinCollect2D.format("CoinCollect2D_%s", coinCollect);
+            info->coinCollectEmpty2D.format("CoinCollectEmpty2D_%s", coinCollect);
+            info->shineAnimFrame = shine;
+        }
     }
 
     mCoinCollectNumMax = new s32[mWorldList->getWorldNum()];
