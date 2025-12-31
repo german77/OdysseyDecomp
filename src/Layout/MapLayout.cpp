@@ -314,33 +314,50 @@ void MapLayout::moveFocusLayout(const sead::Vector3f& pos3D, const sead::Vector2
     mScrollPosition.y = (-proj.y - pos2D.y) - (direction.y * 2.5f);
 }
 
+inline sead::Vector2f getOffset(s32 i) {
+    if (i == 0)
+        return {50.0f, 50.0f};
+    if (i == 1)
+        return {-50.0f, 50.0f};
+
+    return i == 4 ? sead::Vector2f{50.0f, 0.0f} : sead::Vector2f::zero;
+}
+
 void MapLayout::updateST() {
-    if (mIsPrintWorldChanged) {
-        al::setPaneLocalScale(this, "All", mPanelLocalScale);
-        sead::Vector2f position = {mScrollPosition.x * mPanelLocalScale.x,
-                                   mScrollPosition.y * mPanelLocalScale.y};
-        al::setPaneLocalTrans(this, "All", position);
-        MapData* mapdata = mMapTerrainLayout->getMapData();
-        al::LiveActor* playerActor = al::tryGetPlayerActor(mPlayerHolder, 0);
-        if (playerActor != nullptr)
-            updatePlayerPosLayout();
-        for (s32 i = 0; i < mMapIconInfoSize; i++) {
-        }
-        setPanelFont(mPanelLocalScale.x, &mCurrentFontType, this, mCurrentFontType);
-        s32 size = mArray.size();
-        for (s32 i = 0; i < size; i++) {
-            if (al::isActive(mArray[i])) {
-                sead::Vector2f vector2 = {50.0f, 50.0f};
-                if (i == 1)
-                    vector2 = {-50.0f, 50.0f};
-                else if (i == 4)
-                    vector2 = {50.0f, 0.0f};
-                else
-                    vector2 = sead::Vector2f::zero;
-                updateIconLine(mArray[i], mAAA, vector2);
-            }
+    if (!mIsPrintWorldChanged)
+        return;
+
+    al::setPaneLocalScale(this, "All", mPanelLocalScale);
+    al::setPaneLocalTrans(
+        this, "All",
+        {mScrollPosition.x * mPanelLocalScale.x, mScrollPosition.y * mPanelLocalScale.y});
+
+    MapData* mapData = mMapTerrainLayout->getMapData();
+    if (al::tryGetPlayerActor(mPlayerHolder, 0))
+        updatePlayerPosLayout();
+
+    for (s32 i = 0; i < mMapIconInfoSize; i++) {
+        if (!mMapIconInfo[i].isActive)
+            continue;
+
+        if (mMapIconInfo[i].value) {
+            sead::Vector3f projectedPos = sead::Vector3f::zero;
+            calcSeaOfTreeIconPos(&projectedPos);
+            al::setLocalTrans(mMapIconInfo[i].iconLayout->layout, projectedPos);
+        } else {
+            sead::Vector2f projectedPos;
+            rs::calcTransOnMap(&projectedPos, mMapIconInfo[i].position, mapData->viewProjMatrix,
+                               mScrollPosition, mPanelLocalScale.x, 2.0f);
+            al::setLocalTrans(mMapIconInfo[i].iconLayout->layout, projectedPos);
         }
     }
+
+    setPanelFont(mPanelLocalScale.x, &mCurrentFontType, this, mCurrentFontType);
+
+    s32 size = mArray.size();
+    for (s32 i = 0; i < size; i++)
+        if (al::isActive(mArray[i]))
+            updateIconLine(mArray[i], mAAA, getOffset(i));
 }
 
 HintAmiibo& getHintAmiibo(s32 i, u32 maxSize, HintAmiibo* mHintAmiibo) {
@@ -370,10 +387,7 @@ void MapLayout::appearAmiiboHint() {
             iconInfo.value = false;
         }
         f32 map = mMapTerrainLayout->getPaneSize();
-        mPanelLocalScale.y = 0.4f;
-        mPanelLocalScale.x = 0.4f;
-        mMapTerrainLayout->getPaneSize();
-        mScrollPosition = sead::Vector2f::zero;
+        reset();
         mPanelSize = {map * 0.4f, map * 0.4f};
         mPanelLocalScale.y = StageMapFunction::getStageMapScaleMin();
         mPanelLocalScale.x = StageMapFunction::getStageMapScaleMin();
@@ -392,7 +406,7 @@ void MapLayout::appearAmiiboHint() {
         mIsSomesomebool = true;
         return;
     }
-    al::setNerve(this, &NrvMapLayout.End);
+    end();
 }
 
 void MapLayout::end() {
@@ -559,10 +573,7 @@ void MapLayout::appearWithHint() {
             iconInfo.value = false;
         }
         f32 map = mMapTerrainLayout->getPaneSize();
-        mPanelLocalScale.y = 0.4f;
-        mPanelLocalScale.x = 0.4f;
-        mMapTerrainLayout->getPaneSize();
-        mScrollPosition = sead::Vector2f::zero;
+        reset();
         mPanelSize = {map * 0.4f, map * 0.4f};
         mPanelLocalScale.y = StageMapFunction::getStageMapScaleMin();
         mPanelLocalScale.x = StageMapFunction::getStageMapScaleMin();
@@ -581,7 +592,7 @@ void MapLayout::appearWithHint() {
         mIsSomesomebool = true;
         return;
     }
-    al::setNerve(this, &NrvMapLayout.End);
+    end();
 }
 
 void MapLayout::appearMoonRockDemo(s32 sworldId) {
@@ -597,10 +608,7 @@ void MapLayout::appearMoonRockDemo(s32 sworldId) {
     }
     changePrintWorld(sworldId);
     f32 map = mMapTerrainLayout->getPaneSize();
-    mPanelLocalScale.y = 0.4f;
-    mPanelLocalScale.x = 0.4f;
-    mMapTerrainLayout->getPaneSize();
-    mScrollPosition = sead::Vector2f::zero;
+    reset();
     mPanelLocalScale.y = StageMapFunction::getStageMapScaleMin();
     mPanelLocalScale.x = StageMapFunction::getStageMapScaleMin();
     mPanelSize = {map * StageMapFunction::getStageMapScaleMin(),
@@ -982,18 +990,18 @@ void MapLayout::lostFocusIcon(MapIconLayout* mapIconLayout) {
 
 bool MapLayout::tryCalcNorthDir(sead::Vector3f* northDir) {
     MapData* mapData = mMapTerrainLayout->getMapData();
-    if (mapData != nullptr) {
-        const sead::Vector3f ey = sead::Vector3f::ey;
-        northDir->x = mapData->viewMatrix(0, 0) * ey.x + mapData->viewMatrix(1, 0) * ey.y +
-                      mapData->viewMatrix(2, 0) * ey.z;
-        northDir->y = mapData->viewMatrix(0, 1) * ey.x + mapData->viewMatrix(1, 1) * ey.y +
-                      mapData->viewMatrix(2, 1) * ey.z;
-        northDir->z = mapData->viewMatrix(0, 2) * ey.x + mapData->viewMatrix(1, 2) * ey.y +
-                      mapData->viewMatrix(2, 2) * ey.z;
-        al::normalize(northDir);
-        return true;
-    }
-    return false;
+    if (mapData == nullptr)
+        return false;
+
+    const sead::Vector3f ey = sead::Vector3f::ey;
+    northDir->x = mapData->viewMatrix(0, 0) * ey.x + mapData->viewMatrix(1, 0) * ey.y +
+                  mapData->viewMatrix(2, 0) * ey.z;
+    northDir->y = mapData->viewMatrix(0, 1) * ey.x + mapData->viewMatrix(1, 1) * ey.y +
+                  mapData->viewMatrix(2, 1) * ey.z;
+    northDir->z = mapData->viewMatrix(0, 2) * ey.x + mapData->viewMatrix(1, 2) * ey.y +
+                  mapData->viewMatrix(2, 2) * ey.z;
+    al::normalize(northDir);
+    return true;
 }
 
 void MapLayout::exeAppear() {
@@ -1018,7 +1026,7 @@ void MapLayout::exeAppear() {
             }
         }
         al::startAction(mWaitEndMapCursor, "Off", "Scenario");
-        if (al::isNerve(this, &NrvMapLayout.Appear))
+        if (isAppear())
             mWaitEndMapCursor->appear();
         al::startHitReaction(this, "マップオープン", nullptr);
     }
@@ -1081,7 +1089,7 @@ void MapLayout::exeAppear() {
       field_0x296 = 1;
     }*/
     if (al::isActionEnd(this, nullptr)) {
-        if (al::isNerve(this, &NrvMapLayout.Appear) || al::isNerve(this, &NrvMapLayout.ChangeIn)) {
+        if (isAppear() || al::isNerve(this, &NrvMapLayout.ChangeIn)) {
             al::setNerve(this, &NrvMapLayout.Wait);
             appearParts(true);
             startNumberAction();
@@ -1236,7 +1244,7 @@ void MapLayout::exeHintDecideIconWait() {
 void MapLayout::exeHintPressDecide() {
     mDecideIconLayout->updateNerve();
     if (mDecideIconLayout->isEnd())
-        al::setNerve(this, &NrvMapLayout.End);
+        end();
 }
 
 void MapLayout::exeEnd() {
@@ -1295,29 +1303,37 @@ void MapLayout::exeChangeOut() {
 namespace rs {
 void calcTransOnMap(sead::Vector2f* out, const sead::Vector3f& v1, const sead::Matrix44f& m,
                     const sead::Vector2f& v2, f32 f1, f32 f2) {
-    out->x = f1 * f2 * 0.5 * (m.m[0][3] + v1.x * m.m[0][0] + v1.y * m.m[0][1] + v1.z * m.m[0][2]) +
-             (v2.x * f1);
-    out->y = f1 * f2 * 0.5 * (m.m[1][3] + v1.x * m.m[1][0] + v1.y * m.m[1][1] + v1.z * m.m[1][2]) +
-             (v2.y * f1);
+    const sead::Vector3f tmp = v1;
+
+    f64 d_m00 = m.m[0][0];
+    f64 d_m01 = m.m[0][1];
+    f64 d_m02 = m.m[0][2];
+    f64 d_m03 = m.m[0][3];
+
+    f64 d_m10 = m.m[1][0];
+    f64 d_m11 = m.m[1][1];
+    f64 d_m12 = m.m[1][2];
+    f64 d_m13 = m.m[1][3];
+
+    f64 d_v1x = (f64)tmp.x;
+    f64 d_v1y = (f64)tmp.y;
+    f64 d_v1z = (f64)tmp.z;
+
+    f64 accx = (d_v1x * d_m00 + d_v1y * d_m01 + d_v1z * d_m02) + d_m03;
+    f64 accy = (d_v1x * d_m10 + d_v1y * d_m11 + d_v1z * d_m12) + d_m13;
+    sead::Vector2<f64> scaled = {accx, accy};
+    scaled *= f2 * 0.5;
+    scaled *= f1;
+
+    f64 d_v2x = v2.x * f1 + scaled.x;
+    f64 d_v2y = __builtin_fma(scaled.y, 1.0, v2.y * f1);
+
+    out->set(d_v2x, d_v2y);
 }
 
 bool tryCalcMapNorthDir(sead::Vector3f* direction, const al::IUseSceneObjHolder* objHolder) {
     MapLayout* mapLayout = al::getSceneObj<MapLayout>(objHolder);
-    MapData* mapData = mapLayout->getMapTerrainLayout()->getMapData();
-
-    if (mapData == nullptr)
-        return false;
-
-    // direction->setMul(mapData->viewMatrix, sead::Vector3f::ey);
-    const sead::Vector3f tmp = sead::Vector3f::ey;
-    direction->x = mapData->viewMatrix.m[0][0] * tmp.x + mapData->viewMatrix.m[1][0] * tmp.y +
-                   mapData->viewMatrix.m[2][0] * tmp.z;
-    direction->y = mapData->viewMatrix.m[0][1] * tmp.x + mapData->viewMatrix.m[1][1] * tmp.y +
-                   mapData->viewMatrix.m[2][1] * tmp.z;
-    direction->z = mapData->viewMatrix.m[0][2] * tmp.x + mapData->viewMatrix.m[1][2] * tmp.y +
-                   mapData->viewMatrix.m[2][2] * tmp.z;
-    al::normalize(direction);
-    return true;
+    return mapLayout->tryCalcNorthDir(direction);
 }
 
 const sead::Matrix44f& getMapViewProjMtx(const al::IUseSceneObjHolder* objHolder) {
