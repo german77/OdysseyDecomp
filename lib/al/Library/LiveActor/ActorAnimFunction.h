@@ -4,7 +4,7 @@
 #include <math/seadVector.h>
 
 #include "Library/Anim/AnimPlayerSkl.h"
-#include "Library/Execute/ExecuteTableHolderUpdate.h"
+#include "Library/Execute/ExecuteUtil.h"
 #include "Library/LiveActor/LiveActor.h"
 #include "Library/Model/ModelCtrl.h"
 #include "Library/Model/ModelKeeper.h"

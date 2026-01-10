@@ -52,11 +52,3 @@ static_assert(sizeof(ExecuteTableHolderUpdate) == 0x70);
 
 void registerExecutorUser(IUseExecutor* user, ExecuteDirector* director, const char* listName);
 }  // namespace al
-
-namespace alActorSystemFunction {
-void addToExecutorMovement(al::LiveActor* actor);
-void addToExecutorDraw(al::LiveActor* actor);
-void removeFromExecutorMovement(al::LiveActor* actor);
-void removeFromExecutorDraw(al::LiveActor* actor);
-void updateExecutorDraw(al::LiveActor* actor);
-}  // namespace alActorSystemFunction
