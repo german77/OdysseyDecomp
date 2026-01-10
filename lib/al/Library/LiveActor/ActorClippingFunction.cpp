@@ -5,6 +5,7 @@
 #include "Library/Clipping/ClippingActorInfo.h"
 #include "Library/Clipping/ClippingJudge.h"
 #include "Library/Collision/CollisionPartsKeeperUtil.h"
+#include "Library/Draw/GraphicsFunction.h"
 #include "Library/Effect/EffectKeeper.h"
 #include "Library/Execute/ExecuteUtil.h"
 #include "Library/HitSensor/HitSensorKeeper.h"
@@ -108,7 +109,43 @@ bool tryExpandClippingByShadowMaskLength(LiveActor* actor, sead::Vector3f* pos) 
     return false;
 }
 
-bool tryExpandClippingByDepthShadowLength(LiveActor* actor, sead::Vector3f*) {}
+bool tryExpandClippingByDepthShadowLength(LiveActor* actor, sead::Vector3f* pos) {
+    if (!isExistDepthShadow(actor))
+        return false;
+    f32 farLength = alGraphicsFunction::getDepthShadowFarLength(actor);
+    const sead::Vector3f& lightDir = alGraphicsFunction::calcDirectionalLightDir(actor);
+    f32 clippingRadius = getClippingRadius(actor);
+    const sead::BoundBox3f& clippingObb = getClippingObb(actor);
+
+    if (!clippingObb.isUndef()) {
+        f32 x = clippingObb.getSizeX();
+        f32 y = clippingObb.getSizeY();
+        f32 z = clippingObb.getSizeZ();
+
+        clippingRadius = sead::Mathf::max(x, sead::Mathf::max(y, z));
+    }
+
+    sead::Vector3f hitPos = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f upDir = sead::Vector3f::ey;
+    calcUpDir(&upDir, actor);
+
+    sead::Vector3f trans = getTrans(actor);
+    sead::Vector3f kak = trans + upDir * clippingRadius;
+    if (!alCollisionUtil::getLastPolyOnArrow(actor, &hitPos, nullptr, kak, farLength * lightDir,
+                                             nullptr, nullptr))
+        return false;
+
+    f32 distance = (hitPos - kak).length();
+    if ((clippingRadius <= distance) && (distance <= farLength)) {
+        clippingRadius = (clippingRadius + clippingRadius + distance) * 0.5f;
+
+        distance = (distance - clippingRadius) / distance;
+        *pos = kak + (hitPos - kak) * distance;
+        setClippingInfo(actor, clippingRadius, pos);
+        return true;
+    }
+    return false;
+}
 
 bool tryExpandClippingByExpandObject(LiveActor* actor, const ActorInitInfo& initInfo) {
     PlacementInfo linksInfo;
