@@ -69,54 +69,56 @@ void HelpAmiiboDirector::initAfterPlacementSceneObj(const al::ActorInitInfo& ini
     mTouchEntries[3]->initAfterPlacement(initInfo);
 }
 
-bool HelpAmiiboDirector::isTriggerTouchAmiiboMario() const {
-    const HelpAmiiboType type = HelpAmiiboType::Mario;
+inline bool isTriggerTouchAmiibo(HelpAmiiboType type, const sead::PtrArray<HelpAmiiboExecutor>& mTouchEntries){
     s32 entryCount = mTouchEntries.size();
-    for (s32 i = 0; i < entryCount; i++){
-        if (mTouchEntries[i]->getType() != type && mTouchEntries[i]->isTouched())
-          return true;
+
+    for (s32 i = 0; i < entryCount; i++) {
+        HelpAmiiboType touchType = mTouchEntries[i]->getType();
+        if (touchType == type && mTouchEntries[i]->isTouched()) {
+            return true;
+        }
     }
     return false;
 }
 
-bool HelpAmiiboDirector::isTriggerTouchAmiiboPeach() const {
+bool HelpAmiiboDirector::isTriggerTouchAmiiboMario() const {
+    volatile HelpAmiiboType type=  HelpAmiiboType::Mario;
     s32 entryCount = mTouchEntries.size();
     for (s32 i = 0; i < entryCount; i++)
-        if (mTouchEntries[i]->getType() == HelpAmiiboType::Peach && mTouchEntries[i]->isTouched())
+        if (mTouchEntries[i]->getType() == type && mTouchEntries[i]->isTouched())
+            return true;
+    return false;
+}
+
+bool HelpAmiiboDirector::isTriggerTouchAmiiboPeach() const {
+    volatile HelpAmiiboType type=  HelpAmiiboType::Peach;
+    s32 entryCount = mTouchEntries.size();
+    for (s32 i = 0; i < entryCount; i++)
+        if (mTouchEntries[i]->getType() == type && mTouchEntries[i]->isTouched())
             return true;
     return false;
 }
 
 bool HelpAmiiboDirector::isTriggerTouchAmiiboKoopa() const {
+    volatile HelpAmiiboType type=  HelpAmiiboType::Koopa;
     s32 entryCount = mTouchEntries.size();
     for (s32 i = 0; i < entryCount; i++)
-        if (mTouchEntries[i]->getType() == HelpAmiiboType::Koopa && mTouchEntries[i]->isTouched())
+        if (mTouchEntries[i]->getType() == type && mTouchEntries[i]->isTouched())
             return true;
     return false;
 }
 
 bool HelpAmiiboDirector::isTriggerTouchAmiiboYoshi() const {
+    volatile HelpAmiiboType type=  HelpAmiiboType::Yoshi;
     s32 entryCount = mTouchEntries.size();
     for (s32 i = 0; i < entryCount; i++)
-        if (mTouchEntries[i]->getType() == HelpAmiiboType::Yoshi && mTouchEntries[i]->isTouched())
+        if (mTouchEntries[i]->getType() == type && mTouchEntries[i]->isTouched())
             return true;
     return false;
 }
 
 bool HelpAmiiboDirector::isTriggerTouchAmiiboAll() const {
-    for (s32 i = 0; i < mTouchEntries.size(); i++)
-        if (mTouchEntries[i]->getType() == HelpAmiiboType::Mario && mTouchEntries[i]->isTouched())
-            return true;
-    for (s32 i = 0; i < mTouchEntries.size(); i++)
-        if (mTouchEntries[i]->getType() == HelpAmiiboType::Peach && mTouchEntries[i]->isTouched())
-            return true;
-    for (s32 i = 0; i < mTouchEntries.size(); i++)
-        if (mTouchEntries[i]->getType() == HelpAmiiboType::Koopa && mTouchEntries[i]->isTouched())
-            return true;
-    for (s32 i = 0; i < mTouchEntries.size(); i++)
-        if (mTouchEntries[i]->getType() == HelpAmiiboType::Yoshi && mTouchEntries[i]->isTouched())
-            return true;
-    return false;
+    return isTriggerTouchAmiiboMario()||isTriggerTouchAmiiboPeach()||isTriggerTouchAmiiboKoopa()||isTriggerTouchAmiiboYoshi();
 }
 
 void HelpAmiiboDirector::execute() {
