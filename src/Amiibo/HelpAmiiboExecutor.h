@@ -12,7 +12,7 @@ struct ActorInitInfo;
 
 class HelpAmiiboDirector;
 
-enum class HelpAmiiboType : s64 {
+enum class HelpAmiiboType : s32 {
     Mario = 0,
     Peach = 1,
     Koopa = 2,
@@ -41,6 +41,10 @@ public:
     bool isTouched() const { return mIsTouched; }
     
     al::LiveActor* getActor() const { return mHelpAmiiboActor; }
+
+    bool isSameType(HelpAmiiboType type){
+        return getType() == type;
+    }
 
 private:
     HelpAmiiboDirector* mHelpAmiiboDirector = nullptr;
