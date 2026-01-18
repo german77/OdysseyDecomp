@@ -1,6 +1,7 @@
 #pragma once
 
 #include <math/seadVector.h>
+#include <gfx/seadColor.h>
 
 namespace sead {
 class ControllerBase;
@@ -8,8 +9,6 @@ class ControllerBase;
 
 namespace al {
 class IUseCamera;
-
-bool isPadTypeJoySingle(s32 port = -1);
 
 bool isPadTrigger(s32 port, s32 button);
 bool isPadTriggerA(s32 port = -1);
@@ -166,9 +165,6 @@ bool isPadReleaseUiCursorDown(s32 port = -1);
 bool isPadReleaseUiCursorLeft(s32 port = -1);
 bool isPadReleaseUiCursorRight(s32 port = -1);
 
-bool isEitherPadHoldA();
-bool isEitherPadHoldB();
-
 const sead::Vector2f& getLeftStick(s32 port = -1);
 const sead::Vector2f& getRightStick(s32 port = -1);
 
@@ -198,5 +194,16 @@ s32 getJoyPadSingleLeftPort();
 s32 getJoyPadDoublePort();
 
 bool isSameNpadId(u32, s32);  // TODO implement
+
+bool isPadTypeJoySingle(s32 port = -1);
+bool isPadTypeJoyDual(s32 port = -1);
+bool isPadTypeJoyLeft(s32 port = -1);
+bool isPadTypeJoyRight(s32 port = -1);
+bool isPadTypeHandheld(s32 port = -1);
+bool isPadTypeFullKey(s32 port = -1);
+
+bool tryGetPadColor(sead::Color4f*, sead::Color4f*, sead::Color4f*, sead::Color4f*, s32);
+bool isEitherPadHoldA();
+bool isEitherPadHoldB();
 
 }  // namespace al

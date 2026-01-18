@@ -445,24 +445,6 @@ bool isPadHoldRightStick(s32 port) {
     return isPadHold(port, 0xF000000);
 }
 
-bool isEitherPadHoldA() {
-    sead::ControllerMgr* mgr = sead::ControllerMgr::instance();
-    if (mgr->getController(0)->isHold(1 << 0) || mgr->getController(1)->isHold(1 << 0) ||
-        mgr->getController(2)->isHold(1 << 0)) {
-        return true;
-    }
-    return false;
-}
-
-bool isEitherPadHoldB() {
-    sead::ControllerMgr* mgr = sead::ControllerMgr::instance();
-    if (mgr->getController(0)->isHold(1 << 1) || mgr->getController(1)->isHold(1 << 1) ||
-        mgr->getController(2)->isHold(1 << 1)) {
-        return true;
-    }
-    return false;
-}
-
 inline bool isPadRelease(s32 port, s32 button) {
     return getController(port)->isRelease(button);
 }
@@ -686,6 +668,68 @@ s32 getJoyPadSingleLeftPort() {
 
 s32 getJoyPadDoublePort() {
     return getMainJoyPadDoublePort();
+}
+
+bool isPadType(s32 port, s32 type){
+    sead::ControllerBase* controller= getController(port);
+
+  if (al::isValidReplayController(port)) {
+  }
+  return controller->getReleaseMask()== type;
+}
+
+bool isPadTypeJoySingle(s32 port) {
+    if (port == -1)
+        port = getMainControllerPort();
+    return isPadType(port, 3) || isPadType(port, 4);
+}
+
+bool isPadTypeJoyDual(s32 port) {
+    if (port == -1)
+        port = getMainControllerPort();
+    return isPadType(port, 2);
+}
+
+bool isPadTypeJoyLeft(s32 port) {
+    if (port == -1)
+        port = getMainControllerPort();
+    return isPadType(port, 3);
+}
+
+bool isPadTypeJoyRight(s32 port) {
+    if (port == -1)
+        port = getMainControllerPort();
+    return isPadType(port, 4);
+}
+
+bool isPadTypeHandheld(s32 port) {
+    if (port == -1)
+        port = getMainControllerPort();
+    return isPadType(port, 1);
+}
+
+bool isPadTypeFullKey(s32 port) {
+    if (port == -1)
+        port = getMainControllerPort();
+    return isPadType(port, 0);
+}
+
+bool isEitherPadHoldA() {
+    sead::ControllerMgr* mgr = sead::ControllerMgr::instance();
+    if (mgr->getController(0)->isHold(1 << 0) || mgr->getController(1)->isHold(1 << 0) ||
+        mgr->getController(2)->isHold(1 << 0)) {
+        return true;
+    }
+    return false;
+}
+
+bool isEitherPadHoldB() {
+    sead::ControllerMgr* mgr = sead::ControllerMgr::instance();
+    if (mgr->getController(0)->isHold(1 << 1) || mgr->getController(1)->isHold(1 << 1) ||
+        mgr->getController(2)->isHold(1 << 1)) {
+        return true;
+    }
+    return false;
 }
 
 }  // namespace al
