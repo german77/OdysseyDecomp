@@ -7,6 +7,10 @@ namespace nn::ui2d {
 class TextureInfo;
 }
 
+namespace nn::util::neon {
+struct MatrixColumnMajor4x3fType;
+}
+
 namespace sead {
 class Color4u8;
 }
@@ -22,7 +26,7 @@ class IUseLayout;
 class MessageHolder;
 
 template <typename T>
-class Matrix43;
+struct Matrix43;
 
 typedef Matrix43<f32> Matrix43f;
 
@@ -45,8 +49,9 @@ void calcPaneMtx(sead::Matrix34f*, const IUseLayout*, const char*);
 void calcPaneTrans(sead::Vector2f*, const IUseLayout*, const char*);
 void calcPaneScale(sead::Vector3f*, const IUseLayout*, const char*);
 void calcPaneSize(sead::Vector3f*, const IUseLayout*, const char*);
-const Matrix43f& getPaneMtx(const IUseLayout*, const char*);
-const Matrix43f* getPaneMtxRaw(const IUseLayout*, const char*);
+// TODO investigate the difference between Mtx and MtxRaw
+const nn::util::neon::MatrixColumnMajor4x3fType& getPaneMtx(const IUseLayout*, const char*);
+const nn::util::neon::MatrixColumnMajor4x3fType&  getPaneMtxRaw(const IUseLayout*, const char*);
 f32 getGlobalAlpha(const IUseLayout*, const char*);
 void setPaneLocalTrans(IUseLayout*, const char*, const sead::Vector2f&);
 void setPaneLocalTrans(IUseLayout*, const char*, const sead::Vector3f&);
@@ -56,9 +61,9 @@ void setPaneLocalSize(IUseLayout*, const char*, const sead::Vector2f&);
 void setPaneLocalAlpha(IUseLayout*, const char*, f32);
 sead::Vector3f getPaneLocalTrans(const IUseLayout*, const char*);
 void getPaneLocalSize(sead::Vector2f*, const IUseLayout*, const char*);
-const sead::Vector3f& getPaneLocalRotate(const IUseLayout*, const char*);
-const sead::Vector3f& getPaneLocalScale(const IUseLayout*, const char*);
-const sead::Vector3f& getTextBoxDrawRectSize(const IUseLayout*, const char*);
+sead::Vector3f getPaneLocalRotate(const IUseLayout*, const char*);
+sead::Vector2f getPaneLocalScale(const IUseLayout*, const char*);
+sead::Vector2f getTextBoxDrawRectSize(const IUseLayout*, const char*);
 void showPane(IUseLayout*, const char*);
 void hidePane(IUseLayout*, const char*);
 void showPaneNoRecursive(IUseLayout*, const char*);
