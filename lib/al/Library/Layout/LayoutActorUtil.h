@@ -11,6 +11,10 @@ namespace nn::util::neon {
 struct MatrixColumnMajor4x3fType;
 }
 
+namespace nn::util {
+typedef neon::MatrixColumnMajor4x3fType MatrixT4x3fType;
+}
+
 namespace sead {
 class Color4u8;
 }
@@ -35,10 +39,10 @@ bool appearLayoutIfDead(LayoutActor*);
 bool isActive(const LayoutActor*);
 bool isDead(const LayoutActor*);
 void calcTrans(sead::Vector3f*, const IUseLayout*);
-sead::Vector2f getLocalTrans(const IUseLayout*);
-sead::Vector2f* getLocalTransPtr(const IUseLayout*);
+sead::Vector3f getLocalTrans(const IUseLayout*);
+const sead::Vector3f* getLocalTransPtr(const IUseLayout*);
 void calcScale(sead::Vector3f*, const IUseLayout*);
-f32 getLocalScale(const IUseLayout*);
+sead::Vector2f  getLocalScale(const IUseLayout*);
 void setLocalTrans(IUseLayout*, const sead::Vector3f&);
 void setLocalTrans(IUseLayout*, const sead::Vector2f&);
 void setLocalScale(IUseLayout*, f32);
@@ -50,8 +54,8 @@ void calcPaneTrans(sead::Vector2f*, const IUseLayout*, const char*);
 void calcPaneScale(sead::Vector3f*, const IUseLayout*, const char*);
 void calcPaneSize(sead::Vector3f*, const IUseLayout*, const char*);
 // TODO investigate the difference between Mtx and MtxRaw
-const nn::util::neon::MatrixColumnMajor4x3fType& getPaneMtx(const IUseLayout*, const char*);
-const nn::util::neon::MatrixColumnMajor4x3fType&  getPaneMtxRaw(const IUseLayout*, const char*);
+const nn::util::MatrixT4x3fType& getPaneMtx(const IUseLayout*, const char*);
+const nn::util::MatrixT4x3fType& getPaneMtxRaw(const IUseLayout*, const char*);
 f32 getGlobalAlpha(const IUseLayout*, const char*);
 void setPaneLocalTrans(IUseLayout*, const char*, const sead::Vector2f&);
 void setPaneLocalTrans(IUseLayout*, const char*, const sead::Vector3f&);

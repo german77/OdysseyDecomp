@@ -31,12 +31,14 @@ void AimingCursor::end() {
 }
 
 void AimingCursor::setTrans(const sead::Vector2f& pos) {
-    sead::Vector2f t = al::getLocalTrans(this);
-    al::setLocalTrans(this, (t + pos) * 0.5f);
+    const sead::Vector3f& trans = al::getLocalTrans(this);
+    sead::Vector2f trans2D = {trans.x, trans.y};
+
+    al::setLocalTrans(this, (trans2D + pos) * 0.5f);
 }
 
 void AimingCursor::setScale(f32 scale) {
-    al::setLocalScale(this, (al::getLocalScale(this) + scale) * 0.5f);
+    al::setLocalScale(this, (al::getLocalScale(this).x + scale) * 0.5f);
 }
 
 bool AimingCursor::tryLookOn() {

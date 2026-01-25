@@ -2,28 +2,93 @@
 
 #include <nn/ui2d/Layout.h>
 #include <nn/ui2d/Pane.h>
+#include <nn/ui2d/Util.h>
 
+#include "Library/Controller/InputFunction.h"
 #include "Library/Layout/IUseLayout.h"
+#include "Library/Layout/LayoutActor.h"
 #include "Library/Layout/LayoutActorUtil.h"
 #include "Library/Layout/LayoutKeeper.h"
 #include "Library/Layout/LayoutPaneGroup.h"
+#include "Library/Math/MathUtil.h"
 #include "Library/Matrix/MatrixUtil.h"
 
 namespace al {
-bool killLayoutIfActive(LayoutActor*);
-bool appearLayoutIfDead(LayoutActor*);
-bool isActive(const LayoutActor*);
-bool isDead(const LayoutActor*);
-void calcTrans(sead::Vector3f*, const IUseLayout*);
-sead::Vector2f getLocalTrans(const IUseLayout*);
-sead::Vector2f* getLocalTransPtr(const IUseLayout*);
-void calcScale(sead::Vector3f*, const IUseLayout*);
-f32 getLocalScale(const IUseLayout*);
-void setLocalTrans(IUseLayout*, const sead::Vector3f&);
-void setLocalTrans(IUseLayout*, const sead::Vector2f&);
-void setLocalScale(IUseLayout*, f32);
-void setLocalScale(IUseLayout*, const sead::Vector2f&);
-void setLocalAlpha(IUseLayout*, f32);
+bool killLayoutIfActive(LayoutActor* layout) {
+    if (layout->isAlive()) {
+        layout->kill();
+        return true;
+    }
+    return false;
+}
+
+bool appearLayoutIfDead(LayoutActor* layout) {
+    if (!layout->isAlive()) {
+        layout->appear();
+        return true;
+    }
+    return false;
+}
+
+bool isActive(const LayoutActor* layout) {
+    return layout->isAlive();
+}
+
+bool isDead(const LayoutActor* layout) {
+    return !layout->isAlive();
+}
+
+void calcTrans(sead::Vector3f* outTrans, const IUseLayout* user) {
+    const nn::util::MatrixT4x3fType& mtx =
+        user->getLayoutKeeper()->getLayout()->GetPane()->GetMtx();
+    outTrans->x = mtx.m[0][3];
+    outTrans->y = mtx.m[1][3];
+    outTrans->z = mtx.m[2][3];
+}
+
+sead::Vector3f getLocalTrans(const IUseLayout* user) {
+    const nn::util::Float3& trans = user->getLayoutKeeper()->getLayout()->GetPane()->GetPosition();
+    return {trans.x, trans.y, trans.z};
+}
+
+const sead::Vector3f* getLocalTransPtr(const IUseLayout* user) {
+    const nn::util::Float3& trans = user->getLayoutKeeper()->getLayout()->GetPane()->GetPosition();
+    return reinterpret_cast<const sead::Vector3f*>(&trans);
+}
+
+void calcScale(sead::Vector3f* outScale, const IUseLayout* user) {
+    const nn::util::MatrixT4x3fType& mtx =
+        user->getLayoutKeeper()->getLayout()->GetPane()->GetMtx();
+
+    sead::Vector3f scale;  // = {mtx.getBase(0).length(), mtx.getBase(1).length(),
+                           //   mtx.getBase(2).length()};
+    outScale->set(scale);
+}
+
+sead::Vector2f getLocalScale(const IUseLayout* user) {
+    const nn::util::Float2& scale = user->getLayoutKeeper()->getLayout()->GetPane()->GetScale();
+    return {scale.x, scale.y};
+}
+
+void setLocalTrans(IUseLayout* user, const sead::Vector3f& trans) {
+    user->getLayoutKeeper()->getLayout()->GetPane()->SetPosition({{{trans.x, trans.y, trans.z}}});
+}
+
+void setLocalTrans(IUseLayout* user, const sead::Vector2f& trans) {
+    user->getLayoutKeeper()->getLayout()->GetPane()->SetPosition({{{trans.x, trans.y, 0.0f}}});
+}
+
+void setLocalScale(IUseLayout* user, f32 scale) {
+    user->getLayoutKeeper()->getLayout()->GetPane()->SetScale({{{scale, scale}}});
+}
+
+void setLocalScale(IUseLayout* user, const sead::Vector2f& scale) {
+    user->getLayoutKeeper()->getLayout()->GetPane()->SetScale({{{scale.x, scale.y}}});
+}
+
+void setLocalAlpha(IUseLayout* user, f32 alpha){
+    user->getLayoutKeeper()->getLayout()->GetPane()->SetAlpha(alpha);
+}
 
 void calcPaneTrans(sead::Vector3f* outTrans, const IUseLayout* user, const char* name) {
     sead::Matrix34f mtx;
@@ -56,13 +121,11 @@ void calcPaneScale(sead::Vector3f* outScale, const IUseLayout* user, const char*
 
 void calcPaneSize(sead::Vector3f*, const IUseLayout*, const char*);
 
-const nn::util::neon::MatrixColumnMajor4x3fType& getPaneMtx(const IUseLayout* user,
-                                                            const char* name) {
+const nn::util::MatrixT4x3fType& getPaneMtx(const IUseLayout* user, const char* name) {
     return user->getLayoutKeeper()->getLayout()->GetPane()->FindPaneByName(name, true)->GetMtx();
 }
 
-const nn::util::neon::MatrixColumnMajor4x3fType& getPaneMtxRaw(const IUseLayout* user,
-                                                               const char* name) {
+const nn::util::MatrixT4x3fType& getPaneMtxRaw(const IUseLayout* user, const char* name) {
     return user->getLayoutKeeper()->getLayout()->GetPane()->FindPaneByName(name, true)->GetMtx();
 }
 
@@ -111,7 +174,7 @@ void setPaneLocalSize(IUseLayout* user, const char* name, const sead::Vector2f& 
         ->getLayout()
         ->GetPane()
         ->FindPaneByName(name, true)
-        ->SetSize({{{size.x, size.y}}});
+        ->SetSize({size.x, size.y});
 }
 
 void setPaneLocalAlpha(IUseLayout* user, const char* name, f32 alpha) {
@@ -125,9 +188,9 @@ sead::Vector3f getPaneLocalTrans(const IUseLayout* user, const char* name) {
 }
 
 void getPaneLocalSize(sead::Vector2f* outSize, const IUseLayout* user, const char* name) {
-    const nn::util::Float2& size =
+    const nn::ui2d::Size& size =
         user->getLayoutKeeper()->getLayout()->GetPane()->FindPaneByName(name, true)->GetSize();
-    outSize->set(size.x, size.y);
+    outSize->set(size.width, size.height);
 }
 
 sead::Vector3f getPaneLocalRotate(const IUseLayout* user, const char* name) {
@@ -161,7 +224,11 @@ void hidePaneNoRecursive(IUseLayout* user, const char* name) {
 }
 
 bool isHidePane(const IUseLayout* user, const char* name) {
-    return !user->getLayoutKeeper()->getLayout()->GetPane()->FindPaneByName(name, true)->IsShow();
+    return !user->getLayoutKeeper()
+                ->getLayout()
+                ->GetPane()
+                ->FindPaneByName(name, true)
+                ->IsVisible();
 }
 
 void showPaneRoot(IUseLayout* user) {
@@ -181,20 +248,57 @@ void hidePaneRootNoRecursive(IUseLayout* user) {
 }
 
 bool isHidePaneRoot(const IUseLayout* user) {
-    return !user->getLayoutKeeper()->getLayout()->GetPane()->IsShow();
+    return !user->getLayoutKeeper()->getLayout()->GetPane()->IsVisible();
 }
 
 bool isExistPane(const IUseLayout* user, const char* name) {
     return user->getLayoutKeeper()->getLayout()->GetPane()->FindPaneByName(name, true) != nullptr;
 }
 
-bool isContainPointPane(const IUseLayout*, const char*, const sead::Vector2f&);
+bool isContainPointPane(const IUseLayout* user, const char* name, const sead::Vector2f& point) {
+    nn::ui2d::Pane* pane =
+        user->getLayoutKeeper()->getLayout()->GetPane()->FindPaneByName(name, true);
+    const nn::util::MatrixT4x3fType& mtx = pane->GetMtx();
+    f32 aa = mtx.m[1][1];
+
+    if (!isNearZero(mtx.m[0][0])) {
+        if (!isNearZero(aa))
+            return nn::ui2d::IsContain(pane, {{{point.x, point.y}}});
+    }
+    return false;
+}
+
 void findHitPaneFromLayoutPos(const IUseLayout*, const sead::Vector2f&);
 bool isExistHitPaneFromLayoutPos(const IUseLayout*, const sead::Vector2f&);
 void findHitPaneFromScreenPos(const IUseLayout*, const sead::Vector2f&);
 bool isExistHitPaneFromScreenPos(const IUseLayout*, const sead::Vector2f&);
-bool isTouchPosInPane(const IUseLayout*, const char*);
-void setCursorPanePos(IUseLayout*, const IUseLayout*);
+
+bool isTouchPosInPane(const IUseLayout* user, const char* name) {
+    sead::Vector2f pos = {0.0f, 0.0f};
+    calcTouchLayoutPos(&pos);
+    return isContainPointPane(user, name, pos);
+}
+
+void setCursorPanePos(IUseLayout* user, const IUseLayout* user2) {
+    sead::Vector2f size;
+    getPaneLocalSize(&size, user2, "CursorPosition");
+    sead::Matrix34f mtx;
+    calcPaneMtx(&mtx, user2, "CursorPosition");
+
+    const nn::util::MatrixT4x3fType& mtx2 =
+        user->getLayoutKeeper()->getLayout()->GetPane()->GetMtx();
+
+    sead::Vector3f pos;
+    pos.x = (size.x * mtx.m[0][0] + size.y * mtx.m[0][1] + mtx.m[0][2] * 0.0f) * 0.5f;
+    pos.y = (size.x * mtx.m[1][0] + size.y * mtx.m[1][1] + mtx.m[1][2] * 0.0f) * 0.5f;
+    pos.z = (size.x * mtx2.m[2][0] + size.y * mtx2.m[2][1] + mtx2.m[2][2] * 0.0f) * 0.5f;
+
+    setPaneLocalTrans(user, "CursorTL", pos);
+    setPaneLocalTrans(user, "CursorTR", pos);
+    setPaneLocalTrans(user, "CursorBL", pos);
+    setPaneLocalTrans(user, "CursorBR", pos);
+}
+
 void setPaneVtxColor(const IUseLayout*, const char*, const sead::Color4u8&);
 bool isTriggerTouchPane(const IUseLayout*, const char*);
 bool isHoldTouchPane(const IUseLayout*, const char*);
