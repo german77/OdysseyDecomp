@@ -233,9 +233,8 @@ Edge* insertVertexAndSplitEdge(Graph* graph, Vertex* newVertex, Edge* edge) {
     if (!isExistVertex(graph, newVertex))
         graph->appendVertex(newVertex);
 
-    Edge* newEdge = (Edge*)graph->tryFindEdge(newVertex->getIndex(), previousVertex->getIndex());
-    if (!newEdge)
-        newEdge = new Edge(newVertex, previousVertex);
+    Edge* newEdge = (Edge*)graph->tryFindEdge(newVertex->getIndex(), previousVertex->getIndex()) ?:
+                        new Edge(newVertex, previousVertex);
 
     if (!tryFindEdgeEndVertex(newVertex, previousVertex))
         previousVertex->addEdge(newEdge);
