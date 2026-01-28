@@ -28,11 +28,11 @@
 #include "Library/Thread/FunctorV0M.h"
 
 #include "Enemy/EnemyStateReset.h"
+#include "Npc/RabbitGraph.h"
 #include "Util/ItemGenerator.h"
 #include "Util/ItemUtil.h"
 #include "Util/PlayerUtil.h"
 #include "Util/SensorMsgFunction.h"
-#include "Npc/RabbitGraph.h"
 
 namespace {
 NERVE_IMPL(Rabbit, Reset)
@@ -545,35 +545,37 @@ void Rabbit::reduceStamina() {
 }
 
 void Rabbit::trySetPoseGraphMoveDir(f32 delay) {
-    if (vertexA != nullptr && vertexB != nullptr) {
-        sead::Vector3f position = vertexB->getPos();
-        position -= al::getTrans(this);
-        f32 length = sead::Mathf::clamp(position.length() / 500.0f, 0.0f, 1.0f);
-        position.y = 0.0f;
+    if (vertexA == nullptr || vertexB == nullptr)
+        return;
 
-        if (al::tryNormalizeOrZero(&position)) {
-            if (0.0f < 1.0f - length && vertexB->getEdgeCount() == 4) {
-                RabbitGraphVertex* selected = nullptr;
-                s32 size = vertexB->getEdgeCount();
-                for (s32 i = 0; i < size; i++) {
-                    RabbitGraphVertex* weigth = (RabbitGraphVertex*)vertexB->getEdge(i);
-                    if (weigth != vertexB && weigth != vertexA)
-                        selected = weigth;
-                }
-                sead::Vector3f nipon = selected->getPos();
-                nipon -= vertexB->getPos();
-                nipon.y = 0;
-                if (al::tryNormalizeOrZero(&nipon)) {
-                    f32 fVar11 = (1.0f - length) * 0.5f;
-                    position = fVar11 * nipon + (1.0f - fVar11) * position;
-                }
-            }
-            if (!al::isParallelDirection(position, sead::Vector3f::ey, 0.01f)) {
-                sead::Quatf nipon;
-                al::makeQuatFrontUp(&nipon, position, sead::Vector3f::ey);
-                al::slerpQuat(al::getQuatPtr(this), al::getQuat(this), nipon, delay);
-            }
+    sead::Vector3f position = vertexB->getPos();
+    position -= al::getTrans(this);
+    f32 length = sead::Mathf::clamp(position.length() / 500.0f, 0.0f, 1.0f);
+    position.y = 0.0f;
+
+    if (!al::tryNormalizeOrZero(&position))
+        return;
+
+    if (1.0f - length > 0.0f && vertexB->getEdgeCount() == 4) {
+        RabbitGraphVertex* selected = nullptr;
+        for (s32 i = 0; i < vertexB->getEdgeCount(); i++) {
+            RabbitGraphVertex* v2 = (RabbitGraphVertex*)vertexB->getEdge(i)->getVertex2();
+            if (v2 != vertexB && v2 != vertexA)
+                selected = v2;
         }
+        sead::Vector3f nipon = selected->getPos();
+        nipon -= vertexB->getPos();
+        nipon.y = 0;
+        if (al::tryNormalizeOrZero(&nipon)) {
+            f32 fVar11 = (1.0f - length) * 0.5f;
+            position = fVar11 * nipon + (1.0f - fVar11) * position;
+        }
+    }
+
+    if (!al::isParallelDirection(position, sead::Vector3f::ey)) {
+        sead::Quatf quat;
+        al::makeQuatFrontUp(&quat, position, sead::Vector3f::ey);
+        al::slerpQuat(al::getQuatPtr(this), al::getQuat(this), quat, delay);
     }
 }
 
