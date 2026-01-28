@@ -51,6 +51,10 @@ public:
 
     bool isValid() const;
 
+    RabbitGraphVertex* getVertex1() const { return static_cast<RabbitGraphVertex*>(Edge::getVertex1()); }
+
+    RabbitGraphVertex* getVertex2() const { return static_cast<RabbitGraphVertex*>(Edge::getVertex2()); }
+
     u16 getValue() const { return _250; }
 
     void setParent(al::LiveActor* parent){ mParent=parent;}
