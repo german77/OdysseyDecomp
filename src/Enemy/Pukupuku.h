@@ -78,7 +78,7 @@ public:
 private:
     al::WaterSurfaceFinder* mWaterSurfaceFinder = nullptr;
     CapTargetInfo* mCapTargetInfo = nullptr;
-    IUsePlayerHack* _118 = nullptr;
+    IUsePlayerHack* mPlayerHack = nullptr;
     EnemyStateReviveInsideScreen* mEnemyStateReviveInsideScreen = nullptr;
     EnemyStateSwoon* mEnemyStateSwoon = nullptr;
     HackerStateNormalJump* mHackerStateNormalJump = nullptr;
