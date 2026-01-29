@@ -160,7 +160,7 @@ void Pukupuku::init(const al::ActorInitInfo& info) {
                       "吹き飛び[憑依中]");
     al::addNerveState(this, mEnemyStateBlowDown, &NrvPukupuku.BlowDownWithoutMsg,
                       "吹き飛び[メッセージなし死亡]");
-    mHackerStateNormalJump = new HackerStateNormalJump(this, &_118, "JumpGround", nullptr);
+    mHackerStateNormalJump = new HackerStateNormalJump(this, &mPlayerHack, "JumpGround", nullptr);
     mHackerStateNormalJump->set_38({15.0f, 30.0f, 2.0f});
     mHackerStateNormalJump->set_48({8.0f, 8.0f});
     al::initNerveState(this, mHackerStateNormalJump, &NrvPukupuku.CaptureJumpGround,
@@ -273,7 +273,7 @@ void Pukupuku::endCapture() {
     sead::Vector3f pos =
         al::getTrans(this) + g_7101e62d50.y * sead::Vector3f::ey + g_7101e62d50.z * frontDir;
 
-    rs::endHackFromTargetPos(&_118, pos, frontDir);
+    rs::endHackFromTargetPos(&mPlayerHack, pos, frontDir);
     al::validateClipping(this);
     al::offCollide(this);
     al::onGroupClipping(this);
@@ -306,7 +306,7 @@ void Pukupuku::startCapture() {
     al::onCollide(this);
     al::offGroupClipping(this);
     al::addDemoActor(al::tryGetSubActor(this, "ライト"));
-    rs::startHackStartDemo(_118, this);
+    rs::startHackStartDemo(mPlayerHack, this);
 }
 
 void Pukupuku::updateEffectWaterSurface() {
@@ -341,15 +341,19 @@ void Pukupuku::updateInputRolling() {
     if (!FUN_7100175f24(this))
         return;
 
-    if (isTriggerHackSwingAnyHand(_118)) {
+    if (isTriggerHackSwingAnyHand(mPlayerHack) ||
+        sead::Mathf::abs(rs::getHackStickRotateSpeed(mPlayerHack)) > 20.0f) {
         _2c4 = true;
-        if (sead::Mathf::abs(rs::getHackStickRotateSpeed(_118)) <= 20.0f)
-            _2c5 = rs::isTriggerHackSwingRightHand(_118);
+        if (sead::Mathf::abs(rs::getHackStickRotateSpeed(mPlayerHack)) > 20.0f)
+            _2c5 = rs::getHackStickRotateSpeed(mPlayerHack) < 0.0f;
         else
-            _2c5 = rs::getHackStickRotateSpeed(_118) < 0.0f;
+            _2c5 = rs::isTriggerHackSwingRightHand(mPlayerHack);
         _2c8 = 8;
-    } else if (sead::Mathf::abs(rs::getHackStickRotateSpeed(_118)) <= 20.0f) {
-        _2c8 = sead::Mathi::clampMin(_2c8 - 1, 0);
+        return;
+    }
+
+    if (_2c8 > 0) {
+        _2c8--;
         if (_2c8 == 0)
             _2c4 = false;
     }
@@ -359,7 +363,7 @@ void Pukupuku::updateInputKiss() {
     if (!FUN_7100175f24(this))
         return;
 
-    if (al::isOnGround(this, 0) && rs::isHoldHackAction(_118)) {
+    if (al::isOnGround(this, 0) && rs::isHoldHackAction(mPlayerHack)) {
         sead::Vector3f frontDir;
         al::calcFrontDir(&frontDir, this);
         if (al::calcAngleDegree(frontDir, -sead::Vector3f::ey) < 5.0f && _2dc < 60) {
@@ -433,7 +437,7 @@ bool FUN_7100177c74(sead::Vector3f* out, al::LiveActor* actor) {
 bool Pukupuku::checkCollidedFloorDamageAndNextNerve() {
     if (al::isCollidedFloorCode(this, "Needle")) {
         if (FUN_7100175f24(this)) {
-            rs::requestDamage(_118);
+            rs::requestDamage(mPlayerHack);
 
             return false;
         }
@@ -511,7 +515,7 @@ void Pukupuku::exeSwoon() {
 }
 
 void Pukupuku::exeCaptureStart() {
-    if (rs::isHackStartDemoEnterMario(_118))
+    if (rs::isHackStartDemoEnterMario(mPlayerHack))
         al::setNerve(this, &NrvPukupuku.CaptureStartEnd);
 }
 
@@ -525,12 +529,12 @@ void Pukupuku::exeCaptureStartEnd() {
     mPlayerHackStartShaderCtrl->update();
 
     sead::Vector3f moveDir = {0.0f, 0.0f, 0.0f};
-    rs::calcHackerMoveDir(&moveDir, _118, sead::Vector3f::ey);
+    rs::calcHackerMoveDir(&moveDir, mPlayerHack, sead::Vector3f::ey);
     al::turnToDirection(this, moveDir, 6.0f);
 
     if (al::isActionEnd(this)) {
         mPlayerHackStartShaderCtrl->end();
-        rs::endHackStartDemo(_118, this);
+        rs::endHackStartDemo(mPlayerHack, this);
         al::setNerve(this, &NrvPukupuku.CaptureWait);
     }
 }
@@ -703,7 +707,7 @@ void Pukupuku::exeRevive() {
         al::resetMtxPosition(this, _1a0);
         if (al::isExistRail(this))
             al::setSyncRailToNearestPos(this);
-        _118 = nullptr;
+        mPlayerHack = nullptr;
     }
 }
 
