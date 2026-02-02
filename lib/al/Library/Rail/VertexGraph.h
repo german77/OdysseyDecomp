@@ -137,7 +137,7 @@ static_assert(sizeof(Graph::PosEdge) == 0x30);
 
 struct Graph::VertexInfo {
     Vertex* vertex;
-    s32 index;
+    s32 prevIndex;
     f32 weight;
 
     inline bool operator<(const VertexInfo& rhs) const {
@@ -233,8 +233,9 @@ Edge* insertVertexAndSplitEdge(Graph* graph, Vertex* newVertex, Edge* edge) {
     if (!isExistVertex(graph, newVertex))
         graph->appendVertex(newVertex);
 
-    Edge* newEdge = (Edge*)graph->tryFindEdge(newVertex->getIndex(), previousVertex->getIndex()) ?:
-                        new Edge(newVertex, previousVertex);
+    Edge* newEdge =
+        reinterpret_cast<Edge*>(graph->tryFindEdge(newVertex->getIndex(), previousVertex->getIndex())) ?:
+            new Edge(newVertex, previousVertex);
 
     if (!tryFindEdgeEndVertex(newVertex, previousVertex))
         previousVertex->addEdge(newEdge);
