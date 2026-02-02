@@ -184,7 +184,7 @@ private:
     s32 mHintDecideIconAmiiboSize;
 
     bool mIsFreezeAction;
-    bool mIsSomesomebool;
+    bool mIsResetTransform;
     bool mIsSharila;
 };
 

@@ -185,13 +185,16 @@ void MapLayout::appear() {
         sead::Vector2f prevLocalSize = mPanelLocalScale;
         sead::Vector2f prevPanelSize = mPanelSize;
         reset();
-        if (!mIsSomesomebool) {
+
+        if (!mIsResetTransform) {
             mPanelLocalScale = prevLocalSize;
             mPanelSize = prevPanelSize;
         }
-        mIsSomesomebool = false;
+        mIsResetTransform = false;
+
         al::LiveActor* playerActor = al::tryGetPlayerActor(mPlayerHolder, 0);
         sead::Vector3f position = {0.0f, 0.0f, 0.0f};
+
         if (playerActor == nullptr) {
             moveFocusLayout(position, sead::Vector2f::zero);
         } else {
@@ -203,18 +206,21 @@ void MapLayout::appear() {
             } else {
                 mScrollPosition = sead::Vector2f::zero;
                 if (!GameDataFunction::isMainStage(this))
-                    position.set(GameDataFunction::getStageMapPlayerPos(this));
+                    position.set(GameDataFunction::getStageMapPlayerPos(playerActor));
             }
         }
+
         moveFocusLayout(position, sead::Vector2f::zero);
         updateST();
     }
+
     mMapTerrainLayout->appear();
     al::LayoutActor::appear();
     al::setNerve(this, &NrvMapLayout.Appear);
     al::startAction(this, "Appear", nullptr);
     al::startAction(this, "LeftIn", "Change");
     al::setActionFrame(this, al::getActionFrameMax(this, "LeftIn", "Change"), "Change");
+
     if (mIsHelp)
         mWaitEndMapBg->appear();
 }
@@ -328,9 +334,9 @@ void MapLayout::updateST() {
         return;
 
     al::setPaneLocalScale(this, "All", mPanelLocalScale);
-    al::setPaneLocalTrans(
-        this, "All",
-        {mScrollPosition.x * mPanelLocalScale.x, mScrollPosition.y * mPanelLocalScale.y});
+    sead::Vector2f localTrans(mScrollPosition.x * mPanelLocalScale.x,
+                              mScrollPosition.y * mPanelLocalScale.y);
+    al::setPaneLocalTrans(this, "All", localTrans);
 
     MapData* mapData = mMapTerrainLayout->getMapData();
     if (al::tryGetPlayerActor(mPlayerHolder, 0))
@@ -403,7 +409,7 @@ void MapLayout::appearAmiiboHint() {
                                         mapData->viewProjMatrix);
         updatePlayerPosLayout();
         mWaitEndMapPlayer->startWait();
-        mIsSomesomebool = true;
+        mIsResetTransform = true;
         return;
     }
     end();
@@ -589,7 +595,7 @@ void MapLayout::appearWithHint() {
                                         mapData->viewProjMatrix);
         updatePlayerPosLayout();
         mWaitEndMapPlayer->startWait();
-        mIsSomesomebool = true;
+        mIsResetTransform = true;
         return;
     }
     end();
@@ -625,7 +631,7 @@ void MapLayout::appearMoonRockDemo(s32 sworldId) {
                                     mapData->viewProjMatrix);
     updatePlayerPosLayout();
     mWaitEndMapPlayer->startWait();
-    mIsSomesomebool = true;
+    mIsResetTransform = true;
     return;
 }
 
@@ -1266,6 +1272,7 @@ void MapLayout::exeEnd() {
                 mMapIconInfo[i].isActive = false;
         al::startHitReaction(this, "マップクローズ", nullptr);
     }
+
     if (al::isActionEnd(this, nullptr)) {
         s32 size = mArray.size();
         for (s32 i = 0; i < size; i++)
@@ -1288,6 +1295,7 @@ void MapLayout::exeChangeOut() {
                 al::killLayoutIfActive(mMapIconInfo[i].iconLayout->layout))
                 mMapIconInfo[i].isActive = false;
     }
+
     if (al::isActionEnd(this, "Change")) {
         mWaitEndMapPlayer->kill();
         mWaitEndMapCursor->kill();
