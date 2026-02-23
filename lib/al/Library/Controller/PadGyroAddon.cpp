@@ -18,20 +18,20 @@ bool PadGyroAddon::calc() {
 
 bool PadGyroAddon::tryUpdateGyroStatus() {
     sead::ControllerMgr* mgr = sead::ControllerMgr::instance();
-    sead::NinJoyNpadDevice* npadDevice =mgr->getControlDeviceAs<sead::NinJoyNpadDevice*>();
+    sead::NinJoyNpadDevice* npadDevice = mgr->getControlDeviceAs<sead::NinJoyNpadDevice*>();
     NpadController* npad = (NpadController*)mController;
 
     if (!npad->isConnected())
         return false;
 
-    s64 index=mIndex;
+    s64 index = mIndex;
     if (index >= npad->getSixAxisSensorCount())
         return false;
 
     const sead::NinJoyNpadDevice::NpadState& state = npadDevice->getNpadState(npad->getNpadId());
-    const nn::hid::SixAxisSensorState& sixaxisState = state.mSixAxisSensorStates[index];
+    const nn::hid::SixAxisSensorState& sixaxisState = state.mSixAxisSensorStates[index].state[0];
 
-    s64 sampleNumber=sixaxisState.mSamplingNumber;
+    s64 sampleNumber = sixaxisState.mSamplingNumber;
     s32 samples = sampleNumber - mPrevSamplingNumber;
     if (samples > 15)
         samples = 16;
@@ -39,40 +39,110 @@ bool PadGyroAddon::tryUpdateGyroStatus() {
         samples = 0;
 
     mSampleCount = samples;
-    mPrevSamplingNumber = sampleNumber;;
+    mPrevSamplingNumber = sampleNumber;
 
-    mAngularVelocity.set(-sixaxisState.mAngularVelocity[0], sixaxisState.mAngularVelocity[2], sixaxisState.mAngularVelocity[1]);
-    mAngle.set(-sixaxisState.mAngle[0], sixaxisState.mAngle[2], sixaxisState.mAngle[1]);
+    f32 angVx = sixaxisState.mAngularVelocity[0];
+    f32 angVy = sixaxisState.mAngularVelocity[1];
+    mAngularVelocity.y = sixaxisState.mAngularVelocity[2];
+    mAngularVelocity.z = angVy;
+    f32 nangVx = -angVx;
+    mAngularVelocity.x = nangVx;
 
-    const auto& m = sixaxisState.mDirection.mMtx;
-    mSide.set(m[0][0], -m[0][1], -m[0][2]);
-    mUp.set(-m[1][0], m[1][2], m[1][1]);
-    mFront.set(-m[2][0], m[2][2], m[2][1]);
+    f32 angx = sixaxisState.mAngle[0];
+    f32 angy = sixaxisState.mAngle[1];
+    mAngle.y = sixaxisState.mAngle[2];
+    mAngle.z = angy;
+    f32 nangx = -angx;
+    mAngle.x = nangx;
+
+    f32 xx = sixaxisState.mDirection.mMtx[0][0];
+    f32 xy = sixaxisState.mDirection.mMtx[0][1];
+    f32 xz = sixaxisState.mDirection.mMtx[0][2];
+    mSide.x = xx;
+    mSide.y = -xz;
+    mSide.z = -xy;
+
+    f32 yx = sixaxisState.mDirection.mMtx[2][0];
+    f32 fVar9 = -yx;
+    f32 yy = sixaxisState.mDirection.mMtx[2][1];
+    f32 yz = sixaxisState.mDirection.mMtx[2][2];
+    mUp.x = fVar9;
+    mUp.y = yz;
+    mUp.z = yy;
+
+    f32 fVar11 = sixaxisState.mDirection.mMtx[1][0];
+    f32 fVar12 = -fVar11;
+    f32 fVar10 = sixaxisState.mDirection.mMtx[1][1];
+    f32 fVar7 = sixaxisState.mDirection.mMtx[1][2];
+    mFront.x = fVar12;
+    mFront.y = fVar7;
+    mFront.z = fVar10;
 
     if (npadDevice->getNpadJoyHoldType() == nn::hid::NpadJoyHoldType::Horizontal) {
         nn::hid::NpadStyleTag style = npad->getStyleIndex();
         if (style == nn::hid::NpadStyleTag::NpadStyleJoyLeft ||
             style == nn::hid::NpadStyleTag::NpadStyleJoyRight) {
-            bool isRight = (style == nn::hid::NpadStyleTag::NpadStyleJoyRight);
-
-    f32 vX = sixaxisState.mAngularVelocity[0];
-    f32 vY = sixaxisState.mAngularVelocity[1];
-    f32 vZ = sixaxisState.mAngularVelocity[2];
-            mAngularVelocity.set(isRight ? vZ : -vZ, isRight ? -vX : vX, vY);
-
-            f32 pAx = mSide.x, pAy = mSide.y, pAz = mSide.z;
-            f32 pBx = mUp.x, pBy = mUp.y, pBz = mUp.z;
-            f32 pCx = mFront.x, pCy = mFront.y, pCz = mFront.z;
+            bool isRight = style != nn::hid::NpadStyleTag::NpadStyleJoyRight;
 
             if (isRight) {
-                mSide.set(pAy, -pAx, pAz);
-                mUp.set(-pBy, pBx, -pBz);
-                mFront.set(pCy, -pCx, pCz);
-            } else {
-                mSide.set(-pAy, pAx, -pAz);
-                mUp.set(pBy, -pBx, pBz);
-                mFront.set(-pCy, pCx, -pCz);
+                nangVx = angVx;
             }
+            mAngularVelocity.z = nangVx;
+            angVx = -angVy;
+            nangVx = -angy;
+            if (isRight) {
+                angVx = angVy;
+                nangVx = angy;
+            }
+            mAngle.x = nangVx;
+            if (isRight) {
+                nangx = angx;
+            }
+            mAngularVelocity.x = angVx;
+            mAngle.z = nangx;
+
+            if (isRight) {
+                xx = -xx;
+            }
+            else {
+                fVar7 = -fVar7;
+                fVar10 = -fVar10;
+                xz = -xz;
+                xy = -xy;
+                fVar12 = fVar11;
+            }
+            isRight = style != nn::hid::NpadStyleTag::NpadStyleJoyRight;
+            if (isRight) {
+                fVar9 = yx;
+            }
+            mUp.z = fVar9;
+            if (isRight) {
+                fVar12 = -fVar12;
+            }
+            angVy = -fVar10;
+            if (isRight) {
+                angVy = fVar10;
+            }
+            fVar10 = -yy;
+            if (isRight) {
+                fVar10 = yy;
+            }
+            angy = -xy;
+            if (isRight) {
+                angy = xy;
+            }
+            if (isRight) {
+                xx = -xx;
+            }
+            mSide.y = fVar7;
+            mUp.y = yz;
+            mFront.y = xz;
+            mSide.z = fVar12;
+            mSide.x = angVy;
+            mUp.x = fVar10;
+            mFront.x = angy;
+            mFront.z = xx;
+
         }
     }
     return true;

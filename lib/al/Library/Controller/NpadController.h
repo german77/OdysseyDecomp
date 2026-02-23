@@ -13,6 +13,7 @@ class NpadController : public sead::Controller {
     SEAD_RTTI_OVERRIDE(NpadController, Controller)
 public:
     NpadController(sead::ControllerMgr* mgr);
+
     bool isConnected() const override;
     bool isValidNpadId() const;
     s32 getNpadId() const;
