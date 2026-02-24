@@ -32,9 +32,10 @@ private:
     s32 mNpadId = -1;
     nn::hid::NpadStyleTag mNpadStyleIndex = nn::hid::NpadStyleTag::NpadStyleInvalid;
     s32 mCount = 0;
-    s32 e = 0;
+    s32 mE = 0;
     bool mIsConnected = false;
-    void* f = nullptr;
+    s32 mF = 0;
+    s32 mG = 0;
 };
 
 static_assert(sizeof(NpadController) == 0x198);
