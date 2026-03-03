@@ -23,6 +23,7 @@ public:
     void startBindRideJump();
     void tryStartBindRideRunIfNotPlaying();
     void tryStartBindRideLandIfJump();
+
     void exeNone();
     void exeRideStartL();
     void exeRideStartR();

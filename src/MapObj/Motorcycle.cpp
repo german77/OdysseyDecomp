@@ -1,5 +1,6 @@
 #include "MapObj/Motorcycle.h"
 
+#include "Library/Camera/CameraUtil.h"
 #include "Library/Collision/PartsConnectorUtil.h"
 #include "Library/Effect/EffectSystemInfo.h"
 #include "Library/LiveActor/ActorActionFunction.h"
@@ -15,10 +16,11 @@
 #include "Library/Nerve/NerveSetupUtil.h"
 #include "Library/Nerve/NerveUtil.h"
 #include "Library/Shadow/ActorShadowUtil.h"
-#include "Library/Camera/CameraUtil.h"
+#include "Library/Controller/PadRumbleFunction.h"
 
 #include "MapObj/MotorcyclePlayerAnimator.h"
 #include "Util/CameraUtil.h"
+#include "Util/InputInterruptTutorialUtil.h"
 #include "Util/PlayerCollisionUtil.h"
 #include "Util/PlayerPuppetFunction.h"
 #include "Util/SensorMsgFunction.h"
@@ -62,7 +64,27 @@ NERVES_MAKE_NOSTRUCT(Motorcycle, RideRunClash, RideParking, RideParkingAfter)
 const sead::Vector3f verticalUp = {0.0f, -1.0f, 0.0};
 
 bool funA(Motorcycle* actor) {
-    return false;
+    if (!rs::isOnGround(actor, actor))
+        return false;
+
+    if (al::isInWater(actor)) {
+        al::setVelocityZero(actor);
+        al::invalidateHitSensors(actor);
+        al::hideModelIfShow(actor);
+        al::setNerve(actor, &NrvMotorcycle.Reset);
+        return true;
+    }
+
+    if (rs::isCollisionCodeJump(actor)) {
+        al::HitSensor* sensor = rs::tryGetCollidedGroundSensor(actor);
+        if (sensor)
+            rs::sendMsgPlayerTouchFloorJumpCode(sensor, al::getHitSensor(actor, "PlayerBody"));
+        al::setNerve(actor, &NrvMotorcycle.Jump);
+        return true;
+    }
+
+    al::setNerve(actor, &NrvMotorcycle.Creep);
+    return true;
 }
 
 void funV(Motorcycle* actor) {
@@ -117,6 +139,28 @@ bool funR(Motorcycle* actor, IUsePlayerPuppet* playerPuppet) {
     }
 
     return false;
+}
+
+void funH(Motorcycle* actor, MotorcyclePlayerAnimator* playerAnimator,
+          al::CameraTargetBase* cameraTarget, al::CameraSubTargetBase* cameraSubTarget) {
+    playerAnimator->endBind();
+    alPadRumbleFunction::stopPadRumbleDirectValue(actor, -1);
+    rs::tryCloseBindTutorial(actor);
+    al::invalidateHitSensors(actor);
+    al::validateHitSensorBindableAll(actor);
+    al::validateHitSensorRideAll(actor);
+    al::hideSilhouetteModel(actor);
+    al::validateOcclusionQuery(actor);
+    al::showModelIfHide(actor);
+    al::resetCameraTarget(actor, cameraTarget);
+    al::offCameraRideObj(actor);
+    al::invalidateDepthShadowMap(actor);
+    al::onDepthShadowModel(actor);
+    if (al::isActiveCameraSubTarget(cameraSubTarget))
+        al::resetCameraSubTarget(actor, cameraSubTarget);
+
+    if (!funA(actor))
+        al::setNerve(actor, &NrvMotorcycle.Fall);
 }
 
 Motorcycle::Motorcycle(const char* name) : al::LiveActor(name) {}
