@@ -113,8 +113,8 @@ struct SeDemoSyncedProcInfo : public AudioDemoSyncedProcInfo {
     SeDemoSyncedProcInfo();
     SeDemoSyncedProcInfo(const SeDemoSyncedProcInfo& demoSyncedProcInfo);
 
-    al::AudioInfoListWithParts<al::SeDemoProcInfo>* procInfoList=nullptr;
-    al::AudioInfoListWithParts<al::SeDemoProcInfo>* procEndInfoList=nullptr;
+    al::AudioInfoListWithParts<al::SeDemoProcInfo>* procInfoList = nullptr;
+    al::AudioInfoListWithParts<al::SeDemoProcInfo>* procEndInfoList = nullptr;
     bool isDisableAudioMaximizer = false;
     bool isNotStopOneShotSe = false;
     s32 oneShotSeFadeOutFrameNum = 45;
