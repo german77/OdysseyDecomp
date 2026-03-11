@@ -85,7 +85,7 @@ void calcHackerWallInputVec(sead::Vector3f*, sead::Vector3f*, const IUsePlayerHa
                             const sead::Vector3f&);
 void calcHackerWallInputVec(sead::Vector3f*, sead::Vector3f*, const sead::Vector2f&,
                             const sead::Vector3f&);
-f32 getHackMoveStickRaw(const IUsePlayerHack*);
+sead::Vector2f getHackMoveStickRaw(const IUsePlayerHack*);
 void calcHackerWallInputDir(sead::Vector3f*, sead::Vector3f*, const IUsePlayerHack*,
                             const sead::Vector3f&);
 bool addHackActorAccelStick(al::LiveActor*, const IUsePlayerHack*, sead::Vector3f*, f32,

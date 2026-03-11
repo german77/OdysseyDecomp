@@ -13,6 +13,7 @@ public:
     HackerStateNormalJump(al::LiveActor*, IUsePlayerHack**, const char*, const char*);
 
     void set_38(const sead::Vector3f& value) { _38.set(value); }
+    void set_38(f32 x, f32 y,f32 z) { _38.x=x;_38.y=y;_38.z=z; }
 
     void set_48(sead::Vector2f value) { _48.set(value); }
 

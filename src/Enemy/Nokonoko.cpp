@@ -566,7 +566,7 @@ void Nokonoko::exeCaptureSpin() {
     al::addVelocity(this, velocityDir * frontVel);
 
     if (al::isOnGround(this, 0) || al::isInWater(this) || mWaterSurfaceFinder->isFoundSurface()) {
-        f32 hackMoveStick = rs::getHackMoveStickRaw(mHackActor);
+        f32 hackMoveStick = rs::getHackMoveStickRaw(mHackActor).x;
         f32 rotateMaxDegree = al::isNerve(this, &NrvNokonoko.CaptureSpinDrift) ? 5.0f : 1.7f;
         if (al::isInWater(this))
             rotateMaxDegree = 1.6f;
