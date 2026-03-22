@@ -27,6 +27,7 @@ public:
     void setScenarioCameraState(StageSceneStateScenarioCamera*);
 
     al::LiveActor* getDemoShineActor() const { return mDemoShineActor; }
+
     al::CameraTicket* getCameraTicket() const { return mCameraTicket; }
 
 private:

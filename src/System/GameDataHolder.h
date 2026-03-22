@@ -293,11 +293,10 @@ public:
 
     QuestInfoHolder* getQuestInfoHolder() const { return mQuestInfoHolder; }
 
-    TimeBalloonSequenceInfo* getTimeBalloonSequenceInfo() const {
-        return mTimeBalloonSequenceInfo;
-    }
+    TimeBalloonSequenceInfo* getTimeBalloonSequenceInfo() const { return mTimeBalloonSequenceInfo; }
 
     void setIsWaitingForStageStart(bool value) { mIsExistKoopaShip = value; }
+
     void setUnkNumber(s32 value) { mDeadPlayerCoinIdx = value; }
 
 private:

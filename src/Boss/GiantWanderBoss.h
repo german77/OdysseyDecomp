@@ -9,6 +9,8 @@ public:
     void startDemoWorldEnter();
 
     const char* getSceneObjName() const override { return ""; }
+
     void initAfterPlacementSceneObj(const al::ActorInitInfo&) override {}
+
     void initSceneObj() override {}
 };

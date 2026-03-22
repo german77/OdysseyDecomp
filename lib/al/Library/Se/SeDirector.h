@@ -4,6 +4,7 @@ namespace al {
 class SeDirector {
 public:
     void setMuteSeInPVList(const char** list) { mMuteSeInPVList = list; }
+
     void setMuteSeInPVListSize(s32 size) { mMuteSeInPVListSize = size; }
 
 private:

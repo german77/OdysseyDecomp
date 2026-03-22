@@ -14,7 +14,7 @@ class StageSceneStateSnapShot;
 class StageSceneStateYukimaruRace : public al::HostStateBase<al::Scene> {
 public:
     static StageSceneStateYukimaruRace* tryCreate(al::Scene*, const al::ActorInitInfo&,
-                                                   StageSceneLayout*,
-                                                   SceneAudioSystemPauseController*,
-                                                   StageSceneStateSnapShot*);
+                                                  StageSceneLayout*,
+                                                  SceneAudioSystemPauseController*,
+                                                  StageSceneStateSnapShot*);
 };

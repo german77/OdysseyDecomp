@@ -10,6 +10,6 @@ class PlacementInfo;
 
 namespace rs {
 CheckpointFlag* tryFindCheckpointFlag(const al::IUseSceneObjHolder* holder, const char* objId);
-const al::PlacementInfo* tryFindCheckpointFlagPlayerRestartInfo(
-    const al::IUseSceneObjHolder* holder, const char* startId);
+const al::PlacementInfo*
+tryFindCheckpointFlagPlayerRestartInfo(const al::IUseSceneObjHolder* holder, const char* startId);
 }  // namespace rs

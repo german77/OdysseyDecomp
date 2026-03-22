@@ -22,6 +22,6 @@ public:
     static StageSceneStateRaceManRace*
     tryCreate(al::Scene*, GameDataHolder*, StageSceneLayout*, StageSceneStateMiss*,
               StageSceneStateCollectionList*, StageSceneStateGetLifeMaxUpItem*,
-              StageSceneStateWarp*, const al::ActorInitInfo&,
-              SceneAudioSystemPauseController*, StageSceneStateSnapShot*);
+              StageSceneStateWarp*, const al::ActorInitInfo&, SceneAudioSystemPauseController*,
+              StageSceneStateSnapShot*);
 };

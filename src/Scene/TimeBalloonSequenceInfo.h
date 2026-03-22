@@ -10,6 +10,7 @@ class TimeBalloonSequenceInfo {
 public:
     void setAccessor(al::LiveActor*);
     void addHioNode();
+
     void disableLayout() { mIsLayoutEnabled = false; }
 
 private:

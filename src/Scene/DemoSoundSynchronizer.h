@@ -5,7 +5,7 @@
 namespace al {
 class AudioDirector;
 class ApplicationMessageReceiver;
-}
+}  // namespace al
 
 class DemoSoundSynchronizer {
 public:

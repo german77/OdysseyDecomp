@@ -21,8 +21,7 @@ class StageSceneStateTimeBalloon : public al::HostStateBase<StageScene> {
 public:
     StageSceneStateTimeBalloon(StageScene*, TimeBalloonDirector*, TimeBalloonSequenceInfo*,
                                GameDataHolder*, StageSceneLayout*, const al::ActorInitInfo&,
-                               TimeBalloonNpc*, bool, MiniGameMenu*, void*,
-                               StageSceneStateWarp*);
+                               TimeBalloonNpc*, bool, MiniGameMenu*, void*, StageSceneStateWarp*);
     virtual bool isAutoStart() const;
 
 private:

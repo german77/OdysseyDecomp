@@ -9,8 +9,7 @@ class PostProcessingFilter;
 
 class ControllerGuideSnapShotCtrl {
 public:
-    ControllerGuideSnapShotCtrl(const char*, const al::LayoutInitInfo&,
-                                al::PostProcessingFilter*);
+    ControllerGuideSnapShotCtrl(const char*, const al::LayoutInitInfo&, al::PostProcessingFilter*);
 
 private:
     u8 _padding[0x68];

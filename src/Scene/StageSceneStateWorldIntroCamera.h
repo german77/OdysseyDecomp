@@ -14,9 +14,8 @@ class StageSceneStateSkipDemo;
 class StageSceneStateWorldIntroCamera : public al::HostStateBase<al::Scene> {
 public:
     StageSceneStateWorldIntroCamera(const char*, const al::ActorInitInfo&, al::Scene*,
-                                    al::SimpleLayoutAppearWaitEnd*,
-                                    al::SimpleLayoutAppearWaitEnd*, al::SimpleAudioUser*,
-                                    StageSceneStateSkipDemo*);
+                                    al::SimpleLayoutAppearWaitEnd*, al::SimpleLayoutAppearWaitEnd*,
+                                    al::SimpleAudioUser*, StageSceneStateSkipDemo*);
 
 private:
     unsigned char _padding[0x50 - 0x20];

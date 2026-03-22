@@ -3,7 +3,6 @@
 #include <container/seadPtrArray.h>
 
 #include "Library/HostIO/HioNode.h"
-
 #include "Library/Scene/ISceneObj.h"
 
 #include "Scene/SceneObjFactory.h"
@@ -24,6 +23,7 @@ public:
     const char* getSceneObjName() const override { return "レイアウトテクスチャ生成"; }
 
     void initAfterPlacementSceneObj(const ActorInitInfo&) override {}
+
     void initSceneObj() override {}
 
 private:

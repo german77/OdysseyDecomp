@@ -5,7 +5,9 @@
 class CollectBgmPlayer : public al::ISceneObj {
 public:
     const char* getSceneObjName() const override;
+
     void initAfterPlacementSceneObj(const al::ActorInitInfo&) override {}
+
     void initSceneObj() override {}
 
     void* _8 = nullptr;

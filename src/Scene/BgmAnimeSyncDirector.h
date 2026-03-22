@@ -10,7 +10,9 @@ public:
     BgmAnimeSyncDirector();
     const char* getSceneObjName() const override;
     al::AudioKeeper* getAudioKeeper() const override;
+
     void initAfterPlacementSceneObj(const al::ActorInitInfo&) override {}
+
     void initSceneObj() override {}
 
 private:
