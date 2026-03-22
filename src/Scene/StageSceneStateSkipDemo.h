@@ -32,4 +32,9 @@ public:
     void exeWaitConfirmClose();
     void exeSkip();
     void exeWaitSkipEnd();
+
+private:
+    u8 _padding[0x48];
 };
+
+static_assert(sizeof(StageSceneStateSkipDemo) == 0x68);

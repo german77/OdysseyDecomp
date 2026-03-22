@@ -34,7 +34,7 @@ class NpcEventDirector : public al::NerveExecutor,
 public:
     NpcEventDirector(const al::PlayerHolder*, al::CameraDirector*, al::CollisionDirector*,
                      const al::MessageSystem*, EventFlowSceneExecuteCtrl*);
-    void init(const al::ActorInitInfo& initInfo);
+    virtual void init(const al::ActorInitInfo& initInfo);
     void execute() override;
     void updateBalloon();
     void killAllBalloonForSnapshotMode();
@@ -55,6 +55,10 @@ public:
     const al::MessageSystem* getMessageSystem() const override { return mMessageSystem; }
 
     al::SceneObjHolder* getSceneObjHolder() const override { return mSceneObjHolder; }
+
+    NpcEventCtrlInfo* getNpcEventCtrlInfo() const { return mNpcEventCtrlInfo; }
+
+    EventDemoCtrl* getEventDemoCtrl() const { return mEventDemoCtrl; }
 
 private:
     NpcEventSceneInfo* mNpcEventSceneInfo;

@@ -15,6 +15,8 @@ class StageSceneStateSnapShot : public al::HostStateBase<al::Scene> {
 public:
     StageSceneStateSnapShot(const char*, al::Scene*, ControllerGuideSnapShotCtrl*,
                             SceneAudioSystemPauseController*, InputSeparator*, NpcEventDirector*);
+
+    void init() override;
     void appear() override;
     void kill() override;
     bool tryStart();
