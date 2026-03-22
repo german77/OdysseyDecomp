@@ -16,12 +16,11 @@ class StageSceneStateWarp;
 class TimeBalloonDirector;
 class TimeBalloonNpc;
 class TimeBalloonSequenceInfo;
+class StageSceneStateStageMap;
 
 class StageSceneStateTimeBalloon : public al::HostStateBase<StageScene> {
 public:
-    StageSceneStateTimeBalloon(StageScene*, TimeBalloonDirector*, TimeBalloonSequenceInfo*,
-                               GameDataHolder*, StageSceneLayout*, const al::ActorInitInfo&,
-                               TimeBalloonNpc*, bool, MiniGameMenu*, void*, StageSceneStateWarp*);
+    StageSceneStateTimeBalloon(StageScene*, TimeBalloonDirector*, TimeBalloonSequenceInfo*, GameDataHolder*, StageSceneLayout*, al::ActorInitInfo const&, TimeBalloonNpc*, bool, MiniGameMenu*, StageSceneStateStageMap*, StageSceneStateWarp*);
     virtual bool isAutoStart() const;
 
 private:

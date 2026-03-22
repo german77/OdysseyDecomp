@@ -1,22 +1,25 @@
 #pragma once
 
-#include <basis/seadTypes.h>
-
 #include "Library/Audio/IUseAudioKeeper.h"
 #include "Library/Scene/ISceneObj.h"
 
+#include "Scene/SceneObjFactory.h"
+
 class BgmAnimeSyncDirector : public al::ISceneObj, public al::IUseAudioKeeper {
 public:
+    static constexpr s32 sSceneObjId = SceneObjID_BgmAnimeSyncDirector;
+
     BgmAnimeSyncDirector();
-    const char* getSceneObjName() const override;
-    al::AudioKeeper* getAudioKeeper() const override;
 
-    void initAfterPlacementSceneObj(const al::ActorInitInfo&) override {}
+    void initAfterPlacementSceneObj(const al::ActorInitInfo&) override;
+    s32 calcArchiveAndActionIndex(const char*, const char*);
+    f32 calcNecessaryMeasuresNumScale(s32);
 
-    void initSceneObj() override {}
+    al::AudioKeeper* getAudioKeeper() const override { return mAudioKeeper; }
 
 private:
-    u8 _padding[0x10];
+    al::AudioKeeper* mAudioKeeper = nullptr;
+    s32 _18 = -1;
 };
 
 static_assert(sizeof(BgmAnimeSyncDirector) == 0x20);

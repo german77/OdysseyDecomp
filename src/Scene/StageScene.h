@@ -1,7 +1,5 @@
 #pragma once
 
-#include <math/seadQuat.h>
-
 #include "Library/LiveActor/LiveActorGroup.h"
 #include "Library/Message/LanguageUtil.h"
 #include "Library/Scene/Scene.h"

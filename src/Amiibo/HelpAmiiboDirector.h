@@ -6,6 +6,7 @@
 #include "Library/HostIO/HioNode.h"
 #include "Library/Nerve/IUseNerve.h"
 #include "Library/Scene/ISceneObj.h"
+#include "Scene/SceneObjFactory.h"
 
 namespace al {
 struct NfpInfo;
@@ -30,6 +31,8 @@ class HelpAmiiboDirector : public al::IUseHioNode,
                            public al::IUseAudioKeeper,
                            public al::IUseNerve {
 public:
+   static constexpr s32 sSceneObjId = SceneObjID_HelpAmiiboDirector; 
+
     HelpAmiiboDirector();
     void init(ProjectNfpDirector* projectNfpDirector, const al::PlayerHolder* playerHolder,
               al::AudioDirector* audioDirector, const al::LayoutInitInfo& initInfo);
