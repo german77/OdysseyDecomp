@@ -97,9 +97,14 @@ public:
     static_assert(sizeof(GrowFlower) == 0x140);
 
     struct CollectBgmInfo {
-        const char* name;
-        const char* situationName;
-        bool isCollected;
+        const char* name = nullptr;
+        const char* situationName = nullptr;
+        bool isCollected = false;
+
+        CollectBgmInfo() = default;
+
+        CollectBgmInfo(const char* name, const char* situationName)
+            : name(name), situationName(situationName) {}
     };
 
     static_assert(sizeof(CollectBgmInfo) == 0x18);
@@ -121,10 +126,7 @@ public:
         sead::FixedSafeString<64> objectName;
         sead::Vector3f trans;
         sead::Vector3f originalTrans;
-        s64 _1a8 = 0;
-        s64 _1b0 = 0;
-        s64 _1b8 = 0;
-        s64 _1c0 = 0;
+        s64 _1a8[4] = {};
         s32 mainScenarioNo;
         s32 worldId;
         bool isMoonRock;

@@ -22,9 +22,12 @@ public:
 
     const char* getStageName() const { return mStageName.cstr(); }
 
+    void setStageName(const char* str) { mStageName.format("%s", str); }
+
     const char* getObjId() const { return mObjId.cstr(); }
 
-private:
+    void setObjId(const char* str) { mObjId.format("%s", str); }
+
     sead::FixedSafeString<128> mStageName;
     sead::FixedSafeString<128> mObjId;
 };

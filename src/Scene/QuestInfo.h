@@ -1,6 +1,7 @@
 #pragma once
 
 #include <basis/seadTypes.h>
+#include <math/seadVector.h>
 #include <prim/seadSafeString.h>
 
 #include "Library/Scene/IUseSceneObjHolder.h"
@@ -14,31 +15,50 @@ class SceneObjHolder;
 class QuestInfo : public al::IUseSceneObjHolder {
 public:
     QuestInfo();
-    void clear();
-    void init(const al::ActorInitInfo&);
-    void init(const al::PlacementInfo&, const al::ActorInitInfo&);
-    void init(const al::PlacementInfo&, al::SceneObjHolder*);
-    void setStageName(const char*);
-    void setLabel(const char*);
-    void copy(const QuestInfo*);
-    void end();
-    bool isEqual(const QuestInfo*) const;
 
-    al::SceneObjHolder* getSceneObjHolder() const override { return mSceneObjHolder; }
+    void clear();
+    void init(const al::ActorInitInfo& actor_info);
+    void init(const al::PlacementInfo& placement_info, const al::ActorInitInfo& actor_info);
+    void init(const al::PlacementInfo& placement_info, al::SceneObjHolder* scene_obj_holder);
+    void setStageName(const char* stage_name);
+    void setLabel(const char* obj_id);
+    void copy(const QuestInfo* other);
+    void end();
+    bool isEqual(const QuestInfo* other) const;
 
     s32 getQuestNo() const { return mQuestNo; }
 
+    const sead::Vector3f& getTrans() const { return mTrans; }
+
+    bool isMainQuest() const { return mIsMainQuest; }
+
+    bool isEnded() const { return mIsEnded; }
+
+    void start() { mIsEnded = false; }
+
+    al::SceneObjHolder* getSceneObjHolder() const override { return mSceneObjHolder; }
+
+    void initSceneObjHolder(al::SceneObjHolder* holder) { mSceneObjHolder = holder; }
+
+    bool isInitialized() const { return mSceneObjHolder != nullptr; }
+
+    bool isValid() const { return !mShineLabel.isEmpty(); }
+
+    const char* getLabel() const { return mShineLabel.cstr(); }
+
+    const char* getStageName() const { return mShineStageName.cstr(); }
+
 private:
-    s32 mQuestNo;
-    void* filler_10;
-    bool mIsMainQuest;
-    al::SceneObjHolder* mSceneObjHolder;
-    sead::SafeString* mScenarioName;
-    void* filler_30[0x12];
-    sead::SafeString* mStageName;
-    void* filler_c8[0x12];
-    bool mIsSingle;
-    void* filler_160[0x26];
+    s32 mQuestNo = -1;
+    sead::Vector3f mTrans = sead::Vector3f::zero;
+    bool mIsMainQuest = false;
+    bool mIsEnded = false;
+    al::SceneObjHolder* mSceneObjHolder = nullptr;
+    sead::FixedSafeString<128> mShineLabel;
+    sead::FixedSafeString<128> mShineStageName;
+    bool mIsSingle = false;
+    sead::FixedSafeString<128> mObjId;
+    sead::FixedSafeString<128> mStageName;
 };
 
 static_assert(sizeof(QuestInfo) == 0x290);
