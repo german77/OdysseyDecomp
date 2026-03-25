@@ -43,6 +43,8 @@ public:
     void exeReaction();
     void exeBossBattle();
 
+    ShoppingWatcher* getShoppingWatcher() { return mShoppingWatcher; }
+
 private:
     ShoppingWatcher* mShoppingWatcher = nullptr;
     al::BgmPlayObj* mBgmPlayObj = nullptr;
