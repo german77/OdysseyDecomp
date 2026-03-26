@@ -185,7 +185,7 @@ public:
 
         T* end() const { return mPtr + Size; }
 
-    private:
+    public:
         T* mPtr = nullptr;
     };
 

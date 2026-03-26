@@ -144,9 +144,10 @@ static s32 compareCollectBgmInfo(const GameDataFile::CollectBgmInfo* a,
     return compareStringOrNull(a->situationName, b->situationName);
 }
 
+
 GameDataFile::GameDataFile(GameDataHolder* game_data_holder) : mGameDataHolder(game_data_holder) {
-    mGotShine.alloc();
-    mGotGrandShine.alloc();
+    mGotShine.mPtr=new ShineInfo*[1024];
+    mGotGrandShine.mPtr=new ShineInfo*[1024];
     mLatestGetShineInfo = new ShineInfo();
     for (s32 i = 0; i < 1024; i++)
         mGotShine[i] = new ShineInfo();
@@ -209,7 +210,7 @@ GameDataFile::GameDataFile(GameDataHolder* game_data_holder) : mGameDataHolder(g
 
     mCheckpointTable.alloc();
     for (s32 i = 0; i < sNumWorlds; i++)
-        mCheckpointTable[i] = new CheckpointInfo[16];
+        mCheckpointTable.mPtr[i] = new CheckpointInfo[16]();
 
     mItemCap.alloc();
     mItemCloth.alloc();
@@ -245,7 +246,7 @@ GameDataFile::GameDataFile(GameDataHolder* game_data_holder) : mGameDataHolder(g
 
     mWorldMapIndex.alloc();
     mWorldWarpIndex.alloc();
-    mShopNpcInfo.alloc();
+    mShopNpcInfo.mPtr=new ShopNpcInfo[4];
     mShopTalkData = new ShopTalkData(20, mGameDataHolder->get_170(), mGameDataHolder->get_178(),
                                      mGameDataHolder->getShopItemInfoList());
     mMiniGameInfo.alloc();
@@ -255,7 +256,8 @@ GameDataFile::GameDataFile(GameDataHolder* game_data_holder) : mGameDataHolder(g
     mIsTalkLocalLanguage.alloc();
 
     mCollectBgmList.allocBuffer(cCollectBgmListSize, nullptr);
-    for (s32 i = 0; i < cCollectBgmListSize; i++)
+    s32 bgmSize=cCollectBgmListSize;
+    for (s64 i = 0; i < bgmSize; i++)
         mCollectBgmList.pushBack(
             new CollectBgmInfo(cCollectBgmList[i].name, cCollectBgmList[i].situationName));
     mCollectBgmList.sort(compareCollectBgmInfo);
