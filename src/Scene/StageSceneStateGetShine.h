@@ -20,9 +20,9 @@ class StageSceneStateSkipDemo;
 
 class StageSceneStateGetShine : public al::HostStateBase<al::Scene> {
 public:
-    StageSceneStateGetShine(const char*, al::Scene*, StageSceneLayout*, const al::SceneInitInfo*,
+    StageSceneStateGetShine(const char*, al::Scene*, StageSceneLayout*, const al::SceneInitInfo&,
                             const al::ActorInitInfo&, const al::LayoutInitInfo&, al::LiveActor*,
-                            al::LiveActor*, void*, GameDataHolder*, ProjectItemDirector*);
+                            al::LiveActor*, al::LiveActor*, GameDataHolder*, ProjectItemDirector*);
     void setLifeRecoverState(StageSceneStateRecoverLife*);
     void setShopShine10();
 

@@ -18,7 +18,7 @@ class TimeBalloonDirector : public al::HioNode, public al::IUseNerve, public al:
 public:
     static constexpr s32 sSceneObjId = SceneObjID_TimeBalloonDirector;
 
-    void init(const al::ActorInitInfo&, TimeBalloonNpc*, TimeBalloonSequenceInfo*, s32, s32,
+    void init(const al::ActorInitInfo&, TimeBalloonNpc*, TimeBalloonSequenceInfo*, bool, bool,
               StageSceneLayout*);
-    al::LiveActor* getAccessor();
+    al::LiveActor* getAccessor() const;
 };

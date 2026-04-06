@@ -93,9 +93,8 @@ void initSwitchAreaDirector(Scene* scene, s32 maxSwitchOnArea, s32 maxSwitchKeep
 void registerSwitchOnAreaGroup(Scene* scene, SwitchOnAreaGroup* switchOnAreaGroup);
 void registerSwitchKeepOnAreaGroup(Scene* scene, SwitchKeepOnAreaGroup* switchKeepOnAreaGroup);
 void initGraphicsSystemInfo(Scene* scene, const char* name, s32 index);
-void initCameraDirector(Scene* scene, const CameraPoserFactory* cameraPoserFactory);
 void initCameraDirector(Scene* scene, const char* stageName, s32 scenarioNo,
-                        CameraPoserFactory* cameraPoserFactory);
+                        const CameraPoserFactory* cameraPoserFactory);
 void initCameraDirectorWithoutStageResource(Scene* scene,
                                             const CameraPoserFactory* cameraPoserFactory);
 void initCameraDirectorFix(Scene* scene, const sead::Vector3f& pos, const sead::Vector3f& lookAtPos,

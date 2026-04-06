@@ -21,7 +21,7 @@ class StageSceneStateScenarioCamera;
 class StageSceneStateGetShineMain : public al::HostStateBase<al::Scene> {
 public:
     StageSceneStateGetShineMain(const char*, al::Scene*, StageSceneLayout*,
-                                const al::SceneInitInfo*, const al::ActorInitInfo&,
+                                const al::SceneInitInfo&, const al::ActorInitInfo&,
                                 const al::LayoutInitInfo&, al::LiveActor*,
                                 ScenarioStartCameraHolder*, GameDataHolder*);
     void setScenarioCameraState(StageSceneStateScenarioCamera*);

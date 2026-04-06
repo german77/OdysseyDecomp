@@ -3,18 +3,19 @@
 #include "Library/Factory/Factory.h"
 #include "Library/Placement/PlacementFunction.h"
 
+class PlayerActorBase;
+
 namespace al {
-class LiveActor;
 struct ActorInitInfo;
 }  // namespace al
 
-using PlayerCreatorFunction = al::LiveActor* (*)(const char* actorName);
+using PlayerCreatorFunction = PlayerActorBase* (*)(const char* actorName);
 
 class PlayerFactory : public al::Factory<PlayerCreatorFunction> {
 public:
     PlayerFactory();
 
-    al::LiveActor* createActor(const al::ActorInitInfo& initInfo, const char* className) {
+    PlayerActorBase* createActor(const al::ActorInitInfo& initInfo, const char* className) {
         PlayerCreatorFunction creationFunc = nullptr;
         getEntryIndex(&creationFunc, className);
         if (!creationFunc)

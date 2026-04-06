@@ -9,7 +9,7 @@ class ApplicationMessageReceiver;
 
 class DemoSoundSynchronizer {
 public:
-    DemoSoundSynchronizer(al::ApplicationMessageReceiver* receiver, al::AudioDirector* director);
+    DemoSoundSynchronizer(const al::ApplicationMessageReceiver* receiver, al::AudioDirector* director);
 
 private:
     u8 _padding[0x20];

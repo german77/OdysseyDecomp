@@ -6,7 +6,7 @@ struct ActorInitInfo;
 }  // namespace al
 
 namespace CapManHeroDemoUtil {
-void initCapManHeroDemoDirector(al::Scene* scene, const al::ActorInitInfo& initInfo);
+void initCapManHeroDemoDirector(const al::Scene* scene, const al::ActorInitInfo& initInfo);
 bool isExistTalkDemoStageStart(const al::Scene*);
 bool isExistTalkDemoAfterMoonRockBreakDemo(const al::Scene*);
 void startTalkDemoStageStart(const al::Scene*);

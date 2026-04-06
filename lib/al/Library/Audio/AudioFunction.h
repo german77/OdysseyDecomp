@@ -2,5 +2,5 @@
 
 namespace al {
 class IUseAudioKeeper;
-void createAudioEffect(IUseAudioKeeper* keeper, const char* name);
+void createAudioEffect(const IUseAudioKeeper* keeper, const char* name);
 }  // namespace al

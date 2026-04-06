@@ -9,7 +9,7 @@ class GiantWanderBoss : public al::LiveActor, public al::ISceneObj {
 public:
     static constexpr s32 sSceneObjId = SceneObjID_GiantWanderBoss;
 
-    static bool isOnSwitchAll(GiantWanderBoss*);
+    bool isOnSwitchAll() const;
     void startDemoWorldEnter();
 
     const char* getSceneObjName() const override { return ""; }
