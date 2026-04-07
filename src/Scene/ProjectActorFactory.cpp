@@ -1,6 +1,7 @@
 #include "Scene/ProjectActorFactory.h"
 
 #include "Library/Fluid/FlowMapParts.h"
+#include "Library/Fluid/RippleFixMapParts.h"
 #include "Library/LiveActor/CreateActorFunction.h"
 #include "Library/MapObj/BackHideParts.h"
 #include "Library/MapObj/ClockMapParts.h"
@@ -667,7 +668,7 @@ const al::NameToCreator<al::ActorCreatorFunction> sProjectActorFactoryEntries[] 
     {"RiseMapPartsHolder", al::createActorFunction<RiseMapPartsHolder>},
     {"RocketFlower", nullptr},
     {"RollingCubeMapParts", al::createActorFunction<al::RollingCubeMapParts>},
-    {"RippleFixMapParts", nullptr},
+    {"RippleFixMapParts", al::createActorFunction<al::RippleFixMapParts>},
     {"RotateMapParts", al::createActorFunction<al::RotateMapParts>},
     {"SeesawMapParts", al::createActorFunction<al::SeesawMapParts>},
     {"SlideMapParts", al::createActorFunction<al::SlideMapParts>},
