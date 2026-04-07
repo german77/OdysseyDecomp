@@ -235,6 +235,8 @@ private:
     sead::FixedSafeString<0x40> mKey;
 };
 
+static_assert(sizeof(ParameterObj) == 0x78);
+
 class ParameterArray {
 public:
     ParameterArray();
@@ -263,6 +265,8 @@ private:
     sead::FixedSafeString<0x40> mKey;
     s32 mSize = 0;
 };
+
+static_assert(sizeof(ParameterArray) == 0x70);
 
 class ParameterList {
 public:
@@ -294,9 +298,13 @@ private:
     sead::FixedSafeString<0x40> mKey;
 };
 
+static_assert(sizeof(ParameterList) == 0x80);
+
 class ParameterIo : public ParameterList {
 public:
     ParameterIo();
 };
+
+static_assert(sizeof(ParameterIo) == 0x80);
 
 }  // namespace al
