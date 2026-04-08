@@ -39,17 +39,15 @@ void RippleFixMapParts::init(const ActorInitInfo& info) {
         mParameters = new Parameters;
         mParameters->parameterIo = new ParameterIo;
         mParameters->parameterObj = new ParameterObj;
-        ParameterObj* obj = mParameters->parameterObj;
         mParameters->sinkStartDist =
-            new ParameterF32(2000.0f, "沈み始める距離", "SinkStartDist", "Min=0.f, Max=7000.f",
-                             mParameters->parameterObj, true);
+            new ParameterF32(2000.0f, mParameters->parameterObj, "SinkStartDist", "沈み始める距離",
+                             "Min=0.f, Max=7000.f", true);
         mParameters->sinkEndDist =
-            new ParameterF32(4000.0f, "沈み終える距離", "SinkEndDist", "Min=0.f, Max=10000.f",
-                             mParameters->parameterObj, true);
+            new ParameterF32(4000.0f, mParameters->parameterObj, "SinkEndDist", "沈み終える距離",
+                             "Min=0.f, Max=10000.f", true);
         mParameters->sinkDistance =
-            new ParameterV3f({0.0f, -100.0f, 0.0f}, "沈み距離", "SinkDistance",
-                             "Min=-1000.f,Max=1000.f", mParameters->parameterObj, true);
-
+            new ParameterV3f({0.0f, -100.0f, 0.0f}, mParameters->parameterObj, "SinkDistance",
+                             "沈み距離", "Min=-1000.f,Max=1000.f", true);
         mParameters->parameterIo->addObj(mParameters->parameterObj, "SinkParams");
 
         ByamlIter iter;

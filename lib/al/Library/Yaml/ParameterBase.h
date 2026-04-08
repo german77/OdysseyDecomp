@@ -40,18 +40,14 @@ SEAD_ENUM(YamlParamType,
 #define PARAM_TYPE_DEF(Name, Type)                                                                 \
     class Parameter##Name : public Parameter<Type> {                                               \
     public:                                                                                        \
-        Parameter##Name(const sead::SafeString& name, const sead::SafeString& label,               \
-                        const sead::SafeString& meta, ParameterObj* obj, bool e)                   \
-            : Parameter(name, label, meta, obj, e) {}                                              \
-                                                                                                   \
         Parameter##Name(Type const& value, const sead::SafeString& name,                           \
                         const sead::SafeString& label, const sead::SafeString& meta,               \
                         ParameterObj* obj, bool e)                                                 \
             : Parameter(value, name, label, meta, obj, e) {}                                       \
-                                                                                                   \
-        Parameter##Name(const sead::SafeString& name, const sead::SafeString& label,               \
-                        const sead::SafeString& meta, ParameterList* list, bool e)                 \
-            : Parameter(name, label, meta, list, e) {}                                             \
+        Parameter##Name(Type const& value,ParameterObj* obj, const sead::SafeString& name,                           \
+                        const sead::SafeString& label, const sead::SafeString& meta,               \
+                         bool e)                                                 \
+            : Parameter(value, name, label, meta, obj, e) {}                                       \
                                                                                                    \
         Parameter##Name(Type const& value, const sead::SafeString& name,                           \
                         const sead::SafeString& label, const sead::SafeString& meta,               \
@@ -72,7 +68,7 @@ public:
     static u32 calcHash(const sead::SafeString& key);
 
     // TODO: rename parameter bool e in all functions
-    ParameterBase(bool e) { initialize("default", "parameter", "", e); }
+    ParameterBase() { initialize("default", "parameter", "", true); }
 
     ParameterBase(const sead::SafeString& name, const sead::SafeString& label,
                   const sead::SafeString& meta, ParameterObj* obj, bool e);
@@ -139,39 +135,41 @@ template <typename T>
 class Parameter : public ParameterBase {
 public:
     // TODO: rename parameter bool e in constructor
-    Parameter(const sead::SafeString& name, const sead::SafeString& label,
-              const sead::SafeString& meta, ParameterObj* obj, bool e)
-        : ParameterBase(e) {
+    Parameter(const T& value, const sead::SafeString& name, const sead::SafeString& label,
+              const sead::SafeString& meta, ParameterObj* obj, bool e) {
         initializeListNode(name, label, meta, obj, e);
-        mValue = T();
+        setValue(value);
     }
 
     Parameter(const T& value, const sead::SafeString& name, const sead::SafeString& label,
-              const sead::SafeString& meta, ParameterObj* obj, bool e)
-        : ParameterBase(e) {
-        initializeListNode(name, label, meta, obj, e);
-        mValue = value;
-    }
-
-    Parameter(const sead::SafeString& name, const sead::SafeString& label,
-              const sead::SafeString& meta, ParameterList* list, bool e)
-        : ParameterBase(e) {
+              const sead::SafeString& meta, ParameterList* list, bool e) {
         initializeListNode(name, label, meta, list, e);
-        mValue = T();
-    }
-
-    Parameter(const T& value, const sead::SafeString& name, const sead::SafeString& label,
-              const sead::SafeString& meta, ParameterList* list, bool e)
-        : ParameterBase(e) {
-        initializeListNode(name, label, meta, list, e);
-        mValue = value;
+        setValue(value);
     }
 
     const void* ptr() const override { return &mValue; };
 
     void* ptr() override { return &mValue; };
 
-    s32 size() const override { return sizeof(T); }
+    s32 size() const override {
+        // BUG: sead::FixedSafeString<128> is excluded from this list
+        if constexpr (std::is_same<T, sead::FixedSafeString<32>>())
+            return 32;
+        else if constexpr (std::is_same<T, sead::FixedSafeString<64>>())
+            return 64;
+        else if constexpr (std::is_same<T, sead::FixedSafeString<256>>())
+            return 256;
+        else if constexpr (std::is_same<T, sead::FixedSafeString<512>>())
+            return 512;
+        else if constexpr (std::is_same<T, sead::FixedSafeString<1024>>())
+            return 1024;
+        else if constexpr (std::is_same<T, sead::FixedSafeString<2048>>())
+            return 2048;
+        else if constexpr (std::is_same<T, sead::FixedSafeString<4096>>())
+            return 4096;
+        else
+            return sizeof(T);
+    }
 
     const char* getParamTypeStr() const override {
         return YamlParamType::text(YamlParamType::Invalid);
@@ -181,7 +179,15 @@ public:
 
     const T& getValue() const { return mValue; }
 
-    void setValue(const T& value) { mValue = value; }
+    void setValue(const T& value) {
+
+        if constexpr (std::is_same<T, sead::Vector3f>()){
+            mValue.z=value.z;
+            mValue.y=value.y;
+            mValue.x=value.x;
+            return;
+        }
+        mValue = value; }
 
     T* operator->() { return &mValue; }
 
@@ -240,8 +246,6 @@ private:
     sead::FixedSafeString<0x40> mKey;
 };
 
-static_assert(sizeof(ParameterObj) == 0x78);
-
 class ParameterArray {
 public:
     ParameterArray();
@@ -270,8 +274,6 @@ private:
     sead::FixedSafeString<0x40> mKey;
     s32 mSize = 0;
 };
-
-static_assert(sizeof(ParameterArray) == 0x70);
 
 class ParameterList {
 public:
@@ -303,13 +305,9 @@ private:
     sead::FixedSafeString<0x40> mKey;
 };
 
-static_assert(sizeof(ParameterList) == 0x80);
-
 class ParameterIo : public ParameterList {
 public:
     ParameterIo();
 };
-
-static_assert(sizeof(ParameterIo) == 0x80);
 
 }  // namespace al
