@@ -9,6 +9,7 @@
 
 namespace al {
 
+
 ParameterBase::ParameterBase(const sead::SafeString& name, const sead::SafeString& label,
                              const sead::SafeString& meta, ParameterObj* obj, bool e) {
     initializeListNode(name, label, meta, obj, e);

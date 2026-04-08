@@ -19,8 +19,7 @@ void DirectionParam::initByArg(const ActorInitInfo& initInfo) {
 
     sead::Vector2f coordinate = {sead::Mathf::deg2rad(longitudeDegree),
                                  sead::Mathf::deg2rad(latitudeDegree)};
-    mAglCoordinate = new agl::utl::Parameter<sead::Vector2f>(
-        coordinate, "PlacementArg", "配置情報からのパラメータ", new agl::utl::ParameterObj);
+    mAglCoordinate = new agl::utl::Parameter<sead::Vector2f>(coordinate, "PlacementArg", "配置情報からのパラメータ", new agl::utl::ParameterObj);
     syncToDirection();
 }
 
@@ -54,13 +53,13 @@ void DirectionParam::syncFromDirection(const sead::Vector3f& direction) {
 
 void DirectionParam::initializeDir(ParameterObj* parameterObj, const char* name,
                                    const char* label) {
-    mAlCoordinate = new ParameterV2f(sead::Vector2f::zero, name, label, "", parameterObj, true);
+    mAlCoordinate = new ParameterV2f(sead::Vector2f::zero,parameterObj, name, label, "", true);
     syncToDirection();
 }
 
 void DirectionParam::initializeDir(const sead::Vector3f& direction, ParameterObj* parameterObj,
                                    const char* name, const char* label) {
-    mAlCoordinate = new ParameterV2f(sead::Vector2f::zero, name, label, "", parameterObj, true);
+    mAlCoordinate = new ParameterV2f(sead::Vector2f::zero,parameterObj, name, label, "", true);
     syncFromDirection(direction);
 }
 

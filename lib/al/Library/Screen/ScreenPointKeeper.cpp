@@ -25,7 +25,6 @@ ScreenPointKeeper::ScreenPointKeeper() {
 
     mAddTargetNum =
         new ParameterS32(0, "AddTargetNum", "AddTargetNum", "Min=0, Max=10", mOptions, true);
-
     mParameterIo->addObj(mOptions, "Options");
     mParameterIo->addArray(mTargets, "Targets");
 }

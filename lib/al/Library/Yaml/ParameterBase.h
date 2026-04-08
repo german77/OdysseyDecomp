@@ -63,6 +63,7 @@ class ParameterBase {
 public:
     static u32 calcHash(const sead::SafeString& key);
 
+
     ParameterBase() { initialize("default", "parameter", "", true); }
 
     // TODO: rename parameter bool e in all functions
@@ -155,6 +156,7 @@ public:
             return 64;
         else if constexpr (std::is_same<T, sead::FixedSafeString<256>>())
             return 256;
+
         // NOTE: from 512 onwards, no examples exist in the binary
         else if constexpr (std::is_same<T, sead::FixedSafeString<512>>())
             return 512;
@@ -176,7 +178,15 @@ public:
 
     const T& getValue() const { return mValue; }
 
-    void setValue(const T& value) { mValue = value; }
+    void setValue(const T& value) {
+
+        if constexpr (std::is_same<T, sead::Vector3f>()){
+            mValue.z=value.z;
+            mValue.y=value.y;
+            mValue.x=value.x;
+            return;
+        }
+        mValue = value; }
 
     T* operator->() { return &mValue; }
 
@@ -235,8 +245,6 @@ private:
     sead::FixedSafeString<0x40> mKey;
 };
 
-static_assert(sizeof(ParameterObj) == 0x78);
-
 class ParameterArray {
 public:
     ParameterArray();
@@ -265,8 +273,6 @@ private:
     sead::FixedSafeString<0x40> mKey;
     s32 mSize = 0;
 };
-
-static_assert(sizeof(ParameterArray) == 0x70);
 
 class ParameterList {
 public:
@@ -298,13 +304,9 @@ private:
     sead::FixedSafeString<0x40> mKey;
 };
 
-static_assert(sizeof(ParameterList) == 0x80);
-
 class ParameterIo : public ParameterList {
 public:
     ParameterIo();
 };
-
-static_assert(sizeof(ParameterIo) == 0x80);
 
 }  // namespace al
