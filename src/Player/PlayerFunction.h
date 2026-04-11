@@ -20,6 +20,7 @@ u32 getPlayerInputPort(const al::LiveActor*);
 const sead::Matrix34f& getPlayerViewMtx(const al::LiveActor*);
 bool tryActivateAmiiboPreventDamage(const al::LiveActor*);
 bool isPlayerDeadStatus(const al::LiveActor* actor);
+bool isPlayerDeadDrawForward(const al::LiveActor* actor);
 void syncBodyHairVisibility(al::LiveActor*, al::LiveActor*);
 void syncMarioFaceBeardVisibility(al::LiveActor*, al::LiveActor*);
 void syncMarioHeadStrapVisibility(al::LiveActor*);

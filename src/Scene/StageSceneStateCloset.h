@@ -12,4 +12,5 @@ class StageSceneStateCloset : public al::HostStateBase<al::Scene> {
 public:
     static StageSceneStateCloset* tryCreate(al::Scene*, const al::ActorInitInfo&,
                                             const al::LayoutInitInfo&);
+    bool isDrawViewRenderer() const;
 };

@@ -17,4 +17,5 @@ public:
                                                   StageSceneLayout*,
                                                   SceneAudioSystemPauseController*,
                                                   StageSceneStateSnapShot*);
+    bool isPause() const;
 };

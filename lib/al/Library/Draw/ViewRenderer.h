@@ -40,7 +40,6 @@ public:
     void startForwardPlayerScreenFader(s32, s32, f32);
     void endForwardPlayerScreenFader(s32);
 
-private:
     GraphicsSystemInfo* mGraphicsSystemInfo;
     ExecuteDirector* mExecuteDirector;
     EffectSystem* mEffectSystem;

@@ -13,6 +13,7 @@ class StageSceneStateGetShineGrand : public al::HostStateBase<al::Scene> {
 public:
     StageSceneStateGetShineGrand(const char*, al::Scene*, const al::SceneInitInfo&,
                                  const al::ActorInitInfo&, const al::LayoutInitInfo&);
+    bool isDrawChromakey() const;
 
 private:
     u8 _padding[0x98];

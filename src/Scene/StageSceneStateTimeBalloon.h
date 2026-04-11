@@ -22,6 +22,11 @@ class StageSceneStateTimeBalloon : public al::HostStateBase<StageScene> {
 public:
     StageSceneStateTimeBalloon(StageScene*, TimeBalloonDirector*, TimeBalloonSequenceInfo*, GameDataHolder*, StageSceneLayout*, al::ActorInitInfo const&, TimeBalloonNpc*, bool, MiniGameMenu*, StageSceneStateStageMap*, StageSceneStateWarp*);
     virtual bool isAutoStart() const;
+    virtual bool isOpenMapNerve() const;
+    virtual bool isMissNerve() const;
+    virtual bool isDemoNerve() const;
+    virtual bool isPauseNerve() const;
+    virtual bool isTimeBalloonNerve() const;
 
 private:
     u8 _padding[0x138];

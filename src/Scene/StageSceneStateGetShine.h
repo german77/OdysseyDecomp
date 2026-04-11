@@ -25,6 +25,7 @@ public:
                             al::LiveActor*, al::LiveActor*, GameDataHolder*, ProjectItemDirector*);
     void setLifeRecoverState(StageSceneStateRecoverLife*);
     void setShopShine10();
+    bool isDrawForward() const;
 
 private:
     u8 _padding[0x108];

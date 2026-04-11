@@ -15,6 +15,7 @@ class StageSceneStateShop : public al::HostStateBase<StageScene> {
 public:
     StageSceneStateShop(const char*, StageScene*, StageSceneLayout*);
     void initAndSetting(al::DeriveActorGroup<ShoppingWatcher>*, const al::ActorInitInfo&);
+    bool isDrawViewRenderer() const;
 
 private:
     unsigned char _padding[0x50 - 0x20];

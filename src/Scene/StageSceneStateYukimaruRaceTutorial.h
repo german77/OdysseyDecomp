@@ -17,4 +17,5 @@ public:
                                                           const al::LayoutInitInfo&,
                                                           const GameDataHolder*,
                                                           StageSceneStateSnapShot*);
+    bool isPause() const;
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <basis/seadTypes.h>
+#include <common/aglShaderEnum.h>
 
 // TODO: Someone should add this to nnheaders!
 namespace nn::g3d {
@@ -12,11 +13,18 @@ namespace sead {
 class GraphicsContext;
 }
 
+namespace agl {
+class DrawContext;
+class SamplerLocation;
+}  // namespace agl
+
 namespace al {
 class Scene;
 class LiveActor;
 
 f32 getDepthClearValue();
+void tryChangeShaderMode(agl::DrawContext* drawContext, agl::ShaderMode mode);
+const agl::SamplerLocation& getSamplerLocationHackStart();
 
 void setDepthFuncNearDraw(sead::GraphicsContext* context);
 void setDepthFuncFarDraw(sead::GraphicsContext* context);

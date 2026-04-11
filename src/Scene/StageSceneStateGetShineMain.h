@@ -25,6 +25,7 @@ public:
                                 const al::LayoutInitInfo&, al::LiveActor*,
                                 ScenarioStartCameraHolder*, GameDataHolder*);
     void setScenarioCameraState(StageSceneStateScenarioCamera*);
+    bool isDrawChromakey() const;
 
     al::LiveActor* getDemoShineActor() const { return mDemoShineActor; }
 

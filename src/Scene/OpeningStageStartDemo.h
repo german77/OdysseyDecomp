@@ -7,4 +7,6 @@ public:
     virtual void startDemo();
     virtual void endDemo();
     virtual bool isEnableStart() const;
+
+    bool isDrawLayout() const;
 };

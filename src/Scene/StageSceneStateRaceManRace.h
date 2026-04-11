@@ -24,4 +24,5 @@ public:
               StageSceneStateCollectionList*, StageSceneStateGetLifeMaxUpItem*,
               StageSceneStateWarp*, const al::ActorInitInfo&, SceneAudioSystemPauseController*,
               StageSceneStateSnapShot*);
+    bool isPause() const;
 };

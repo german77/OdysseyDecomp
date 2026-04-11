@@ -224,8 +224,7 @@ private:
     MiniGameMenu* mMiniGameMenu = nullptr;
     bool mIsExistShineOrCoinCollectInStage = false;
     char _359[7];
-    bool _360 = false;
-    void* _368 = nullptr;
+    void* _360 = nullptr;
     MapLayout* mMapLayout = nullptr;
     al::SimpleLayoutAppearWaitEnd* mPauseMenu = nullptr;
     al::DeriveActorGroup<ShoppingWatcher>* mShoppingWatcherGroup = nullptr;
@@ -234,6 +233,7 @@ private:
     TimeBalloonNpc* mTimeBalloonNpc = nullptr;
     ProjectItemDirector* mProjectItemDirector = nullptr;
     Pyramid* mPyramid = nullptr;
+    void* _3a8 = nullptr;
     OpeningStageStartDemo* mOpeningStageStartDemo = nullptr;
     al::Nerve* mCurrentNerve = nullptr;
     SceneAudioSystemPauseController* mAudioSystemPauseController = nullptr;
@@ -246,6 +246,8 @@ private:
     TimeBalloonDirector* mTimeBalloonDirector = nullptr;
     TimeBalloonSequenceInfo* mTimeBalloonSequenceInfo = nullptr;
     void* _408 = nullptr;
+    void* _410 = nullptr;
+    void* _418 = nullptr;
     al::CameraTicket* mCheckpointWarpArriveCamera = nullptr;
     sead::Vector3f mCheckpointWarpTargetPos = {0.0f, 0.0f, 0.0f};
     sead::Vector3f mCheckpointWarpParabolicPathPos = {0.0f, 0.0f, 0.0f};
@@ -254,12 +256,10 @@ private:
     al::ParabolicPath* mCheckpointWarpParabolicPath = nullptr;
     al::LiveActor* mDemoShine = nullptr;
     al::LiveActor* mDemoDotShine = nullptr;
-    void* _460 = nullptr;
     CollectBgmPlayer* mCollectBgmPlayer = nullptr;
     CollectBgmRegister* mCollectBgmRegister = nullptr;
     BgmAnimeSyncDirector* mBgmAnimeSyncDirector = nullptr;
     al::DemoSyncedEventKeeper* mDemoSyncedEventKeeper = nullptr;
-    const char* mActiveDemoName = nullptr;
     s32 mDemoSynchronizerTimer = 0;
     bool _494 = false;
     bool mIsUpdateKitAndGraphics = false;
