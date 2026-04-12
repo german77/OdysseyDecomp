@@ -14,4 +14,5 @@ class StageSceneStateCollectBgm : public al::HostStateBase<al::Scene> {
 public:
     static StageSceneStateCollectBgm* tryCreate(al::Scene*, const al::ActorInitInfo&,
                                                 const al::LayoutInitInfo&, CollectBgmPlayer*);
+    bool tryOpenCollectBgm();
 };

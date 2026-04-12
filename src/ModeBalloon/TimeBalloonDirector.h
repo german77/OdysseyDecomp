@@ -20,5 +20,7 @@ public:
 
     void init(const al::ActorInitInfo&, TimeBalloonNpc*, TimeBalloonSequenceInfo*, bool, bool,
               StageSceneLayout*);
+    void requestDownload();
+    void execute();
     al::LiveActor* getAccessor() const;
 };

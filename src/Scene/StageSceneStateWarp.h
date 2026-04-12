@@ -15,6 +15,8 @@ public:
     StageSceneStateWarp(const char*, al::Scene*, al::WipeSimple*, GameDataHolder*,
                         LocationNameCtrl*);
     void init();
+    void tryValidateEndEntranceCamera();
+    bool tryStartWarp();
 
 private:
     unsigned char _padding[0x48 - 0x20];
