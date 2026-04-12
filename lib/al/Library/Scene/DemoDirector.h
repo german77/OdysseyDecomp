@@ -53,13 +53,19 @@ public:
     virtual bool startDemo(const char*);
     virtual void endDemo(const char*);
 
+    void* get_30() const { return _30; }
+
 private:
     const char* mActiveDemoName;
     s32 _10;
     LiveActor** mActorList;
     s32 mActorListCount;
     s32 mActorListSize;
-    void* filler[5];
+    void* _28;
+    void* _30;
+    void* _38;
+    void* _40;
+    void* _48;
 };
 
 static_assert(sizeof(DemoDirector) == 0x50);

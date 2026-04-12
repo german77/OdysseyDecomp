@@ -12,6 +12,7 @@ public:
     BgmAnimeSyncDirector();
 
     void initAfterPlacementSceneObj(const al::ActorInitInfo&) override;
+    void update();
     s32 calcArchiveAndActionIndex(const char*, const char*);
     f32 calcNecessaryMeasuresNumScale(s32);
 

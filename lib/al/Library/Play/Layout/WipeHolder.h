@@ -24,12 +24,18 @@ public:
     bool isOpenEnd() const;
     bool isCloseWipe(const char* name) const;
 
+    bool get_18() const { return _18; }
+
 private:
     s32 mMaxWipeCount;
     s32 mWipeCount;
     void* _8;
     WipeSimple** mWipes;
-    void* filler[4];
+    bool _18;
+    char _19[7];
+    void* _20;
+    void* _28;
+    void* _30;
 };
 }  // namespace al
 

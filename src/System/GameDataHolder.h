@@ -221,6 +221,8 @@ public:
 
     s64 getPlayTimeAcrossFile() const { return mPlayTimeAcrossFile; }
 
+    void addPlayTimeAcrossFile() { ++mPlayTimeAcrossFile; }
+
     TemporaryScenarioCameraHolder* getTemporaryScenarioCameraHolder() const {
         return mTemporaryScenarioCameraHolder;
     }
