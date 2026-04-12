@@ -65,4 +65,7 @@ namespace alSeFunction {
 void stopAllSe(const al::AudioDirector*, u32);
 void startListenerPoser(const al::IUseAudioKeeper*, const char*, s32);
 void endListenerPoser(const al::IUseAudioKeeper*, const char*, s32);
+void startSituationWithAutoEnd(al::AudioDirector*, const char*, s32, s32, s32);
+void startSituation(al::AudioDirector*, const char*, s32);
+void tryStartDefaultAtmosphereSe(const al::IUseAudioKeeper*);
 }  // namespace alSeFunction

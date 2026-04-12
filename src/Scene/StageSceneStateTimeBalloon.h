@@ -20,13 +20,19 @@ class StageSceneStateStageMap;
 
 class StageSceneStateTimeBalloon : public al::HostStateBase<StageScene> {
 public:
-    StageSceneStateTimeBalloon(StageScene*, TimeBalloonDirector*, TimeBalloonSequenceInfo*, GameDataHolder*, StageSceneLayout*, al::ActorInitInfo const&, TimeBalloonNpc*, bool, MiniGameMenu*, StageSceneStateStageMap*, StageSceneStateWarp*);
+    StageSceneStateTimeBalloon(StageScene*, TimeBalloonDirector*, TimeBalloonSequenceInfo*, GameDataHolder*, StageSceneLayout*, const al::ActorInitInfo&, TimeBalloonNpc*, bool, MiniGameMenu*, StageSceneStateStageMap*, StageSceneStateWarp*);
     virtual bool isAutoStart() const;
-    virtual bool isOpenMapNerve() const;
     virtual bool isMissNerve() const;
+    virtual bool isTimeBalloonNerve() const;
+    virtual bool isReturnNervePlay() const;
     virtual bool isDemoNerve() const;
     virtual bool isPauseNerve() const;
-    virtual bool isTimeBalloonNerve() const;
+    virtual bool isDrawForward() const;
+
+    void updateEventFlow();
+    void receiveEvent(const al::EventFlowEventData*);
+    bool judgeQuery(const char*) const;
+    bool isOpenMapNerve() const;
 
 private:
     u8 _padding[0x138];

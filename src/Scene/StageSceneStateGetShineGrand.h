@@ -14,6 +14,7 @@ public:
     StageSceneStateGetShineGrand(const char*, al::Scene*, const al::SceneInitInfo&,
                                  const al::ActorInitInfo&, const al::LayoutInitInfo&);
     bool isDrawChromakey() const;
+    bool isEnableWipeClose() const;
 
 private:
     u8 _padding[0x98];

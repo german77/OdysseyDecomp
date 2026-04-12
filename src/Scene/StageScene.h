@@ -102,7 +102,7 @@ public:
     bool isModeSelectEnd() const;
     bool isNewGame() const;
     bool isChangeLanguage() const;
-    alLanguage getLanguage() const;
+    const char* getLanguage() const;
     bool isEnableSave() const;
     bool isPause() const;
     void drawMain() const override;
