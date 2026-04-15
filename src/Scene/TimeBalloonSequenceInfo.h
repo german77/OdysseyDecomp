@@ -11,6 +11,7 @@ public:
     void setAccessor(al::LiveActor*);
     void addHioNode();
 
+    void enableLayout() { mIsLayoutEnabled = true; }
     void disableLayout() { mIsLayoutEnabled = false; }
 
 private:
