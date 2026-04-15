@@ -18,7 +18,7 @@
 
 #include "Util/PlayerUtil.h"
 #include "Util/SensorMsgFunction.h"
-/*
+
 namespace {
 NERVE_IMPL(FireBrosFireBall, Appear)
 NERVE_IMPL(FireBrosFireBall, Move)
@@ -38,9 +38,9 @@ void FireBrosFireBall::init(const al::ActorInitInfo& init) {
     al::initNerve(this, &NrvFireBrosFireBall.Move, 0);
 }
 
-//Not matching
+// Not matching
 void FireBrosFireBall::shoot(const sead::Vector3f& trans, const sead::Quatf& quat,
-                             const sead::Vector3f& direction, bool isHack, int vall, bool isFast) {
+                             const sead::Vector3f& direction, bool isHack, s32 unknown, bool isFast) {
     mIsHack = isHack;
     if (mIsHack) {
         al::validateHitSensor(this, "AttackHack");
@@ -172,7 +172,7 @@ inline void tryUpdateEffectMaterialCode(al::LiveActor* actor, const char* materi
     al::tryUpdateEffectMaterialCode(actor, materialCode);
 }
 
-//Not matching
+// Not matching
 bool FireBrosFireBall::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
                                   al::HitSensor* self) {
     if (al::isMsgVanish(message) || al::isMsgEnemyAttackFire(message) ||
@@ -270,4 +270,4 @@ void FireBrosFireBall::exeAttach() {
     sead::Matrix34f attachMtx;
     BrosWeaponBase::calcAttachMtx(&attachMtx, getPoseMtx(), getTrans(), getRotation());
     al::updatePoseMtx(this, &attachMtx);
-}*/
+}

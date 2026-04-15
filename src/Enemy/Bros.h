@@ -21,7 +21,7 @@ public:
     void calcAttachMtx(sead::Matrix34f* attachMtx, const sead::Matrix34f* poseMtx,
                        const sead::Vector3f& trans, const sead::Vector3f& rotation);
 
-    virtual u32 getBreakStep() const { return 0; }
+    virtual s32 getBreakStep() const { return 0; }
 
     virtual bool isBreak() const { return false; }
 
