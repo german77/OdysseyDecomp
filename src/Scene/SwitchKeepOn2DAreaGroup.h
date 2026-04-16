@@ -1,13 +1,14 @@
 #pragma once
 
+#include "Library/Area/SwitchKeepOnAreaGroup.h"
 namespace al {
 class AreaObjDirector;
 class PlayerHolder;
 class SwitchAreaGroup;
 }  // namespace al
 
-class SwitchKeepOn2DAreaGroup {
+class SwitchKeepOn2DAreaGroup : public al::SwitchKeepOnAreaGroup{
 public:
-    static al::SwitchAreaGroup* tryCreate(const char*, al::AreaObjDirector*,
+    static SwitchKeepOn2DAreaGroup* tryCreate(const char*, al::AreaObjDirector*,
                                           const al::PlayerHolder*);
 };

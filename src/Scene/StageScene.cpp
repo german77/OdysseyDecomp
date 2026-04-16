@@ -345,8 +345,9 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
             sead::DynamicCast<al::GameFrameworkNx>(Application::instance()->getGameFramework());
         framework->setVBlankWaitInterval(1);
     }
+
     initLayoutKit(initInfo);
-    al::addResourceCategory(sead::SafeString("シーン"), 0x200,
+    al::addResourceCategory("シーン", 0x200,
                             sead::HeapMgr::instance()->getCurrentHeap());
     al::SceneObjHolder* sceneObjHolder = SceneObjFactory::createSceneObjHolder();
     initSceneObjHolder(sceneObjHolder);
@@ -378,16 +379,15 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     al::tryGetPlacementInfoAndCount(&placementInfos, &placementInfoCount,
                                     al::getStageInfoMap(this, 0), "ObjectList");
     bool foundMirror = false;
-    // This if doesn't seem to be compiler-generated
-    if (placementInfoCount >= 1) {
-        for (s32 i = 0; i < placementInfoCount; i++) {
-            al::PlacementInfo placementInfo;
-            al::getPlacementInfoByIndex(&placementInfo, placementInfos, i);
-            foundMirror |= al::isObjectName(placementInfo, "Mirror");
-            if (foundMirror)
-                break;
+    for (s32 i = 0; i < placementInfoCount; i++) {
+        al::PlacementInfo placementInfo;
+        al::getPlacementInfoByIndex(&placementInfo, placementInfos, i);
+        if (al::isObjectName(placementInfo, "Mirror")) {
+            foundMirror = true;
+            break;
         }
     }
+
     graphicsInitArg.atmosScatterViewNum = foundMirror;
     graphicsInitArg._3c = 2;
     graphicsInitArg._10 = 2 << (s32)foundMirror;
@@ -768,22 +768,17 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
                                      playerPlacementInfo.getZoneIter());
         }
 
-        struct {
-            sead::Vector3f trans;
-            sead::Quatf quat;
-        } playerStartInfo;
-
-        playerStartInfo.trans = sead::Vector3f::zero;
-        playerStartInfo.quat = {0.0, 0.0f, 0.0f, 1.0f};
+        sead::Vector3f trans = sead::Vector3f::zero;
+        sead::Quatf quat = sead::Quatf::unit;
         if (playerRestartInfo) {
-            playerStartInfo.trans = playerRestartInfo->trans;
-            playerStartInfo.quat = playerRestartInfo->quat;
+            trans = playerRestartInfo->trans;
+            quat = playerRestartInfo->quat;
         } else if (restartPlacementInfo.getPlacementIter().isValid()) {
-            al::getTrans(&playerStartInfo.trans, restartPlacementInfo);
-            al::getQuat(&playerStartInfo.quat, restartPlacementInfo);
+            al::getTrans(&trans, restartPlacementInfo);
+            al::getQuat(&quat, restartPlacementInfo);
         } else {
-            al::getTrans(&playerStartInfo.trans, playerPlacementInfo);
-            al::getQuat(&playerStartInfo.quat, playerPlacementInfo);
+            al::getTrans(&trans, playerPlacementInfo);
+            al::getQuat(&quat, playerPlacementInfo);
         }
 
         al::ActorInitInfo playerActorInitInfo;
@@ -795,8 +790,8 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
         playerInitInfo.controllerPort = al::getMainControllerPort();
         playerInitInfo.costumeName = mCostumeName.cstr();
         playerInitInfo.capTypeName = mCapTypeName.cstr();
-        playerInitInfo.trans = playerStartInfo.trans;
-        playerInitInfo.quat = playerStartInfo.quat;
+        playerInitInfo.trans = trans;
+        playerInitInfo.quat = quat;
         playerInitInfo._44 = foundCactus;
         playerInitInfo._45 = (mStateCloset != nullptr);
 
@@ -809,6 +804,7 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
         al::getObjectName(&objectName, playerActorInitInfo);
         const char* className = nullptr;
         al::getClassName(&className, playerActorInitInfo);
+
         PlayerActorBase* player = playerFactory.createActor(playerActorInitInfo, className);
         player->initPlayer(playerActorInitInfo, playerInitInfo);
 
@@ -816,10 +812,8 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
             al::createPadRumbleKeeper(player, player->getPortNo());
         alPlayerFunction::registerPlayer(player, padRumbleKeeper);
 
-        auto* cameraTarget = new PlayerCameraTarget(player);
-        al::setCameraTarget(this, cameraTarget);
-        auto* cameraInput = new ProjectCameraInput(player);
-        al::setCameraInput(this, cameraInput);
+        al::setCameraTarget(this, new PlayerCameraTarget(player));
+        al::setCameraInput(this, new ProjectCameraInput(player));
 
         if (al::isObjectName(playerActorInitInfo, "PlayerActorHakoniwa"))
             GameDataFunction::setStageHakoniwa(mGameDataHolder);
@@ -924,7 +918,7 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     mPlacementInfo = new al::PlacementInfo();
     const al::IUseAudioKeeper* bgmAudioKeeper = static_cast<const al::IUseAudioKeeper*>(this);
 
-    if (!al::isPlayingBgm(bgmAudioKeeper, "CollectBgm"))
+    if (!al::isPlayingBgm(this, "CollectBgm"))
         mCollectBgmPlayer->reset();
 
     mCollectBgmRegister =
@@ -968,23 +962,17 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     mWipeSimple = new al::WipeSimple("ワープ用ワイプ", "WipeCircle", layoutInitInfo, nullptr);
 
     if (!mWipeHolder) {
-        auto* wipeHolder = new al::WipeHolder(6);
-        mWipeHolder = wipeHolder;
-        auto* wipeCircle = new al::WipeSimple("丸ワイプ", "WipeCircle", layoutInitInfo, nullptr);
-        wipeHolder->registerWipe("WipeCircle", wipeCircle);
-        auto* fadeBlack = new al::WipeSimple("黒フェード", "FadeBlack", layoutInitInfo, nullptr);
-        wipeHolder->registerWipe("FadeBlack", fadeBlack);
-        auto* fadeWhite = new al::WipeSimple("白フェード", "FadeWhite", layoutInitInfo, nullptr);
-        wipeHolder->registerWipe("FadeWhite", fadeWhite);
-        auto* wipeMiss = new al::WipeSimple("ミスワイプ", "WipeMiss", layoutInitInfo, nullptr);
-        wipeHolder->registerWipe("WipeMiss", wipeMiss);
-        auto* wipeSkip = new al::WipeSimple("スキップワイプ", "WipeSkip", layoutInitInfo, nullptr);
-        wipeHolder->registerWipe("WipeSkip", wipeSkip);
+        mWipeHolder = new al::WipeHolder(6);
+        mWipeHolder->registerWipe("WipeCircle", new al::WipeSimple("ワープ用ワイプ", "WipeCircle", layoutInitInfo, nullptr));
+        mWipeHolder->registerWipe("FadeBlack", new al::WipeSimple("黒フェード", "FadeBlack", layoutInitInfo, nullptr));
+        mWipeHolder->registerWipe("FadeWhite", new al::WipeSimple("白フェード", "FadeWhite", layoutInitInfo, nullptr));
+        mWipeHolder->registerWipe("WipeMiss", new al::WipeSimple("ミスワイプ", "WipeMiss", layoutInitInfo, nullptr));
+        mWipeHolder->registerWipe("WipeSkip", new al::WipeSimple("スキップワイプ", "WipeSkip", layoutInitInfo, nullptr));
     }
 
     al::createSceneObj<WipeHolderRequester>(this);
 
-    s32 currentWorldId = GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(this));
+    s32 currentWorldId = GameDataFunction::getCurrentWorldId(this);
     mMapLayout = new MapLayout(layoutInitInfo, al::getScenePlayerHolder(this), currentWorldId);
     al::setSceneObj(this, mMapLayout, SceneObjID_MapLayout);
 
@@ -1017,13 +1005,12 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
                                                  mPlayGuideSkip, mAudioSystemPauseController,
                                                  mDemoSyncedEventKeeper);
 
-    al::CameraTicket* checkpointWarpArriveCamera = al::initDemoProgramableCamera(
-        this, actorInitInfo, "CheckpointWarpArriveCamera", &mCheckpointWarpTargetPos,
-        &mCheckpointWarpParabolicPathPos, nullptr);
-    mStateCheckpointWarp = new StageSceneStateCheckpointWarp(
-        "中間ワープ", this, mCheckpointWarpCapActor, mGameDataHolder, checkpointWarpArriveCamera,
-        &mCheckpointWarpTargetPos, &mCheckpointWarpParabolicPathPos);
 
+    mStateCheckpointWarp = new StageSceneStateCheckpointWarp(
+        "チェックポイントワープ到着デモ", this, mCheckpointWarpCapActor, mGameDataHolder,
+         al::initDemoProgramableCamera(
+        this, actorInitInfo, "CheckpointWarpArriveCamera", &mCheckpointWarpTargetPos,
+        &mCheckpointWarpParabolicPathPos, nullptr), &mCheckpointWarpTargetPos, &mCheckpointWarpParabolicPathPos);
     mStateCarryMeat = new StageSceneStateCarryMeat("肉運び", this);
 
     mStagePauseMenu = new StageSceneStatePauseMenu(
@@ -1113,39 +1100,42 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     al::AreaObjDirector* switchAreaObjDir = al::getSceneAreaObjDirector(this);
     al::PlayerHolder* switchPlayerHolder = al::getScenePlayerHolder(this);
 
-    auto* switchOnPlayerOnGround = SwitchOnPlayerOnGroundAreaGroup::tryCreate(
-        "SwitchOnPlayerOnGroundArea", switchAreaObjDir, switchPlayerHolder);
+    SwitchOnPlayerOnGroundAreaGroup* switchOnPlayerOnGround =
+        SwitchOnPlayerOnGroundAreaGroup::tryCreate("SwitchOnPlayerOnGroundArea", switchAreaObjDir,
+                                                   switchPlayerHolder);
     if (switchOnPlayerOnGround)
-        al::registerSwitchOnAreaGroup(this, (al::SwitchOnAreaGroup*)switchOnPlayerOnGround);
+        al::registerSwitchOnAreaGroup(this, switchOnPlayerOnGround);
 
-    auto* switchOn2D =
+    SwitchOn2DAreaGroup* switchOn2D =
         SwitchOn2DAreaGroup::tryCreate("SwitchOn2DArea", switchAreaObjDir, switchPlayerHolder);
     if (switchOn2D)
-        al::registerSwitchOnAreaGroup(this, (al::SwitchOnAreaGroup*)switchOn2D);
+        al::registerSwitchOnAreaGroup(this, switchOn2D);
 
-    auto* switchKeepOn2D = SwitchKeepOn2DAreaGroup::tryCreate("SwitchKeepOn2DArea",
-                                                              switchAreaObjDir, switchPlayerHolder);
+    SwitchKeepOn2DAreaGroup* switchKeepOn2D = SwitchKeepOn2DAreaGroup::tryCreate(
+        "SwitchKeepOn2DArea", switchAreaObjDir, switchPlayerHolder);
     if (switchKeepOn2D)
-        al::registerSwitchKeepOnAreaGroup(this, (al::SwitchKeepOnAreaGroup*)switchKeepOn2D);
+        al::registerSwitchKeepOnAreaGroup(this, switchKeepOn2D);
 
-    auto* switchKeepOn2DExcept = SwitchKeepOn2DExceptDokanInAreaGroup::tryCreate(
-        "SwitchKeepOn2DExceptDokanInArea", switchAreaObjDir, switchPlayerHolder);
+    SwitchKeepOn2DExceptDokanInAreaGroup* switchKeepOn2DExcept =
+        SwitchKeepOn2DExceptDokanInAreaGroup::tryCreate("SwitchKeepOn2DExceptDokanInArea",
+                                                        switchAreaObjDir, switchPlayerHolder);
     if (switchKeepOn2DExcept)
-        al::registerSwitchKeepOnAreaGroup(this, (al::SwitchKeepOnAreaGroup*)switchKeepOn2DExcept);
+        al::registerSwitchKeepOnAreaGroup(this, switchKeepOn2DExcept);
 
-    auto* switchKeepOnWater = SwitchKeepOnPlayerInWaterAreaGroup::tryCreate(
-        "SwitchKeepOnPlayerInWaterArea", switchAreaObjDir, switchPlayerHolder);
+    SwitchKeepOnPlayerInWaterAreaGroup* switchKeepOnWater =
+        SwitchKeepOnPlayerInWaterAreaGroup::tryCreate("SwitchKeepOnPlayerInWaterArea",
+                                                      switchAreaObjDir, switchPlayerHolder);
     if (switchKeepOnWater)
-        al::registerSwitchKeepOnAreaGroup(this, (al::SwitchKeepOnAreaGroup*)switchKeepOnWater);
+        al::registerSwitchKeepOnAreaGroup(this, switchKeepOnWater);
 
-    auto* switchKeepOnIgnoreOff = SwitchKeepOnIgnoreOffAreaTarget::tryCreate(
-        "SwitchKeepOnIgnoreOffAreaTarget", switchAreaObjDir);
+    SwitchKeepOnIgnoreOffAreaTarget* switchKeepOnIgnoreOff =
+        SwitchKeepOnIgnoreOffAreaTarget::tryCreate("SwitchKeepOnIgnoreOffAreaTarget",
+                                                   switchAreaObjDir);
     if (switchKeepOnIgnoreOff)
-        al::registerSwitchKeepOnAreaGroup(this, (al::SwitchKeepOnAreaGroup*)switchKeepOnIgnoreOff);
+        al::registerSwitchKeepOnAreaGroup(this, switchKeepOnIgnoreOff);
 
     rs::applyGameConfigData(this, mGameDataHolder->getGameConfigData());
-    bool isSeparatePlay = rs::isSeparatePlay(this);
-    rs::setSeparatePlayMode(this, isSeparatePlay);
+    rs::setSeparatePlayMode(this, rs::isSeparatePlay(this));
 
     al::Scene::endInit(actorInitInfo);
 
@@ -1240,12 +1230,12 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
 
     if (GameDataFunction::isWarpCheckpoint(mGameDataHolder)) {
         al::setNerve(this, &NrvStageScene.ArriveAtCheckpoint);
-    } else if (GameDataFunction::isPlayDemoWorldWarpHole(GameDataHolderAccessor(this))) {
+    } else if (GameDataFunction::isPlayDemoWorldWarpHole(this)) {
         al::setNerve(this, &NrvStageScene.AppearFromWorldWarpHole);
     } else {
-        s32 currentWorldIdNoDevelop =
-            GameDataFunction::getCurrentWorldIdNoDevelop(GameDataHolderAccessor(this));
-        if (!GameDataFunction::isUnlockedWorld(mGameDataHolder, currentWorldIdNoDevelop)) {
+        GameDataHolder* holder = mGameDataHolder;
+        s32 currentWorldIdNoDevelop = GameDataFunction::getCurrentWorldIdNoDevelop(holder);
+        if (!GameDataFunction::isUnlockedWorld(holder, currentWorldIdNoDevelop)) {
             al::setNerve(this, &NrvStageScene.StartStageBgm);
         } else if (hasOpeningDemo) {
             al::setNerve(this, &NrvStageScene.DemoStageStartOpening);
@@ -1254,7 +1244,7 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
             al::setNerve(this, &NrvStageScene.DemoWorldIntroCameraBeforeAppearElectricDemo);
         } else if (mOpeningStageStartDemo && mOpeningStageStartDemo->isEnableStart()) {
             al::setNerve(this, &NrvStageScene.DemoStageStart);
-        } else if (GameDataFunction::isPlayDemoWorldWarp(GameDataHolderAccessor(this)) ||
+        } else if (GameDataFunction::isPlayDemoWorldWarp(this) ||
                    mGameDataHolder->getGameDataFile()->getPlayDemoWorldWarpState() == 2) {
             rs::changeDemoCommonProc(this, mProjectItemDirector);
             al::setNerve(this, &NrvStageScene.DemoWorldIntroCamera);
@@ -1263,14 +1253,13 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
         } else if (mStateScenarioCamera->tryStart()) {
             al::resetRequestCaptureScreenCover(this);
             al::setNerve(this, &NrvStageScene.DemoScenarioCamera);
-        } else if (GameDataFunction::isRaceStartYukimaru(GameDataHolderAccessor(this))) {
+        } else if (GameDataFunction::isRaceStartYukimaru(this)) {
             al::setNerve(this, &NrvStageScene.RaceYukimaru);
-        } else if (GameDataFunction::isRaceStartYukimaruTutorial(GameDataHolderAccessor(this))) {
+        } else if (GameDataFunction::isRaceStartYukimaruTutorial(this)) {
             al::setNerve(this, &NrvStageScene.RaceYukimaruTutorial);
         } else if (mStateRaceManRace) {
             al::setNerve(this, &NrvStageScene.RaceManRace);
-        } else if (GameDataFunction::isPlayDemoPlayerDownForBattleKoopaAfter(
-                       GameDataHolderAccessor(this))) {
+        } else if (GameDataFunction::isPlayDemoPlayerDownForBattleKoopaAfter(this)) {
             al::setNerve(this, &NrvStageScene.DemoPlayerDown);
             GameDataFunction::disablePlayDemoPlayerDownForBattleKoopaAfter(
                 GameDataHolderWriter(this));
@@ -1297,27 +1286,18 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     if (mPyramid) {
         if (rs::isInvalidChangeStage(mPyramid)) {
             mPyramid->resetAtCloseAndFly();
+        } else if (mScenarioNo == 2 && al::isNerve(this, &NrvStageScene.DemoReturnToHome)) {
+            mPyramid->resetAtOpenAndGround();
+        } else if (mScenarioNo < 2 || (mScenarioNo & ~1) == 8) {
+            s32 activeQuestNo = rs::getActiveQuestNo(this);
+            if (activeQuestNo >= 2)
+                mPyramid->resetAtOpenAndGround();
+            else
+                mPyramid->resetAtCloseAndGround();
         } else {
-            s32 scenarioNo = mScenarioNo;
-            if (scenarioNo == 2) {
-                if (al::isNerve(this, &NrvStageScene.DemoReturnToHome)) {
-                    mPyramid->resetAtOpenAndGround();
-                    goto afterPyramidReset;
-                }
-                scenarioNo = mScenarioNo;
-            }
-            if (scenarioNo < 2 || (scenarioNo & ~1) == 8) {
-                s32 activeQuestNo = rs::getActiveQuestNo(this);
-                if (activeQuestNo < 2)
-                    mPyramid->resetAtCloseAndGround();
-                else
-                    mPyramid->resetAtOpenAndGround();
-            } else {
-                mPyramid->resetAtOpenAndFly();
-            }
+            mPyramid->resetAtOpenAndFly();
         }
     }
-afterPyramidReset:
 
     if (mTimeBalloonNpc && mStateTimeBalloon->isAutoStart())
         al::setNerve(this, &NrvStageScene.TimeBalloon);
@@ -1340,9 +1320,10 @@ afterPyramidReset:
         mIsUpdateKitAndGraphics = true;
     rs::setShopStatusNone(mDemoShine);
 
+    OpeningStageStartDemo* openingDemo = mOpeningStageStartDemo;
     if (al::isNerve(this, &NrvStageScene.DemoStageStart) ||
         al::isNerve(this, &NrvStageScene.DemoStageStartOpening)) {
-        ((OpeningStageStartDemo*)mOpeningStageStartDemo)->startDemo();
+        openingDemo->startDemo();
     } else if (al::isNerve(this, &NrvStageScene.DemoStageStartCapManHeroTalk)) {
         CapManHeroDemoUtil::startTalkDemoStageStart(this);
     } else if (al::isNerve(this, &NrvStageScene.DemoCapManHeroTalkMoonRock)) {

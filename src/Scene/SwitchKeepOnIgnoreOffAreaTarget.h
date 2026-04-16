@@ -1,11 +1,13 @@
 #pragma once
 
+#include "Library/Area/SwitchKeepOnAreaGroup.h"
+
 namespace al {
 class AreaObjDirector;
 class SwitchAreaGroup;
 }  // namespace al
 
-class SwitchKeepOnIgnoreOffAreaTarget {
+class SwitchKeepOnIgnoreOffAreaTarget : public al::SwitchKeepOnAreaGroup {
 public:
-    static al::SwitchAreaGroup* tryCreate(const char*, al::AreaObjDirector*);
+    static SwitchKeepOnIgnoreOffAreaTarget* tryCreate(const char*, al::AreaObjDirector*);
 };

@@ -20,7 +20,7 @@ public:
         getEntryIndex(&creationFunc, className);
         if (!creationFunc)
             return nullptr;
-        const char* displayName = nullptr;
+        const char* displayName;
         al::getDisplayName(&displayName, initInfo);
         return creationFunc(displayName);
     }
