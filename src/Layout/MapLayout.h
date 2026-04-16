@@ -16,6 +16,7 @@ class PlayerHolder;
 class MapLayout : public al::LayoutActor, public al::ISceneObj {
 public:
     MapLayout(const al::LayoutInitInfo&, const al::PlayerHolder*, s32);
+    void end();
 
 private:
     u8 _padding[0x160];

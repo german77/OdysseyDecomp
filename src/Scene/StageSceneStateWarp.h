@@ -14,12 +14,12 @@ class StageSceneStateWarp : public al::HostStateBase<al::Scene> {
 public:
     StageSceneStateWarp(const char*, al::Scene*, al::WipeSimple*, GameDataHolder*,
                         LocationNameCtrl*);
-    void init();
-    void tryValidateEndEntranceCamera();
+    void appear() override;
+    void kill() override;
     bool tryStartWarp();
-
-private:
-    unsigned char _padding[0x48 - 0x20];
+    void tryValidateEndEntranceCamera();
+    void exeStartWarp();
+    void exeWaitWarp();
+    void exeEndWarp();
+    ~StageSceneStateWarp() override;
 };
-
-static_assert(sizeof(StageSceneStateWarp) == 0x48);

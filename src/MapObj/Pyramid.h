@@ -8,4 +8,6 @@ public:
     void resetAtOpenAndGround();
     void resetAtCloseAndGround();
     void resetAtOpenAndFly();
+    void tryStartRiseDemo();
+    bool isDemoPlaying();
 };

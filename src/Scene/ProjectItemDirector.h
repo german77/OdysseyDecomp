@@ -19,6 +19,7 @@ public:
     void declareItem(const char*, const al::ActorInitInfo&) override;
     void endInit() override;
     void initPlayerDeadCoin(GameDataHolder* holder, const al::ActorInitInfo& initInfo);
+    void tryAddDemoCountUpCoin();
 
 private:
     u8 _padding[0x60];

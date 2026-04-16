@@ -5,19 +5,15 @@
 namespace al {
 class LiveActor;
 class Scene;
+class SimpleLayoutAppearWaitEnd;
 }  // namespace al
 
 class ScenarioStartCameraHolder;
 class StageSceneStateSkipDemo;
 
-namespace al {
-class SimpleLayoutAppearWaitEnd;
-}
-
 class StageSceneStateScenarioCamera : public al::HostStateBase<al::Scene> {
 public:
     StageSceneStateScenarioCamera(const char*, al::Scene*, const char*, s32, al::LiveActor*);
-    void init();
     void setStateSkipDemo(StageSceneStateSkipDemo*);
 
     void setScenarioStartCameraHolder(ScenarioStartCameraHolder* holder) {
@@ -28,7 +24,13 @@ public:
         mScenarioStartLayout = layout;
     }
 
+    void appear() override;
+    void kill() override;
     bool tryStart();
+    bool isExistEnableCamera() const;
+    void exeCamera();
+    void exeSkip();
+    ~StageSceneStateScenarioCamera() override;
 
 private:
     al::SimpleLayoutAppearWaitEnd* mScenarioStartLayout = nullptr;

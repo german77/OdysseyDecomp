@@ -10,6 +10,8 @@ class CinemaCaption {
 public:
     CinemaCaption(const al::LayoutInitInfo&);
 
+    void tryEnd();
+
 private:
     u8 _padding[0x148];
 };

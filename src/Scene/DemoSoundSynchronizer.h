@@ -16,6 +16,7 @@ public:
     void trySync(s32, al::DemoSyncedEventKeeper*);
     void endSync();
     void startSync();
+    void resume(s32);
 
 private:
     u8 _padding[0x20];

@@ -33,6 +33,7 @@ public:
     void receiveEvent(const al::EventFlowEventData*);
     bool judgeQuery(const char*) const;
     bool isOpenMapNerve() const;
+    bool isEnd() const;
 
 private:
     u8 _padding[0x138];

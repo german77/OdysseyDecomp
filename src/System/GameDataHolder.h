@@ -249,6 +249,8 @@ public:
 
     const s32* get_170() const { return _170; }
 
+    void setNextPlayerDir(const sead::Vector3f& dir) { mNextPlayerDir = dir; }
+
     s32 get_178() const { return _178; }
 
     AchievementInfoReader* getAchievementInfoReader() const { return mAchievementInfoReader; }
@@ -321,8 +323,8 @@ private:
     TempSaveData* mTempSaveData;
     TempSaveData* mTempSaveDataBackup;
     CapMessageBossData* mCapMessageBossData;
-    void* _c0;
-    void* _c8;
+    sead::Vector3f mNextPlayerDir = {0.0f, 0.0f, 0.0f};
+    u32 _cc;
     TemporaryScenarioCameraHolder* mTemporaryScenarioCameraHolder;
     bool* mIsPlayAlreadyScenarioStartCamera;
     sead::PtrArray<StageLockInfo> mStageLockList;

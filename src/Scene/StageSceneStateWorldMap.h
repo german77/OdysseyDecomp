@@ -54,6 +54,7 @@ public:
     bool isCloseEndWipe() const;
     bool isOpenEndWipe() const;
     bool isOpenCollectionList() const;
+    al::LiveActor* getHomeSticker() const { return mShineTowerRocket; }
 
     static StageSceneStateWorldMap* tryCreate(al::Scene*, const al::SceneInitInfo&,
                                               const al::ActorInitInfo&, const al::LayoutInitInfo&,

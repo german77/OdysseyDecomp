@@ -22,7 +22,6 @@ public:
     bool isWait() const;
     bool isAppearOrWait() const;
 
-private:
     s32 mLifetime = -1;
 };
 }  // namespace al

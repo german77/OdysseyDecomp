@@ -14,6 +14,7 @@ public:
     CollectBgmRegister(const al::AudioDirector*, GameDataHolder*, CollectBgmPlayer*);
 
     void update();
+    void reset();
 
 private:
     u8 _padding[0x30];

@@ -33,6 +33,8 @@ public:
 
     virtual void appear();
     virtual void kill();
+
+    bool isAlive() const { return mIsAlive; }
     virtual void movement();
 
     virtual void control() {}
