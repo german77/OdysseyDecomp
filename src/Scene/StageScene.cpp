@@ -443,7 +443,7 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
         getAudioDirector()->getSeDirector()->setMuteSeInPVList(
             mSeNamedList->getMuteSeInPVList(), mSeNamedList->getMuteSeInPVListSize());
     }
-    al::deactivateAudioEventController(audioKeeper);
+    al::deactivateAudioEventController(this);
     BgmAnimeSyncDirector* bgmAnimeSyncDir = new BgmAnimeSyncDirector();
     mBgmAnimeSyncDirector = bgmAnimeSyncDir;
     al::setSceneObj(this, bgmAnimeSyncDir);
@@ -477,8 +477,7 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     al::LiveActor* demoPowerStarActor = new al::LiveActor("デモ用パワースター");
     al::initChildActorWithArchiveNameNoPlacementInfo(demoPowerStarActor, actorInitInfo, "PowerStar",
                                                      "Demo");
-    al::initChildActorWithArchiveNameNoPlacementInfo(mDemoShine, actorInitInfo, "Shine",
-                                                     "Demo");
+    al::initChildActorWithArchiveNameNoPlacementInfo(mDemoShine, actorInitInfo, "Shine", "Demo");
     mDemoShine->kill();
     demoPowerStarActor->kill();
     mDemoDotShine = new al::LiveActor("デモ用ドットシャイン");
@@ -711,13 +710,11 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
 
     bool restartPlacementInfoValid = restartPlacementInfo.getPlacementIter().isValid();
     const PlayerStartInfo* playerRestartInfo = nullptr;
-    if (startId &&restartPlacementInfoValid) {
-        playerRestartInfo =
-            playerStartInfoHolder->tryFindInitInfoByStartId(startId);
+    if (startId && restartPlacementInfoValid) {
+        playerRestartInfo = playerStartInfoHolder->tryFindInitInfoByStartId(startId);
         if (playerRestartInfo) {
             restartPlacementInfo.set(playerRestartInfo->placementInfo->getPlacementIter(),
-                                        playerRestartInfo->placementInfo->getZoneIter());
-
+                                     playerRestartInfo->placementInfo->getZoneIter());
 
             if (lastRaceRanking <= 0 && playerRestartInfo->cameraTicket)
                 al::startCamera(this, playerRestartInfo->cameraTicket, -1);
@@ -727,7 +724,7 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     }
 
     const char* checkpointWarpObjId = GameDataFunction::getCheckpointWarpObjId(mGameDataHolder);
-    CheckpointFlag* checkpointFlag = rs::tryFindCheckpointFlag(this,checkpointWarpObjId);
+    CheckpointFlag* checkpointFlag = rs::tryFindCheckpointFlag(this, checkpointWarpObjId);
     bool isWarpCheckpoint = GameDataFunction::isWarpCheckpoint(mGameDataHolder);
     if (checkpointFlag && isWarpCheckpoint && checkpointFlag->isHome())
         al::resetSceneInitEntranceCamera(this);
@@ -912,8 +909,6 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     }
 
     mPlacementInfo = new al::PlacementInfo();
-    const al::IUseAudioKeeper* bgmAudioKeeper = static_cast<const al::IUseAudioKeeper*>(this);
-
     if (!al::isPlayingBgm(this, "CollectBgm"))
         mCollectBgmPlayer->reset();
 
@@ -1539,7 +1534,7 @@ void StageScene::appear() {
 
     if (al::isEqualString(mStageName.cstr(), "Special2WorldHomeStage") &&
         al::isPlayingBgm(this, "CollectBgm"))
-        rs::stopCollectBgm(this, -1);
+        stopCollectBgm();
 
     al::startAudioEffect(this, "DistanceReverbSe");
     al::startAudioEffect(this, "DistanceReverbBgm");
@@ -1564,7 +1559,7 @@ void StageScene::control() {
             mWipeHolder->startOpen(10);
     }
 
-    if (mStateSnapShot->isDead() && !al::isNerve(this, &NrvStageScene.Pause)) {
+    if (!isIgnoreAddPlayTime()) {
         mGameDataHolder->getGameDataFile()->addPlayTime(1, this);
         mGameDataHolder->addPlayTimeAcrossFile();
     }
@@ -1603,8 +1598,8 @@ void StageScene::control() {
         mActiveDemoName = activeDemoName;
 
         if (demoDirector->isActiveDemo() && (activeDemoName || prevDemoName)) {
-            if (activeDemoName != nullptr && prevDemoName == nullptr ||
-                activeDemoName == nullptr && prevDemoName != nullptr ||
+            if ((activeDemoName != nullptr && prevDemoName == nullptr) ||
+                (activeDemoName == nullptr && prevDemoName != nullptr) ||
                 !al::isEqualString(activeDemoName, prevDemoName)) {
                 al::DemoSyncedEventKeeper* keeper = mDemoSyncedEventKeeper;
                 if (prevDemoName) {
@@ -1692,7 +1687,7 @@ void StageScene::kill() {
 }
 
 bool StageScene::isGetGrandShineAndEnableWipeClose() const {
-    if (al::isNerve(this, &NrvStageScene.DemoShineGrandGet))
+    if (isGetGrandShine())
         return mStateGetShineGrand->isEnableWipeClose();
     return false;
 }
@@ -1702,13 +1697,12 @@ bool StageScene::isGetGrandShine() const {
 }
 
 bool StageScene::isVeilEnd() const {
-    return al::isNerve(this, &NrvStageScene.DemoShineGrandGet) ||
-           GameDataFunction::getSessionEventProgress(mGameDataHolder) ==
-               SessionEventProgress::TheCeremonyIsReady;
+    return isGetGrandShine() || GameDataFunction::getSessionEventProgress(mGameDataHolder) ==
+                                    SessionEventProgress::TheCeremonyIsReady;
 }
 
 bool StageScene::isE3End() const {
-    return al::isNerve(this, &NrvStageScene.DemoShineGrandGet) || rs::getActiveQuestNo(this) == 4;
+    return isGetGrandShine() || rs::getActiveQuestNo(this) == 4;
 }
 
 bool StageScene::isDefeatKoopaLv1() const {
@@ -1726,12 +1720,8 @@ bool StageScene::isMissEnd() const {
 }
 
 bool StageScene::isHackEnd() const {
-    al::PlayerHolder* playerHolder = al::getScenePlayerHolder(this);
-    al::LiveActor* playerActor = al::getPlayerActor(playerHolder, 0);
-    if (rs::isPlayerHack(playerActor))
-        return !rs::isPlayerHackBazookaElectric(
-            al::getPlayerActor(al::getScenePlayerHolder(this), 0));
-    return false;
+    return rs::isPlayerHack(al::getPlayerActor(al::getScenePlayerHolder(this), 0)) &&
+           !rs::isPlayerHackBazookaElectric(al::getPlayerActor(al::getScenePlayerHolder(this), 0));
 }
 
 bool StageScene::isLoadData() const {
@@ -1792,10 +1782,7 @@ void StageScene::drawMain() const {
 
     al::tryChangeShaderMode(drawContext, (agl::ShaderMode)4);
 
-    al::LiveActor* playerActor = al::getPlayerActor(al::getScenePlayerHolder(this), 0);
-    bool isOddSpace = false;
-    if (playerActor)
-        isOddSpace = rs::isPlayerEnableToSeeOddSpace(playerActor);
+    bool isOddSpace = isEnableToDrawOddSpace();
     viewRenderer->set_50(isOddSpace);
 
     al::SubCameraRenderer* subCameraRenderer =
@@ -1816,9 +1803,9 @@ void StageScene::drawMain() const {
         StageSceneStateCloset* stateCloset = mStateCloset;
 
         if (!al::isNerve(this, &NrvStageScene.Shop)) {
-            if (!stateGetShineMain->isDead() && stateGetShineMain->isDrawChromakey() ||
-                !stateGetShineGrand->isDead() && stateGetShineGrand->isDrawChromakey() ||
-                !stagePauseMenu->isDead() && stagePauseMenu->isDrawChromakey() ||
+            if ((!stateGetShineMain->isDead() && stateGetShineMain->isDrawChromakey()) ||
+                (!stateGetShineGrand->isDead() && stateGetShineGrand->isDrawChromakey()) ||
+                (!stagePauseMenu->isDead() && stagePauseMenu->isDrawChromakey()) ||
                 al::isNerve(this, &NrvStageScene.Shop) ||
                 al::isNerve(this, &NrvStageScene.Closet)) {
                 if (!al::isNerve(this, &NrvStageScene.Shop))
@@ -1918,7 +1905,7 @@ void StageScene::drawMain() const {
         mChromakeyDrawer->setPhysicalArea(physArea.getMax() - physArea.getMin());
         mChromakeyDrawer->drawChromakey(drawContext, projectionCopy, cameraOnStack, frameBuffer,
                                         viewport, chromakeyName, zPrepassName, nullptr);
-    } else if (!mStagePauseMenu->isDead()) {
+    } else if (isPause()) {
         viewport.apply(drawContext, *frameBuffer);
         frameBuffer->bind(drawContext);
         frameBuffer->clear(drawContext, 3, sead::Color4f::cBlack, al::getDepthClearValue(), 0);
@@ -1969,7 +1956,7 @@ void StageScene::drawMain() const {
         al::drawKitList(this, "２Ｄオーバー（メイン画面）", "２Ｄウィンドウカウンター");
         al::drawKitList(this, "２Ｄオーバー（メイン画面）", "２Ｄワイプ");
     } else if (isDrawChromakey) {
-        if (!al::isNerve(this, &NrvStageScene.Shop) && mStagePauseMenu->isDead()) {
+        if (!al::isNerve(this, &NrvStageScene.Shop) && !isPause()) {
             if (mStateGetShineMain->isDead() && mStateGetShineGrand->isDead())
                 al::drawKit(this, "２Ｄオーバー（メイン画面）");
             else {
@@ -2039,12 +2026,7 @@ bool StageScene::updatePlay() {
         return true;
 
     al::LiveActor* player = al::getPlayerActor(al::getScenePlayerHolder(this), 0);
-    al::IUseAreaObj* areaUser;
-    if (player)
-        areaUser = player;
-    else
-        areaUser = nullptr;
-    al::AreaObj* area = al::tryFindAreaObj(areaUser, "MissRestartArea", al::getTrans(player));
+    al::AreaObj* area = al::tryFindAreaObj(player, "MissRestartArea", al::getTrans(player));
     if (area)
         mGameDataHolder->getGameDataFile()->setMissRestartInfo(*area->getPlacementInfo());
 
@@ -2066,12 +2048,10 @@ void StageScene::endDemoAndChangeNerve() {
         return;
     }
     if (rs::isActiveDemo(this)) {
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.Play);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.Play);
     } else {
         al::activateAudioEventController(this);
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.StartStageBgm);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.StartStageBgm);
     }
 }
 
@@ -2086,7 +2066,7 @@ void StageScene::exeStartStageBgm() {
     al::activateAudioEventController(this);
     positionAudioControl(this);
     al::setNerve(this, &NrvStageScene.Play);
-    if (mKoopaLv1 && al::isDead(mKoopaLv1))
+    if (isDefeatKoopaLv1())
         kill();
 }
 
@@ -2167,15 +2147,7 @@ void StageScene::exePlay() {
         mIsPlayerHackFukankun = false;
     }
 
-    if (KoopaHackFunction::isStatusDemoForSceneKoopaHack(mDemoShine)) {
-        if (!mIsKoopaHackDemo) {
-            mIsKoopaHackDemo = true;
-            mSceneLayout->end();
-        }
-    } else if (mIsKoopaHackDemo) {
-        mSceneLayout->start();
-        mIsKoopaHackDemo = false;
-    }
+    updateStageSceneLayoutForKoopaHack();
 
     if (updatePlay()) {
         if (al::isStopScene(this))
@@ -2184,12 +2156,8 @@ void StageScene::exePlay() {
         return;
     }
 
-    if (al::isNerve(this, &NrvStageScene.DemoStageStartOpening) ||
-        (!rs::isInvalidSaveStage(mStageName.cstr()) &&
-         (al::isNerve(this, &NrvStageScene.Pause) ||
-          (al::isNerve(this, &NrvStageScene.Play) && al::isGreaterEqualStep(this, 10))))) {
+    if (isEnableSave())
         mGameDataHolder->updateRequireSaveFrame();
-    }
 
     if (al::isExistSceneObj(this, SceneObjID_FukankunZoomObjHolder)) {
         FukankunZoomObjHolder* fukankunHolder = al::getSceneObj<FukankunZoomObjHolder>(this);
@@ -2225,8 +2193,7 @@ void StageScene::exePlay() {
         return;
     }
 
-    if (mStateWarp->tryStartWarp()) {
-        al::setNerve(this, &NrvStageScene.Warp);
+    if (tryStartWarp()) {
         al::updateKitListPostOnNerveEnd(this);
         return;
     }
@@ -2245,17 +2212,15 @@ void StageScene::exePlay() {
     }
 
     if (mSceneLayout->isWait())
-        mSceneLayout->updateCounterParts();
+        updateStageInfoLayout();
 
     if (mCollectionList && mCollectionList->isOpen()) {
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.CollectionList);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.CollectionList);
         return;
     }
 
     if (mStateCollectBgm && mStateCollectBgm->tryOpenCollectBgm()) {
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.CollectBgm);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.CollectBgm);
         return;
     }
 
@@ -2265,8 +2230,7 @@ void StageScene::exePlay() {
         mTimeBalloonDirector->execute();
 
         if (mStateTimeBalloon->isTimeBalloonNerve()) {
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, &NrvStageScene.TimeBalloon);
+            updateKitListPostAndChangeNextNerve(&NrvStageScene.TimeBalloon);
             return;
         }
     }
@@ -2278,17 +2242,12 @@ void StageScene::exePlay() {
 }
 
 void StageScene::exeDemoGetLifeMaxUpItem() {
-    if (mIsUpdateKitAndGraphics) {
-        al::updateKit(this);
-        al::updateGraphicsPrev(this);
-        mIsUpdateKitAndGraphics = false;
+    if (tryUpdateAllForFirst())
         return;
-    }
 
     if (al::updateNerveState(this)) {
         rs::endDemoCommonProc(this, mProjectItemDirector);
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.Play);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.Play);
         return;
     }
 
@@ -2322,8 +2281,7 @@ void StageScene::exeRadicon() {
             kill();
             return;
         }
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.Play);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.Play);
         return;
     }
     al::updateKitListPostOnNerveEnd(this);
@@ -2342,13 +2300,11 @@ void StageScene::exeCollectionList() {
         if (mCollectionList)
             mCollectionList->close();
         if (mStateCollectionList->getStateStageMap()->isEndCheckpointWarp()) {
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, &NrvStageScene.WaitWarpToCheckpoint);
+            updateKitListPostAndChangeNextNerve(&NrvStageScene.WaitWarpToCheckpoint);
             return;
         }
         mStateCollectionList->getStateStageMap()->isEndClose();
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.Play);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.Play);
         return;
     }
     al::updateKitListPostOnNerveEnd(this);
@@ -2359,8 +2315,7 @@ void StageScene::exeDemoCarryMeat() {
         mSceneLayout->end();
     if (al::updateNerveState(this)) {
         mStateSkipDemo->tryEndForNoSkip();
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.Play);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.Play);
     } else {
         al::updateKitListPostOnNerveEnd(this);
     }
@@ -2384,8 +2339,7 @@ void StageScene::exeDemoShineMainGet() {
     if (al::updateNerveState(this)) {
         rs::endDemoShineGet(this);
         rs::endDemoCommonProc(this, mProjectItemDirector);
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.StartStageBgm);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.StartStageBgm);
     } else {
         al::updateKitListPostOnNerveEnd(this);
     }
@@ -2421,14 +2375,13 @@ void StageScene::exeDemoRisePyramid() {
     }
     al::startCheckViewCtrlByPlayerPos(this);
     mStateScenarioCamera->tryStart();
-    al::updateKitListPostOnNerveEnd(this);
-    al::setNerve(this, &NrvStageScene.DemoScenarioCamera);
+    updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoScenarioCamera);
 }
 
 void StageScene::exeDemoShineChipComplete() {
     if (al::isFirstStep(this))
         mSceneLayout->startShineChipCompleteAnim();
-    mSceneLayout->updateCounterParts();
+    updateStageInfoLayout();
     al::updateKitListPrev(this);
     rs::updateKitListDemoNormalWithPauseEffect(this);
     rs::updateKitListPostWithPauseNormalEffectAndPlayerEffect(this);
@@ -2460,8 +2413,7 @@ void StageScene::exeDemoPlayerDown() {
     al::updateKitListPostDemoWithPauseNormalEffect(this);
     if (isEndDemo) {
         al::validateEndEntranceCamera(this);
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.StartStageBgm);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.StartStageBgm);
     } else {
         al::updateKitListPostOnNerveEnd(this);
     }
@@ -2478,12 +2430,10 @@ void StageScene::exeDemoScenarioCamera() {
         al::updateKitListPostOnNerveEnd(this);
     } else if (CapManHeroDemoUtil::isExistTalkDemoStageStart(this)) {
         CapManHeroDemoUtil::startTalkDemoStageStart(this);
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.DemoStageStartCapManHeroTalk);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoStageStartCapManHeroTalk);
     } else {
         rs::endDemoCommonProc(this, mProjectItemDirector);
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.StartStageBgm);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.StartStageBgm);
     }
 }
 
@@ -2529,7 +2479,7 @@ void StageScene::updateStageSceneLayoutForKoopaHack() {
 bool StageScene::tryChangeSnapShot() {
     if (KoopaHackFunction::isStatusDemoForSceneKoopaHack(mDemoShine))
         return false;
-    if (mStateWorldMap && !mStateWorldMap->isOpenEndWipe())
+    if (!isOpenEndWorldMapWipe())
         return false;
     if (rs::isModeE3Rom())
         return false;
@@ -2554,7 +2504,7 @@ bool StageScene::tryStartWarp() {
 
 bool StageScene::tryChangePause() {
     bool isTrigger = rs::isTriggerUiPause(this);
-    if (mStateWorldMap && !mStateWorldMap->isOpenEndWipe())
+    if (!isOpenEndWorldMapWipe())
         return false;
     if (rs::isPlayerPlayingSwitchOnAnim(mCheckpointWarpCapActor))
         return false;
@@ -2573,7 +2523,7 @@ bool StageScene::tryChangePause() {
 }
 
 bool StageScene::tryChangeList() {
-    if (mStateWorldMap && !mStateWorldMap->isOpenEndWipe())
+    if (!isOpenEndWorldMapWipe())
         return false;
     if (rs::isPlayerPlayingSwitchOnAnim(mCheckpointWarpCapActor))
         return false;
@@ -2663,11 +2613,10 @@ void StageScene::exePause() {
     al::updateNerveState(this);
     if (mStagePauseMenu->checkNeedKillByHostAndEnd()) {
         kill();
-    } else if (mStagePauseMenu->isDead()) {
+    } else if (!isPause()) {
         getLiveActorKit()->getEffectSystem()->set_69(false);
         mSceneLayout->appearShineCountWait();
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.Play);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.Play);
     } else {
         al::updateKitListPostOnNerveEnd(this);
     }
@@ -2677,12 +2626,8 @@ void StageScene::exeDemoShineGet() {
     if (al::isFirstStep(this)) {
         if (mStateShop->isEndBuyShine10())
             mStateGetShine->setShopShine10();
-        if (mIsUpdateKitAndGraphics) {
-            al::updateKit(this);
-            al::updateGraphicsPrev(this);
-            mIsUpdateKitAndGraphics = false;
+        if (tryUpdateAllForFirst())
             return;
-        }
     }
     if (al::updateNerveState(this)) {
         rs::tryShowCapMsgIntroducePowerStar(this, mStateGetShine);
@@ -2691,18 +2636,15 @@ void StageScene::exeDemoShineGet() {
             al::startAudioEffectWithAreaCheck(this);
             if (!al::isPlayingBgm(this, "Shop"))
                 al::startAndStopBgmInCurPosition(this, 1);
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, &NrvStageScene.Shop);
+            updateKitListPostAndChangeNextNerve(&NrvStageScene.Shop);
             return;
         }
         if (al::isNerve(this, &NrvStageScene.DemoShineGet)) {
             if (rs::isActiveDemo(this) && rs::isActiveDemoNormal(this)) {
-                al::updateKitListPostOnNerveEnd(this);
-                al::setNerve(this, &NrvStageScene.DemoNormal);
+                updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoNormal);
             } else {
                 rs::endDemoCommonProc(this, mProjectItemDirector);
-                al::updateKitListPostOnNerveEnd(this);
-                al::setNerve(this, &NrvStageScene.StartStageBgm);
+                updateKitListPostAndChangeNextNerve(&NrvStageScene.StartStageBgm);
             }
         }
     } else {
@@ -2748,8 +2690,7 @@ void StageScene::exeDemoStageStart() {
         rs::updateKitListDemoNormalWithPauseEffect(this);
     al::updateKitListPostDemoWithPauseNormalEffect(this);
     if (mStateSkipDemo->tryStartSkipDemo()) {
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.SkipDemo);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.SkipDemo);
     } else {
         mStateSkipDemo->tryAppearSkipDemoLayout();
         if (mOpeningStageStartDemo->isDemoLastStep() &&
@@ -2762,12 +2703,10 @@ void StageScene::exeDemoStageStart() {
         mStateSkipDemo->tryEndForNoSkip();
         if (al::isNerve(this, &NrvStageScene.DemoStageStartElectricDemo) &&
             mStateScenarioCamera->tryStart()) {
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, &NrvStageScene.DemoScenarioCamera);
+            updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoScenarioCamera);
         } else {
             al::activateAudioEventController(this);
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, &NrvStageScene.StartStageBgm);
+            updateKitListPostAndChangeNextNerve(&NrvStageScene.StartStageBgm);
         }
     }
 }
@@ -2838,14 +2777,12 @@ void StageScene::exeDemoNormal() {
     rs::updateKitListDemoNormalWithPauseEffect(this);
     rs::updateKitListPostWithPauseNormalEffectAndPlayerEffect(this);
     if (mStateMiniGameRanking && mStateMiniGameRanking->tryOpen()) {
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.MiniGameRanking);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.MiniGameRanking);
         return;
     }
     if (isCinema) {
         if (mStateSkipDemo->tryStartSkipDemo()) {
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, &NrvStageScene.SkipDemo);
+            updateKitListPostAndChangeNextNerve(&NrvStageScene.SkipDemo);
             return;
         }
         mStateSkipDemo->tryAppearSkipDemoLayout();
@@ -2853,14 +2790,12 @@ void StageScene::exeDemoNormal() {
     if (rs::isActiveDemoShineGet(this)) {
         rs::killTutorial(this);
         al::stopPadRumble(this);
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.DemoShineGet);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoShineGet);
         return;
     }
     if (rs::isActiveDemo(this)) {
         if (rs::isActiveDemoGetLifeMaxUpItem(this)) {
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, &NrvStageScene.DemoGetLifeMaxUpItem);
+            updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoGetLifeMaxUpItem);
             return;
         }
         if (rs::tryChangeNextStage(mGameDataHolder, this))
@@ -2885,17 +2820,15 @@ void StageScene::exeDemoWithPlayer() {
     al::updateKitList(this, "ステージスイッチディレクター");
     al::updateKitListPostDemoWithPauseNormalEffect(this);
     if (mStateSkipDemo->tryStartSkipDemo()) {
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.SkipDemo);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.SkipDemo);
         return;
     }
     mStateSkipDemo->tryAppearSkipDemoLayout();
-    if (rs::tryChangeNextStage(mGameDataHolder, this) || (mKoopaLv1 && al::isDead(mKoopaLv1))) {
+    if (rs::tryChangeNextStage(mGameDataHolder, this) || isDefeatKoopaLv1()) {
         kill();
     } else if (rs::isActiveDemo(this)) {
         if (mStateCloset && mStateCloset->isOpenEnd()) {
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, &NrvStageScene.Closet);
+            updateKitListPostAndChangeNextNerve(&NrvStageScene.Closet);
             return;
         }
         al::updateKitListPostOnNerveEnd(this);
@@ -2912,7 +2845,7 @@ void StageScene::exeDemoWithPlayerUseCoin() {
     al::updateKitListPrev(this);
     rs::updateKitListDemoPlayerWithPauseEffect(this);
     al::updateKitListPostDemoWithPauseNormalEffect(this);
-    mSceneLayout->updateCounterParts();
+    updateStageInfoLayout();
     if (!rs::isActiveDemo(this)) {
         endDemoAndChangeNerve();
         return;
@@ -2920,8 +2853,7 @@ void StageScene::exeDemoWithPlayerUseCoin() {
     for (s32 i = 0; i < mShoppingWatcherGroup->getActorCount(); i++) {
         if (mShoppingWatcherGroup->getDeriveActor(i)->isShop()) {
             mStateShop->settingShopId(i);
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, &NrvStageScene.Shop);
+            updateKitListPostAndChangeNextNerve(&NrvStageScene.Shop);
             return;
         }
     }
@@ -2971,8 +2903,7 @@ skipEnd:
     al::updateKitListPostDemoWithPauseNormalEffect(this);
     if (!_496) {
         if (mStateSkipDemo->tryStartSkipDemo()) {
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, &NrvStageScene.SkipDemo);
+            updateKitListPostAndChangeNextNerve(&NrvStageScene.SkipDemo);
             return;
         }
         mStateSkipDemo->tryAppearSkipDemoLayout();
@@ -3032,8 +2963,7 @@ void StageScene::exeShop() {
         kill();
         return;
     }
-    al::updateKitListPostOnNerveEnd(this);
-    al::setNerve(this, &NrvStageScene.DemoWithPlayerUseCoin);
+    updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoWithPlayerUseCoin);
 }
 
 void StageScene::exeCloset() {
@@ -3050,8 +2980,7 @@ void StageScene::exeCloset() {
         } else {
             mSceneLayout->endCloset();
             mStateCloset->tryCloseDoor();
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, &NrvStageScene.DemoWithPlayer);
+            updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoWithPlayer);
         }
     } else {
         al::updateKitList(this, "サウンド制御");
@@ -3114,8 +3043,8 @@ void StageScene::exeWaitStartWarpForSession() {
     if (rs::tryChangeNextStage(mGameDataHolder, this)) {
         kill();
     } else {
-        if (mStateWarp->tryStartWarp())
-            al::setNerve(this, &NrvStageScene.Warp);
+        if (tryStartWarp())
+            ;
         al::updateKitListPostOnNerveEnd(this);
     }
 }
@@ -3153,7 +3082,7 @@ void StageScene::exeDemoDamageStopPlayer() {
     al::updateKitList(this, "シャドウマスク");
     al::updateKitList(this, "グラフィックス要求者");
     al::updateEffectPlayer(this);
-    mSceneLayout->updateCounterParts();
+    updateStageInfoLayout();
     al::updateKitList(this, "２Ｄ");
     al::updateKitList(this, "２Ｄ（ポーズ無視）");
     al::updateKitListPostOnNerveEnd(this);
@@ -3169,26 +3098,22 @@ void StageScene::exeDemoSceneStartPlayerWalk() {
         al::updateKitListPostOnNerveEnd(this);
     } else {
         rs::endDemoCommonProc(this, mProjectItemDirector);
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.StartStageBgm);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.StartStageBgm);
     }
 }
 
 void StageScene::exeSkipDemo() {
     if (al::updateNerveState(this)) {
         if (mStateSkipDemo->isCancelSkip()) {
-            const al::Nerve* nerve = mCurrentNerve;
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, nerve);
+            updateKitListPostAndChangeNextNerve(mCurrentNerve);
             mCurrentNerve = nullptr;
             mAudioSystemPauseController->resume(1);
         } else {
-            if (mKoopaLv1 && al::isDead(mKoopaLv1))
+            if (isDefeatKoopaLv1())
                 kill();
             if (mCurrentNerve == &NrvStageScene.DemoStageStartElectricDemo) {
                 if (mStateScenarioCamera->tryStart()) {
-                    al::updateKitListPostOnNerveEnd(this);
-                    al::setNerve(this, &NrvStageScene.DemoScenarioCamera);
+                    updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoScenarioCamera);
                     mCurrentNerve = nullptr;
                 }
             } else {
@@ -3212,12 +3137,8 @@ void StageScene::exeDemoTalk() {
     if (al::isFirstStep(this)) {
         if (rs::isActiveDemoKeepHackTalk(this))
             mProjectItemDirector->tryAddDemoCountUpCoin();
-        if (mIsUpdateKitAndGraphics) {
-            al::updateKit(this);
-            al::updateGraphicsPrev(this);
-            mIsUpdateKitAndGraphics = false;
+        if (tryUpdateAllForFirst())
             return;
-        }
     }
     if (al::updateNerveState(this)) {
         al::endPausePadRumble(this);
@@ -3226,15 +3147,13 @@ void StageScene::exeDemoTalk() {
             SessionMusicianManager* manager = static_cast<SessionMusicianManager*>(sceneObj);
             if (manager->isJoinedMusician()) {
                 mWipeSimple->startCloseEnd();
-                if (mStateWarp->tryStartWarp()) {
-                    al::setNerve(this, &NrvStageScene.Warp);
+                if (tryStartWarp()) {
                     al::updateKitListPostOnNerveEnd(this);
                     return;
                 }
                 alSeFunction::startSituationWithAutoEnd(getAudioDirector(),
                                                         "シーン開始フェードイン", 0, 5, 7);
-                al::updateKitListPostOnNerveEnd(this);
-                al::setNerve(this, &NrvStageScene.WaitStartWarpForSession);
+                updateKitListPostAndChangeNextNerve(&NrvStageScene.WaitStartWarpForSession);
                 return;
             }
         }
@@ -3255,12 +3174,8 @@ void StageScene::exeDemoTalk() {
 }
 
 void StageScene::exeDemoReturnToHome() {
-    if (al::isFirstStep(this) && mIsUpdateKitAndGraphics) {
-        al::updateKit(this);
-        al::updateGraphicsPrev(this);
-        mIsUpdateKitAndGraphics = false;
+    if (al::isFirstStep(this) && tryUpdateAllForFirst())
         return;
-    }
     tryAppearDemoLayout();
     al::updateKitListPrev(this);
     rs::updateKitListDemoPlayerWithPauseEffect(this);
@@ -3270,19 +3185,15 @@ void StageScene::exeDemoReturnToHome() {
         return;
     }
     if (mPyramid && mScenarioNo == 2) {
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.DemoRisePyramid);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoRisePyramid);
     } else if (mStateScenarioCamera->tryStart()) {
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.DemoScenarioCamera);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoScenarioCamera);
     } else if (CapManHeroDemoUtil::isExistTalkDemoStageStart(this)) {
         CapManHeroDemoUtil::startTalkDemoStageStart(this);
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.DemoStageStartCapManHeroTalk);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoStageStartCapManHeroTalk);
     } else {
         al::activateAudioEventController(this);
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.StartStageBgm);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.StartStageBgm);
     }
 }
 
@@ -3311,21 +3222,18 @@ void StageScene::exeDemoAppearFromHome() {
                 rs::addDemoActor(boss, false);
                 boss->startDemoWorldEnter();
                 rs::changeDemoCommonProc(this, mProjectItemDirector);
-                al::updateKitListPostOnNerveEnd(this);
-                al::setNerve(this, &NrvStageScene.DemoWithPlayer);
+                updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoWithPlayer);
                 return;
             }
         }
         if (CapManHeroDemoUtil::isExistTalkDemoMoonRockFind(this)) {
             CapManHeroDemoUtil::startTalkDemoMoonRockFind(this);
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, &NrvStageScene.DemoCapManHeroTalkMoonRock);
+            updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoCapManHeroTalkMoonRock);
             al::activateAudioEventController(this);
             return;
         }
         if (mStateScenarioCamera->tryStart()) {
-            al::updateKitListPostOnNerveEnd(this);
-            al::setNerve(this, &NrvStageScene.DemoScenarioCamera);
+            updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoScenarioCamera);
             return;
         }
         endDemoAndChangeNerve();
@@ -3381,15 +3289,12 @@ void StageScene::exeDemoWorldIntroCamera() {
         }
     } else if (rs::isExistDemoAppearFromHomeInList(this)) {
         rs::requestStartDemoAppearFromHome(this);
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.DemoAppearFromHome);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoAppearFromHome);
     } else if (CapManHeroDemoUtil::isExistTalkDemoStageStart(this)) {
         CapManHeroDemoUtil::startTalkDemoStageStart(this);
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.DemoStageStartCapManHeroTalk);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.DemoStageStartCapManHeroTalk);
     } else {
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.StartStageBgm);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.StartStageBgm);
     }
 }
 
@@ -3424,8 +3329,7 @@ void StageScene::exeAppearFromWorldWarpHole() {
         al::updateKitListPostOnNerveEnd(this);
         return;
     }
-    if (mStateWarp->tryStartWarp()) {
-        al::setNerve(this, &NrvStageScene.Warp);
+    if (tryStartWarp()) {
         mWorldStartCountryLayout->kill();
         mWorldStartRegionLayout->kill();
         al::updateKitListPostOnNerveEnd(this);
@@ -3437,8 +3341,7 @@ void StageScene::exeAppearFromWorldWarpHole() {
     }
     if (al::isDead(mWorldStartCountryLayout)) {
         al::activateAudioEventController(this);
-        al::updateKitListPostOnNerveEnd(this);
-        al::setNerve(this, &NrvStageScene.StartStageBgm);
+        updateKitListPostAndChangeNextNerve(&NrvStageScene.StartStageBgm);
         return;
     }
     alSeFunction::tryHoldStageStartSe(mStageStartAtmosSe);
@@ -3566,7 +3469,5 @@ void StageScene::exeWarpToCheckpoint() {
 }
 
 bool StageScene::isOpenEndWorldMapWipe() const {
-    if (!mStateWorldMap)
-        return true;
-    return mStateWorldMap->isOpenEndWipe();
+    return !mStateWorldMap || mStateWorldMap->isOpenEndWipe();
 }

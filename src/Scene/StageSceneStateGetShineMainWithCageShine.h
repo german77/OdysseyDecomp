@@ -10,7 +10,7 @@ class StageSceneStateGetShineMainLast;
 
 namespace al {
 class Scene;
-class ActorInitInfo;
+struct ActorInitInfo;
 }  // namespace al
 
 class StageSceneStateGetShineMainWithCageShine : public al::HostStateBase<al::Scene> {

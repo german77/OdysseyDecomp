@@ -3,7 +3,7 @@
 #include "Demo/StageEventDemoBase.h"
 
 namespace al {
-class ActorInitInfo;
+struct ActorInitInfo;
 class CameraTicket;
 }  // namespace al
 

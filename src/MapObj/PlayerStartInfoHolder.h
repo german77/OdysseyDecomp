@@ -19,7 +19,7 @@ class LiveActor;
 class PlacementInfo;
 class Scene;
 }  // namespace al
-class PlayerStartInfo;
+struct PlayerStartInfo;
 class PlayerStartObj;
 
 class PlayerStartInfoHolder : public al::ISceneObj, public al::IUseCamera, public al::HioNode {
