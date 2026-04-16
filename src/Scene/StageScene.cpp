@@ -340,14 +340,10 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     mScenarioNo = initInfo.scenarioNo;
     initDrawSystemInfo(initInfo);
     al::initRandomSeedByString(mStageName.cstr());
-    if (__builtin_expect(rs::isModeE3MovieRom() || rs::isModeMovieRom(), 1)) {
-        al::GameFrameworkNx* framework =
-            sead::DynamicCast<al::GameFrameworkNx>(Application::instance()->getGameFramework());
-        framework->setVBlankWaitInterval(2);
-    } else {
-        al::GameFrameworkNx* framework =
-            sead::DynamicCast<al::GameFrameworkNx>(Application::instance()->getGameFramework());
-        framework->setVBlankWaitInterval(1);
+    if(rs::isModeE3MovieRom() || rs::isModeMovieRom()){
+        sead::DynamicCast<al::GameFrameworkNx>(Application::instance()->getGameFramework())->setVBlankWaitInterval(2);
+    }else{
+        sead::DynamicCast<al::GameFrameworkNx>(Application::instance()->getGameFramework())->setVBlankWaitInterval(1);
     }
 
     initLayoutKit(initInfo);
@@ -681,39 +677,32 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
 
     al::PlacementInfo restartPlacementInfo;
     const char* restartPointId = GameDataFunction::tryGetRestartPointIdString(mGameDataHolder);
-    const char* nextPlayerStartId = mGameDataHolder->getNextPlayerStartId();
+    const char* nextPlayerStartId  = mGameDataHolder->getNextPlayerStartId();
+    if (!restartPointId)
+        restartPointId = nextPlayerStartId ;
+
     sead::FixedSafeString<256> playerStartId;
-    const char* startId;
-    if (restartPointId)
-        startId = restartPointId;
-    else
-        startId = nextPlayerStartId;
 
     if (GameDataFunction::isWarpCheckpoint(mGameDataHolder)) {
-        const char* checkpointStartId;
+        const char* checkpointStartId = "Home";
         if (restartPointId)
             checkpointStartId = restartPointId;
-        else
-            checkpointStartId = "Home";
+
         const al::PlacementInfo* checkpointRestartInfo =
             rs::tryFindCheckpointFlagPlayerRestartInfo(this, checkpointStartId);
-        if (checkpointRestartInfo) {
-            al::PlacementId placementIdForCheckpoint;
-            al::tryGetPlacementId(&placementIdForCheckpoint, *checkpointRestartInfo);
-            al::StringTmp<128> placementIdStr =
-                al::makeStringPlacementId(&placementIdForCheckpoint);
-            playerStartId.copy(placementIdStr);
-        }
-        startId = playerStartId.cstr();
+        al::PlacementId placementIdForCheckpoint;
+        al::tryGetPlacementId(&placementIdForCheckpoint, *checkpointRestartInfo);
+        playerStartId=al::makeStringPlacementId(&placementIdForCheckpoint);
+        restartPointId = playerStartId.cstr();
     }
 
-    s32 lastRaceRanking = GameDataFunction::getLastRaceRanking(GameDataHolderWriter(this));
+    s32 lastRaceRanking = GameDataFunction::getLastRaceRanking(this);
     mGameDataHolder->reset_492();
 
     bool restartPlacementInfoValid = restartPlacementInfo.getPlacementIter().isValid();
     const PlayerStartInfo* playerRestartInfo = nullptr;
-    if (startId && restartPlacementInfoValid) {
-        playerRestartInfo = playerStartInfoHolder->tryFindInitInfoByStartId(startId);
+    if (restartPointId && restartPlacementInfoValid) {
+        playerRestartInfo = playerStartInfoHolder->tryFindInitInfoByStartId(restartPointId);
         if (playerRestartInfo) {
             restartPlacementInfo.set(playerRestartInfo->placementInfo->getPlacementIter(),
                                      playerRestartInfo->placementInfo->getZoneIter());
@@ -725,8 +714,7 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
         }
     }
 
-    const char* checkpointWarpObjId = GameDataFunction::getCheckpointWarpObjId(mGameDataHolder);
-    CheckpointFlag* checkpointFlag = rs::tryFindCheckpointFlag(this, checkpointWarpObjId);
+    CheckpointFlag* checkpointFlag = rs::tryFindCheckpointFlag(this, GameDataFunction::getCheckpointWarpObjId(mGameDataHolder));
     bool isWarpCheckpoint = GameDataFunction::isWarpCheckpoint(mGameDataHolder);
     if (checkpointFlag && isWarpCheckpoint && checkpointFlag->isHome())
         al::resetSceneInitEntranceCamera(this);
@@ -757,8 +745,8 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
         const char* changeStageId = nullptr;
         bool hasChangeStageId =
             al::tryGetStringArg(&changeStageId, playerPlacementInfo, "ChangeStageId");
-        if (startId && !restartPlacementInfo.getPlacementIter().isValid() &&
-            !hasChangeStageId == false && al::isEqualString(changeStageId, startId)) {
+        if (restartPointId && !restartPlacementInfo.getPlacementIter().isValid() &&
+            !hasChangeStageId == false && al::isEqualString(changeStageId, restartPointId)) {
             restartPlacementInfo.set(playerPlacementInfo.getPlacementIter(),
                                      playerPlacementInfo.getZoneIter());
         }
@@ -1261,7 +1249,7 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
         } else if (GameDataFunction::isPlayDemoPlayerDownForBattleKoopaAfter(this)) {
             al::setNerve(this, &NrvStageScene.DemoPlayerDown);
             GameDataFunction::disablePlayDemoPlayerDownForBattleKoopaAfter(
-                GameDataHolderWriter(this));
+                this);
         } else if (CapManHeroDemoUtil::isExistTalkDemoStageStart(this)) {
             al::setNerve(this, &NrvStageScene.DemoStageStartCapManHeroTalk);
         } else if (CapManHeroDemoUtil::isExistTalkDemoAfterMoonRockBreakDemo(this)) {
@@ -1357,7 +1345,7 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
                                                al::getSceneExecuteDirector(this),
                                                getLiveActorKit()->getEffectSystem());
 
-    GameDataFunction::noPlayDemoWorldWarp(GameDataHolderWriter(this));
+    GameDataFunction::noPlayDemoWorldWarp(this);
 }
 
 bool StageScene::tryChangeDemo() {
