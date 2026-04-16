@@ -300,7 +300,9 @@ inline void positionAudioControl(al::Scene* scene) {
         al::startAndStopBgmInCurPosition(scene, true);
 }
 
-StageScene::StageScene() : al::Scene("StageScene") {}
+StageScene::StageScene() : al::Scene("StageScene") {
+    mStageName.clear();
+}
 
 StageScene::~StageScene() {
     if (mDemoSyncedEventKeeper)
