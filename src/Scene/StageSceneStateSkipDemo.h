@@ -1,5 +1,7 @@
 #pragma once
 
+#include <basis/seadTypes.h>
+
 #include "Library/Nerve/NerveStateBase.h"
 
 namespace al {
@@ -22,7 +24,7 @@ public:
     bool tryAppearSkipDemoLayout();
     bool isDisableSkipByWorldMap() const;
     bool tryStartSkipDemo();
-    bool isDemoCancelStageScene() const;
+    bool isDemoCancelStageScene() const { return mIsDemoCancelStageScene; }
     void tryEndForNoSkip();
     bool isCancelSkip() const;
     bool isConfirmingOfSkip() const;
@@ -32,4 +34,16 @@ public:
     void exeWaitConfirmClose();
     void exeSkip();
     void exeWaitSkipEnd();
+
+private:
+    void* _20 = nullptr;
+    void* _28 = nullptr;
+    void* _30 = nullptr;
+    void* _38 = nullptr;
+    void* _40 = nullptr;
+    void* _48 = nullptr;
+    void* _50 = nullptr;
+    u32 _58 = 0;
+    u32 _5c = 0;
+    bool mIsDemoCancelStageScene = false;
 };

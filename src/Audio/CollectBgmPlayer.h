@@ -1,6 +1,7 @@
 #pragma once
 
 #include <basis/seadTypes.h>
+
 #include "Library/HostIO/HioNode.h"
 #include "Library/Scene/ISceneObj.h"
 
@@ -24,13 +25,13 @@ public:
 
     void reset() {
         _10 = nullptr;
-        bgmName = nullptr;
+        mBgmName = nullptr;
     }
 
 private:
-    const al::IUseAudioKeeper* audioKeeper = nullptr;
+    const al::IUseAudioKeeper* mAudioKeeper = nullptr;
     const char* _10 = nullptr;
-    const char* bgmName = nullptr;
+    const char* mBgmName = nullptr;
 };
 
 static_assert(sizeof(CollectBgmPlayer) == 0x20);

@@ -8,7 +8,7 @@
 namespace al {
 class IUseDataStore;
 
-class DataStoreDirector : public al::ISceneObj, public al::HioNode {
+class DataStoreDirector : public ISceneObj, public HioNode {
 public:
     static constexpr s32 sSceneObjId = SceneObjID_alDataStoreDirector;
 
@@ -17,7 +17,7 @@ public:
 
     const char* getSceneObjName() const override { return "データストアディレクタ"; }
 
-    s8 filler[0x38 - sizeof(al::ISceneObj) - sizeof(al::HioNode)];
+    s8 filler[0x38 - sizeof(ISceneObj) - sizeof(HioNode)];
 };
 }  // namespace al
 

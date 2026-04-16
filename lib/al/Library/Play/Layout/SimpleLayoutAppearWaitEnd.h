@@ -22,6 +22,9 @@ public:
     bool isWait() const;
     bool isAppearOrWait() const;
 
+    void setLifetime(s32 value) { mLifetime = value; }
+
+private:
     s32 mLifetime = -1;
 };
 }  // namespace al

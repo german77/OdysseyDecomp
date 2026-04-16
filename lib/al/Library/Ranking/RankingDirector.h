@@ -17,9 +17,9 @@ class RankingOrderParam;
 }  // namespace nn::nex
 
 namespace al {
-class RankingDirector : public al::ISceneObj,
-                        public al::IUseNexNetworkStateHolder,
-                        public al::HioNode {
+class RankingDirector : public ISceneObj,
+                        public IUseNexNetworkStateHolder,
+                        public HioNode {
 public:
     static constexpr s32 sSceneObjId = SceneObjID_alRankingDirector;
 
@@ -46,8 +46,8 @@ public:
     const char* getSceneObjName() const override { return "ランキングディレクタ"; }
 
 private:
-    s8 filler[0x48 - sizeof(al::ISceneObj) - sizeof(al::IUseNexNetworkStateHolder) -
-              sizeof(al::HioNode)];
+    s8 filler[0x48 - sizeof(ISceneObj) - sizeof(IUseNexNetworkStateHolder) -
+              sizeof(HioNode)];
 };
 
 }  // namespace al

@@ -7,6 +7,7 @@
 namespace agl {
 class DrawContext;
 class SamplerLocation;
+class TextureData;
 }  // namespace agl
 
 class PlayerHackStartTexKeeper : public al::ISceneObj {
@@ -15,8 +16,14 @@ public:
     void activateHackStartTexture(agl::DrawContext* drawContext,
                                   const agl::SamplerLocation& location) const;
 
+    const agl::TextureData* getTextureData() { return mTextureData; }
+
+    bool isEnabled() { return mIsEnabled; }
+    void disable() { mIsEnabled = false; }
+
+private:
     void* _0[2];
     bool _18;
-    bool _19;
-    void* _20;
+    bool mIsEnabled;
+    const agl::TextureData* mTextureData;
 };

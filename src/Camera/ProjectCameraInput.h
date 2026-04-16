@@ -15,7 +15,7 @@ public:
     void calcInputStick(sead::Vector2f*) const override;
     bool isTriggerReset() const override;
     bool isHoldZoom() const override;
-    bool tryCalcSnapShotMoveStick(sead::Vector2<float>*) const override;
+    bool tryCalcSnapShotMoveStick(sead::Vector2f*) const override;
     bool isHoldSnapShotZoomIn() const override;
     bool isHoldSnapShotZoomOut() const override;
     bool isHoldSnapShotRollLeft() const override;

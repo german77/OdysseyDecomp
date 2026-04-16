@@ -33,6 +33,8 @@ public:
 
     const al::MessageSystem* getMessageSystem() const override { return mMessageSystem; }
 
+    bool isHome() const { return mIsHome; }
+
 private:
     al::MessageSystem* mMessageSystem = nullptr;
     al::ActorInitInfo* mPlayerRestartInfo = nullptr;

@@ -733,7 +733,7 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     const char* checkpointWarpObjId = GameDataFunction::getCheckpointWarpObjId(mGameDataHolder);
     CheckpointFlag* checkpointFlag = rs::tryFindCheckpointFlag(this, checkpointWarpObjId);
     bool isWarpCheckpoint = GameDataFunction::isWarpCheckpoint(mGameDataHolder);
-    if (checkpointFlag && isWarpCheckpoint && checkpointFlag->isHomeFlag())
+    if (checkpointFlag && isWarpCheckpoint && checkpointFlag->isHome())
         al::resetSceneInitEntranceCamera(this);
 
     const char* costumeTypeName = GameDataFunction::getCurrentCostumeTypeName(mGameDataHolder);

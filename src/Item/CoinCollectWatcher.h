@@ -28,6 +28,10 @@ public:
     void registerCoin(bool isCountUpCoin);
     void countup(const al::LiveActor* actor);
 
+    u32 getCoinUpCount() { return mCoinUpCount; }
+    u32 getRegisteredCoins() { return mRegisteredCoins; }
+
+private:
     u32 mCoinUpCount = 0;
     u32 mRegisteredCoins = 0;
     CoinCollectLayout* mCoinCollectLayout = nullptr;

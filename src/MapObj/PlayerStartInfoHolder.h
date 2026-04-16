@@ -8,6 +8,8 @@
 #include "Library/HostIO/HioNode.h"
 #include "Library/Scene/ISceneObj.h"
 
+#include "Scene/SceneObjFactory.h"
+
 namespace al {
 struct ActorInitInfo;
 class AreaObjGroup;
@@ -22,6 +24,8 @@ class PlayerStartObj;
 
 class PlayerStartInfoHolder : public al::ISceneObj, public al::IUseCamera, public al::HioNode {
 public:
+    static constexpr s32 sSceneObjId = SceneObjID_PlayerStartInfoHolder;
+
     PlayerStartInfoHolder();
 
     void init(al::CameraDirector*, s32);

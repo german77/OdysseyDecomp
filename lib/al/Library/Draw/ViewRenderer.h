@@ -40,6 +40,11 @@ public:
     void startForwardPlayerScreenFader(s32, s32, f32);
     void endForwardPlayerScreenFader(s32);
 
+    void set_60(const agl::TextureData* value) { _60 = value; }
+    
+    void set_50(bool value) { _50 = value; }
+
+private:
     GraphicsSystemInfo* mGraphicsSystemInfo;
     ExecuteDirector* mExecuteDirector;
     EffectSystem* mEffectSystem;
@@ -53,7 +58,7 @@ public:
     bool _50;
     bool mIsWorldMap;
     const agl::TextureData* mEffectTextureColor;
-    void* _60;
+    const agl::TextureData* _60;
 };
 }  // namespace al
 

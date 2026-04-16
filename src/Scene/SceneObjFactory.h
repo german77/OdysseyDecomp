@@ -68,7 +68,8 @@ enum SceneObjID : s32 {
     SceneObjID_ShineChipWatcherHolder,
     SceneObjID_SphinxQuizRouteKillExecutor,
     SceneObjID_alStageSyncCounter,
-    SceneObjID__3d,
+    SceneObjID__3d,  // seems like it was meant to be al::registSupportFreezeSyncGroup (based on
+                     // ClockMapParts::init + 0x6c),
     SceneObjID_TalkNpcParamHolder,
     SceneObjID_TalkNpcSceneEventSwitcher,
     SceneObjID_TestStageTimeDirector,
