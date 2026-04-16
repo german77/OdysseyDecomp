@@ -3,9 +3,10 @@
 namespace al {
 class SeDirector {
 public:
-    void setMuteSeInPVList(const char** list) { mMuteSeInPVList = list; }
-
-    void setMuteSeInPVListSize(s32 size) { mMuteSeInPVListSize = size; }
+    void setMuteSeInPVList(const char** list, s32 size) {
+        mMuteSeInPVList = list;
+        mMuteSeInPVListSize = size;
+    }
 
 private:
     unsigned char _padding[0xa8];

@@ -332,6 +332,8 @@ StageScene::~StageScene() {
 }
 
 void StageScene::init(const al::SceneInitInfo& initInfo) {
+    using StageSceneFunctor = al::FunctorV0M<StageScene*, void (StageScene::*)()>;
+
     mStageName = initInfo.initStageName;
     mScenarioNo = initInfo.scenarioNo;
     initDrawSystemInfo(initInfo);
@@ -347,8 +349,7 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     }
 
     initLayoutKit(initInfo);
-    al::addResourceCategory("シーン", 0x200,
-                            sead::HeapMgr::instance()->getCurrentHeap());
+    al::addResourceCategory("シーン", 0x200, sead::HeapMgr::instance()->getCurrentHeap());
     al::SceneObjHolder* sceneObjHolder = SceneObjFactory::createSceneObjHolder();
     initSceneObjHolder(sceneObjHolder);
     al::createSceneObj<KidsModeLayoutAccessor>(this);
@@ -414,6 +415,7 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     al::initDemoDirector(this, demoDir);
     {
         al::AudioDirectorInitInfo audioDirInitInfo;
+        audioDirInitInfo.seDirectorInitInfo.defaultListenerName = "カスタム線リスナ";
         al::GraphicsSystemInfo* graphicsSysInfo = getLiveActorKit()->getGraphicsSystemInfo();
         if (graphicsSysInfo)
             audioDirInitInfo.seDirectorInitInfo.occlusionCullingJudge =
@@ -429,20 +431,17 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     mSnapShotCameraCtrl = new al::SimpleAudioUser("SnapShotCameraCtrl", getAudioDirector());
     mSeNamedList = new ProjectSeNamedList();
     al::initSceneAudioKeeper(this, initInfo, "StageSceneDefault");
+
     getAudioDirector()->setPlayerHolder(al::getScenePlayerHolder(this));
-    const al::IUseAudioKeeper* audioKeeper = static_cast<const al::IUseAudioKeeper*>(this);
-    using StageSceneFunctor = al::FunctorV0M<StageScene*, void (StageScene::*)()>;
-    al::setTriggerEventForStopAllBgm(audioKeeper,
-                                     StageSceneFunctor(this, &StageScene::stopCollectBgm));
+    al::setTriggerEventForStopAllBgm(this, StageSceneFunctor(this, &StageScene::stopCollectBgm));
+
     if (rs::isModeE3MovieRom()) {
-        al::SeDirector* seDir = getAudioDirector()->getSeDirector();
-        seDir->setMuteSeInPVList(mSeNamedList->getMuteSeInPVList());
-        seDir->setMuteSeInPVListSize(mSeNamedList->getMuteSeInPVListSize());
+        getAudioDirector()->getSeDirector()->setMuteSeInPVList(
+            mSeNamedList->getMuteSeInPVList(), mSeNamedList->getMuteSeInPVListSize());
     }
     if (rs::isModeMovieRom()) {
-        al::SeDirector* seDir = getAudioDirector()->getSeDirector();
-        seDir->setMuteSeInPVList(mSeNamedList->getMuteSeInPVList());
-        seDir->setMuteSeInPVListSize(mSeNamedList->getMuteSeInPVListSize());
+        getAudioDirector()->getSeDirector()->setMuteSeInPVList(
+            mSeNamedList->getMuteSeInPVList(), mSeNamedList->getMuteSeInPVListSize());
     }
     al::deactivateAudioEventController(audioKeeper);
     BgmAnimeSyncDirector* bgmAnimeSyncDir = new BgmAnimeSyncDirector();
@@ -478,7 +477,8 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     al::LiveActor* demoPowerStarActor = new al::LiveActor("デモ用パワースター");
     al::initChildActorWithArchiveNameNoPlacementInfo(demoPowerStarActor, actorInitInfo, "PowerStar",
                                                      "Demo");
-    al::initChildActorWithArchiveNameNoPlacementInfo(mDemoShine, actorInitInfo, "Shine", "Demo");
+    al::initChildActorWithArchiveNameNoPlacementInfo(mDemoShine, actorInitInfo, "Shine",
+                                                     "Demo");
     mDemoShine->kill();
     demoPowerStarActor->kill();
     mDemoDotShine = new al::LiveActor("デモ用ドットシャイン");
@@ -707,31 +707,27 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
     }
 
     s32 lastRaceRanking = GameDataFunction::getLastRaceRanking(GameDataHolderWriter(this));
-    mGameDataHolder->reset_49();
-    mGameDataHolder->reset_4a();
+    mGameDataHolder->reset_492();
 
     bool restartPlacementInfoValid = restartPlacementInfo.getPlacementIter().isValid();
     const PlayerStartInfo* playerRestartInfo = nullptr;
-    if (startId) {
-        if (!restartPlacementInfoValid) {
-            const PlayerStartInfo* foundInfo =
-                playerStartInfoHolder->tryFindInitInfoByStartId(startId);
-            playerRestartInfo = foundInfo;
-            if (foundInfo) {
-                const al::PlacementInfo* srcPlacement = foundInfo->placementInfo;
-                restartPlacementInfo.set(srcPlacement->getPlacementIter(),
-                                         srcPlacement->getZoneIter());
-                al::CameraTicket* restartCamera = foundInfo->cameraTicket;
-                if (lastRaceRanking <= 0 && restartCamera)
-                    al::startCamera(this, restartCamera, -1);
-                else
-                    al::resetSceneInitEntranceCamera(this);
-            }
+    if (startId &&restartPlacementInfoValid) {
+        playerRestartInfo =
+            playerStartInfoHolder->tryFindInitInfoByStartId(startId);
+        if (playerRestartInfo) {
+            restartPlacementInfo.set(playerRestartInfo->placementInfo->getPlacementIter(),
+                                        playerRestartInfo->placementInfo->getZoneIter());
+
+
+            if (lastRaceRanking <= 0 && playerRestartInfo->cameraTicket)
+                al::startCamera(this, playerRestartInfo->cameraTicket, -1);
+            else
+                al::resetSceneInitEntranceCamera(this);
         }
     }
 
     const char* checkpointWarpObjId = GameDataFunction::getCheckpointWarpObjId(mGameDataHolder);
-    CheckpointFlag* checkpointFlag = rs::tryFindCheckpointFlag(this, checkpointWarpObjId);
+    CheckpointFlag* checkpointFlag = rs::tryFindCheckpointFlag(this,checkpointWarpObjId);
     bool isWarpCheckpoint = GameDataFunction::isWarpCheckpoint(mGameDataHolder);
     if (checkpointFlag && isWarpCheckpoint && checkpointFlag->isHome())
         al::resetSceneInitEntranceCamera(this);
@@ -771,8 +767,8 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
         sead::Vector3f trans = sead::Vector3f::zero;
         sead::Quatf quat = sead::Quatf::unit;
         if (playerRestartInfo) {
-            trans = playerRestartInfo->trans;
-            quat = playerRestartInfo->quat;
+            trans.set(playerRestartInfo->trans);
+            quat.set(playerRestartInfo->quat);
         } else if (restartPlacementInfo.getPlacementIter().isValid()) {
             al::getTrans(&trans, restartPlacementInfo);
             al::getQuat(&quat, restartPlacementInfo);
@@ -790,10 +786,10 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
         playerInitInfo.controllerPort = al::getMainControllerPort();
         playerInitInfo.costumeName = mCostumeName.cstr();
         playerInitInfo.capTypeName = mCapTypeName.cstr();
+        playerInitInfo._45 = (mStateCloset != nullptr);
         playerInitInfo.trans = trans;
         playerInitInfo.quat = quat;
         playerInitInfo._44 = foundCactus;
-        playerInitInfo._45 = (mStateCloset != nullptr);
 
         if (!mCostumeName.isEmpty())
             GameDataFunction::wearCostume(mGameDataHolder, mCostumeName.cstr());
@@ -963,11 +959,16 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
 
     if (!mWipeHolder) {
         mWipeHolder = new al::WipeHolder(6);
-        mWipeHolder->registerWipe("WipeCircle", new al::WipeSimple("ワープ用ワイプ", "WipeCircle", layoutInitInfo, nullptr));
-        mWipeHolder->registerWipe("FadeBlack", new al::WipeSimple("黒フェード", "FadeBlack", layoutInitInfo, nullptr));
-        mWipeHolder->registerWipe("FadeWhite", new al::WipeSimple("白フェード", "FadeWhite", layoutInitInfo, nullptr));
-        mWipeHolder->registerWipe("WipeMiss", new al::WipeSimple("ミスワイプ", "WipeMiss", layoutInitInfo, nullptr));
-        mWipeHolder->registerWipe("WipeSkip", new al::WipeSimple("スキップワイプ", "WipeSkip", layoutInitInfo, nullptr));
+        mWipeHolder->registerWipe("WipeCircle", new al::WipeSimple("ワープ用ワイプ", "WipeCircle",
+                                                                   layoutInitInfo, nullptr));
+        mWipeHolder->registerWipe(
+            "FadeBlack", new al::WipeSimple("黒フェード", "FadeBlack", layoutInitInfo, nullptr));
+        mWipeHolder->registerWipe(
+            "FadeWhite", new al::WipeSimple("白フェード", "FadeWhite", layoutInitInfo, nullptr));
+        mWipeHolder->registerWipe(
+            "WipeMiss", new al::WipeSimple("ミスワイプ", "WipeMiss", layoutInitInfo, nullptr));
+        mWipeHolder->registerWipe(
+            "WipeSkip", new al::WipeSimple("スキップワイプ", "WipeSkip", layoutInitInfo, nullptr));
     }
 
     al::createSceneObj<WipeHolderRequester>(this);
@@ -1005,13 +1006,14 @@ void StageScene::init(const al::SceneInitInfo& initInfo) {
                                                  mPlayGuideSkip, mAudioSystemPauseController,
                                                  mDemoSyncedEventKeeper);
 
-
     mStateCheckpointWarp = new StageSceneStateCheckpointWarp(
         "チェックポイントワープ到着デモ", this, mCheckpointWarpCapActor, mGameDataHolder,
-         al::initDemoProgramableCamera(
-        this, actorInitInfo, "CheckpointWarpArriveCamera", &mCheckpointWarpTargetPos,
-        &mCheckpointWarpParabolicPathPos, nullptr), &mCheckpointWarpTargetPos, &mCheckpointWarpParabolicPathPos);
-    mStateCarryMeat = new StageSceneStateCarryMeat("肉運び", this);
+        al::initDemoProgramableCamera(this, actorInitInfo, "CheckpointWarpArriveCamera",
+                                      &mCheckpointWarpTargetPos, &mCheckpointWarpParabolicPathPos,
+                                      nullptr),
+        &mCheckpointWarpTargetPos, &mCheckpointWarpParabolicPathPos);
+
+    mStateCarryMeat = new StageSceneStateCarryMeat("肉運びデモ", this);
 
     mStagePauseMenu = new StageSceneStatePauseMenu(
         "ポーズ画面", this, mPauseMenu, mGameDataHolder, initInfo, actorInitInfo, layoutInitInfo,

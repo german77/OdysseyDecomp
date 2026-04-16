@@ -15,6 +15,7 @@ using Matrix34f = Matrix34<f32>;
 }  // namespace sead
 
 struct PlayerInitInfo {
+
     al::GamePadSystem* gamePadSystem;
     const sead::Matrix34f* viewMtxPtr;
     s32 controllerPort;

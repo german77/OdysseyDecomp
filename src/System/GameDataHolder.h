@@ -215,6 +215,8 @@ public:
 
     void reset_49() { _49 = false; }
 
+    void reset_492() { _49 = false;_4a = false; }
+
     void set_4a() { _4a = true; }
 
     void reset_4a() { _4a = false; }
