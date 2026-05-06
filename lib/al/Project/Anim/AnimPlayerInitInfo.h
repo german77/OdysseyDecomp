@@ -1,7 +1,17 @@
 #pragma once
 
+namespace nn::g3d {
+class ModelObj;
+}  // namespace nn::g3d
+
 namespace al {
+class Resource;
+class InitResourceDataAnim;
+
 struct AnimPlayerInitInfo {
-    char _0[0x20];
+    Resource* animRes;
+    nn::g3d::ModelObj* modelObj;
+    Resource* modelRes;
+    InitResourceDataAnim* animResData;
 };
 }  // namespace al

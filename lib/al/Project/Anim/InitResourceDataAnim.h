@@ -11,6 +11,19 @@ public:
     InitResourceDataAnim(Resource*, AnimInfoTable*, AnimInfoTable*, AnimInfoTable*, AnimInfoTable*,
                          AnimInfoTable*);
 
+    AnimInfoTable* getAnimInfoTable(s32 matType) const {
+        switch (matType) {
+        case 0:
+            return mFclAnim;
+        case 1:
+            return mFtpAnim;
+        case 2:
+            return mFtsAnim;
+        default:
+            return nullptr;
+        }
+    }
+
 private:
     AnimInfoTable* mInfoTable;
     AnimInfoTable* mFclAnim;

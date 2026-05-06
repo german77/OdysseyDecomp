@@ -6,7 +6,7 @@
 
 namespace nn::g3d {
 class ModelObj;
-class BoneVisibilityAnimObj;
+class ModelAnimObj;
 }  // namespace nn::g3d
 
 namespace al {
@@ -39,10 +39,16 @@ public:
     bool isAnimPlaying() const;
     const char* getPlayingAnimName() const;
 
+    nn::g3d::ModelObj* getModelObj() const{return mModelInfo->modelObj;}
+    void setModelObj(nn::g3d::ModelObj* obj) { mModelInfo->modelObj = obj; }
+
+    nn::g3d::ModelAnimObj* getAnimObj() const{return mModelInfo->animObj;}
+    void setAnimObj(nn::g3d::ModelAnimObj* obj) { mModelInfo->animObj = obj; }
+
 private:
     struct ModelInfo {
         nn::g3d::ModelObj* modelObj = nullptr;
-        nn::g3d::BoneVisibilityAnimObj* boneAnimObj = nullptr;
+        nn::g3d::ModelAnimObj* animObj = nullptr;
     };
 
     ModelInfo* mModelInfo = nullptr;

@@ -15,18 +15,22 @@ public:
 
     AnimInfoTable* getAnimInfoTable() const { return mInfoTable; }
 
+    void setAnimInfoTable(AnimInfoTable* table) { mInfoTable = table; }
+
     bool is10() const { return _10; };
 
     void set10(bool value) { _10 = value; }
 
-    bool is11() const { return _11; };
+    bool isAnimationPlaying() const { return mIsAnimationPlaying; };
 
-    void set11(bool value) { _11 = value; }
+    void stopAnimation() { mIsAnimationPlaying = false; }
+
+    void startAnimation() { mIsAnimationPlaying = true; }
 
 private:
     AnimInfoTable* mInfoTable = nullptr;
     bool _10 = false;
-    bool _11 = false;
+    bool mIsAnimationPlaying = false;
 };
 
 static_assert(sizeof(AnimPlayerBase) == 0x18);

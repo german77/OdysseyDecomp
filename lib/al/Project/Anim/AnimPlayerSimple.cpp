@@ -1,7 +1,6 @@
 #include "Project/Anim/AnimPlayerSimple.h"
 
 #include <nn/g3d/AnimObj.h>
-#include <nn/g3d/BoneVisibilityAnimObj.h>
 
 #include "Project/Anim/AnimInfo.h"
 
@@ -11,19 +10,19 @@ AnimPlayerSimple::AnimPlayerSimple() {
 }
 
 void AnimPlayerSimple::applyTo() {
-    mModelInfo->boneAnimObj->Calculate();
-    mModelInfo->boneAnimObj->ApplyTo(mModelInfo->modelObj);
+    mModelInfo->animObj->Calculate();
+    mModelInfo->animObj->ApplyTo(mModelInfo->modelObj);
 }
 
 bool AnimPlayerSimple::calcNeedUpdateAnimNext() {
-    if (!is11())
+    if (!isAnimationPlaying())
         return false;
 
     applyTo();
 
     if (getAnimFrameRate() <= 0 || (isAnimOneTime() && isAnimEnd())) {
         setAnimToModel(nullptr);
-        set11(false);
+        stopAnimation();
     }
     return true;
 }
@@ -33,31 +32,31 @@ void AnimPlayerSimple::startAnim(const char* name) {
     setAnimToModel(mResInfo);
     applyTo();
     set10(true);
-    set11(true);
+    startAnimation();
 }
 
 void AnimPlayerSimple::update() {
-    if (is11() && !is10())
-        mModelInfo->boneAnimObj->getFrameCtrlPtr()->update();
+    if (isAnimationPlaying() && !is10())
+        mModelInfo->animObj->getFrameCtrlPtr()->update();
 }
 
 void AnimPlayerSimple::clearAnim() {
-    mModelInfo->boneAnimObj->ClearResult();
+    mModelInfo->animObj->ClearResult();
 }
 
 f32 AnimPlayerSimple::getAnimFrame() const {
-    return mModelInfo->boneAnimObj->getFrameCtrlPtr()->getFrame();
+    return mModelInfo->animObj->getFrameCtrlPtr()->getFrame();
 }
 
 void AnimPlayerSimple::setAnimFrame(f32 frame) {
-    mModelInfo->boneAnimObj->getFrameCtrlPtr()->setFrame(frame);
+    mModelInfo->animObj->getFrameCtrlPtr()->setFrame(frame);
     applyTo();
     set10(true);
-    set11(true);
+    startAnimation();
 }
 
 f32 AnimPlayerSimple::getAnimFrameMax() const {
-    return mModelInfo->boneAnimObj->getFrameCtrlPtr()->getFrameMax();
+    return mModelInfo->animObj->getFrameCtrlPtr()->getFrameMax();
 }
 
 f32 AnimPlayerSimple::getAnimFrameMax(const char* name) const {
@@ -65,13 +64,13 @@ f32 AnimPlayerSimple::getAnimFrameMax(const char* name) const {
 }
 
 f32 AnimPlayerSimple::getAnimFrameRate() const {
-    return mModelInfo->boneAnimObj->getFrameCtrlPtr()->getFrameRate();
+    return mModelInfo->animObj->getFrameCtrlPtr()->getFrameRate();
 }
 
 void AnimPlayerSimple::setAnimFrameRate(f32 rate) {
-    mModelInfo->boneAnimObj->getFrameCtrlPtr()->setFrameRate(rate);
+    mModelInfo->animObj->getFrameCtrlPtr()->setFrameRate(rate);
     applyTo();
-    set11(true);
+    startAnimation();
 }
 
 bool AnimPlayerSimple::isAnimExist(const char* name) const {
@@ -79,14 +78,11 @@ bool AnimPlayerSimple::isAnimExist(const char* name) const {
 }
 
 bool AnimPlayerSimple::isAnimEnd() const {
-    if (!isAnimPlaying())
-        return true;
-
-    return mModelInfo->boneAnimObj->getFrameCtrlPtr()->isEnd();
+    return !isAnimPlaying() || mModelInfo->animObj->getFrameCtrlPtr()->isEnd();
 }
 
 bool AnimPlayerSimple::isAnimOneTime() const {
-    return mModelInfo->boneAnimObj->getFrameCtrlPtr()->isOneTime();
+    return mModelInfo->animObj->getFrameCtrlPtr()->isOneTime();
 }
 
 bool AnimPlayerSimple::isAnimOneTime(const char* name) const {
