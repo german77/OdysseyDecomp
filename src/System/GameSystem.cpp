@@ -15,6 +15,7 @@
 #include "Library/Controller/GamePadSystem.h"
 #include "Library/Controller/GamePadWaveVibrationData.h"
 #include "Library/Effect/EffectSystem.h"
+#include "Library/File/FileUtil.h"
 #include "Library/Framework/GameFrameworkNx.h"
 #include "Library/Layout/LayoutSystem.h"
 #include "Library/LiveActor/ActorSensorUtil.h"
@@ -277,20 +278,20 @@ bool GameSystem::tryChangeSequence(const char* name) {
 void GameSystem::movement() {
     mApplicationMessageReceiver->update();
 
-    if (mApplicationMessageReceiver)
+    if (mApplicationMessageReceiver->mIsUpdatedOperationMode)
         mGamePadSystem->setInvalidateDisconnectFrame(600);
     mGamePadSystem->update();
 
     if (mNetworkSystem)
         mNetworkSystem->updateBeforeScene();
 
-    if (mApplicationMessageReceiver->mPerformanceMode == 1) {
+    if (mApplicationMessageReceiver->mPerformanceMode == nn::oe::PerformanceMode_Boost) {
         sead::GraphicsNvn::instance()->setDisplayBufferWindowCrop(0, 0, 1600, 900);
-        // Application::instance()->isDocked(true);
+        Application::instance()->getGameFramework()->setDocked(true);
         mSystemInfo->drawSystemInfo->isDocked = true;
     } else {
         sead::GraphicsNvn::instance()->setDisplayBufferWindowCrop(0, 0, 1280, 720);
-        // Application::instance()->isDocked(false);
+        Application::instance()->getGameFramework()->setDocked(false);
         mSystemInfo->drawSystemInfo->isDocked = false;
     }
 
@@ -300,23 +301,26 @@ void GameSystem::movement() {
         mNetworkSystem->updateAfterScene();
 
     if (!mSequence->isAlive()) {
-        if (al::isEqualString("HakoniwaSequence", mSequence->getName())) {
+        if (al::isEqualString("HakoniwaSequence", mSequence->getName().cstr())) {
             GameDataHolder* gameDataHolder =
                 static_cast<HakoniwaSequence*>(mSequence)->getGameDataHolder();
-            gameDataHolder->setSeparatePlay(mIsSinglePlay);
+            mIsSinglePlay = gameDataHolder->isSeparatePlay();
             mIsSequenceSetupIncomplete = true;
             *mGameConfigData = *gameDataHolder->getGameConfigData();
         }
+
+        mSystemInfo->layoutSystem->prepareInitFontForChangeLanguage();
+        al::removeResourceCategory("常駐[ローカライズ]");
+
+        al::findNamedHeap("LocalizeResourceHeap")->freeAll();
+        al::addResourceCategory("常駐[ローカライズ]", 80,
+                                al::findNamedHeap("LocalizeResourceHeap"));
+        al::clearFileLoaderEntry();
+        al::createCategoryResourceAll("常駐[ローカライズ]");
+        mSystemInfo->layoutSystem->initFontForChangeLanguage();
+        mSystemInfo->messageSystem->initMessageForChangeLanguage();
+        tryChangeSequence("HakoniwaSequence");
     }
-
-    mSystemInfo->layoutSystem->prepareInitFontForChangeLanguage();
-    al::removeResourceCategory("常駐[ローカライズ]");
-
-    al::addResourceCategory("常駐[ローカライズ]", 80, al::findNamedHeap("LocalizeResourceHeap"));
-    al::createCategoryResourceAll("常駐[ローカライズ]");
-    mSystemInfo->layoutSystem->initFontForChangeLanguage();
-    mSystemInfo->messageSystem->initMessageForChangeLanguage();
-    tryChangeSequence("HakoniwaSequence");
 }
 
 void GameSystem::drawMain() {
