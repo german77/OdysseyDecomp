@@ -159,15 +159,15 @@ void GameSystem::init() {
     al::AudioResourceLoadInfo* strSystemInfo = new al::AudioResourceLoadInfo;
     strSystemInfo->setName("SeResourceStdSystem", false);
     if (copy)
-        al::trySetAudioInfo2(userInfoList, strSystemInfo, false);
+        al::trySetAudioInfo2(copy, strSystemInfo, false);
 
     auto* copy2 = loadInfo->addonSoundArchiveLoadInfoList;
     al::AudioResourceLoadInfo* testSEInfo = new al::AudioResourceLoadInfo;
     testSEInfo->setName("TestSE", false);
     if (copy2)
-        al::trySetAudioInfo2(addonInfoList, testSEInfo, false);
+        al::trySetAudioInfo2(copy2, testSEInfo, false);
 
-    al::trySetAudioInfo(mAudioInfoList, loadInfo, false);
+    al::trySetAudioInfo(groupList, loadInfo, false);
 
     al::AudioResourceLoadGroupInfo* nextGroupList = new al::AudioResourceLoadGroupInfo;
     nextGroupList->name = "システム常駐以外の常駐";
@@ -182,31 +182,31 @@ void GameSystem::init() {
     Std1stInfo->setName("SeResourceStd1st", false);
     al::trySetAudioInfo2(findout, Std1stInfo, false);
 
-    auto* copy3 = loadInfo->userManagementGroupLoadInfoList;
+    auto* copy3 = nextGroupList->userManagementGroupLoadInfoList;
     al::AudioResourceLoadInfo* Std2stInfo = new al::AudioResourceLoadInfo;
     Std2stInfo->setName("SeResourceStd2nd", false);
     if (copy3)
-        al::trySetAudioInfo2(findout, Std2stInfo, false);
+        al::trySetAudioInfo2(copy3, Std2stInfo, false);
 
-    auto* copy4 = loadInfo->userManagementGroupLoadInfoList;
+    auto* copy4 = nextGroupList->userManagementGroupLoadInfoList;
     al::AudioResourceLoadInfo* bgmStd1stInfo = new al::AudioResourceLoadInfo;
     bgmStd1stInfo->setName("BgmResourceStd1st", true);
     if (copy4)
-        al::trySetAudioInfo2(findout, bgmStd1stInfo, false);
+        al::trySetAudioInfo2(copy4, bgmStd1stInfo, false);
 
-    auto* copy5 = loadInfo->userManagementGroupLoadInfoList;
+    auto* copy5 = nextGroupList->userManagementGroupLoadInfoList;
     al::AudioResourceLoadInfo* bgmStd2stInfo = new al::AudioResourceLoadInfo();
     bgmStd2stInfo->setName("BgmResourceStd2nd", true);
     if (copy5)
-        al::trySetAudioInfo2(findout, bgmStd2stInfo, false);
+        al::trySetAudioInfo2(copy5, bgmStd2stInfo, false);
 
-    auto* copy6 = loadInfo->userManagementGroupLoadInfoList;
+    auto* copy6 = nextGroupList->userManagementGroupLoadInfoList;
     al::AudioResourceLoadInfo* prefetch = new al::AudioResourceLoadInfo();
     prefetch->setName("BgmResourceStdPrefetch", true);
     if (copy6)
-        al::trySetAudioInfo2(findout, prefetch, false);
+        al::trySetAudioInfo2(copy6, prefetch, false);
 
-    al::trySetAudioInfo(mAudioInfoList, nextGroupList, false);
+    al::trySetAudioInfo(groupList, nextGroupList, false);
 
     alAudioSystemFunction::loadAudioResource(
         "システム常駐", mAudioInfoList,
