@@ -30,6 +30,7 @@ public:
     void calcAnim(bool);
     void draw();
 
+    nn::ui2d::Layout* getLayout() const { return mLayout; }
 private:
     CustomTagProcessor* mTagProcessor;
     nn::ui2d::DrawInfo* mDrawInfo;

@@ -9,6 +9,8 @@
 
 #include "Scene/SceneObjFactory.h"
 
+class QuestInfo;
+
 namespace al {
 struct ActorInitInfo;
 class IUseSceneObjHolder;

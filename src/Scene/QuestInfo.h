@@ -26,6 +26,8 @@ public:
     bool isEqual(const QuestInfo* quest) const;
 
     s32 getQuestNo() const { return mQuestNo; }
+    const sead::Vector3f& getTrans() const { return mTrans; }
+    const sead::FixedSafeString<128>& getMapLabel() const { return mMapLabel; }
 
     const sead::Vector3f& getTrans() const { return mTrans; }
 
