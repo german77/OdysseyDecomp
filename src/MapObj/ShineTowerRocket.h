@@ -238,13 +238,11 @@ private:
     al::RateParamV3f* mWorldMapCameraPosRateParam = nullptr;
     sead::Vector3f mEntranceCameraFront = sead::Vector3f::zero;
     LinkIdPair mPlayerRestartLinkId;
-    char _39e[0x2];  //???
     al::AreaObj* mDokanActor = nullptr;
     DokanPuppetController* mDokanPuppetController = nullptr;
     DokanInfo* mDokanInfo = nullptr;
     al::LiveActor* mDokanDemoActor = nullptr;
     LinkIdPair mDokanDemoLinkId;
-    char _3c2[0x6];  //???
     al::LiveActor* mDemoPeachCastleCapActor = nullptr;
     bool mIsCompleteShine = false;
     bool mIsDemoPeachCastleCap = false;

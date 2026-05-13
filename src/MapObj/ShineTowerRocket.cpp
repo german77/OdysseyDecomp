@@ -88,23 +88,6 @@
 #include "Util/SpecialBuildUtil.h"
 
 namespace {
-void invalidateDitherAnimAll(al::LiveActor*);
-void validateDitherAnimAll(al::LiveActor*);
-void invalidateOcclusionQueryAll(al::LiveActor*);
-void validateOcclusionQueryAll(al::LiveActor*);
-void resetSubActorPositionAll(al::LiveActor*);
-void setModelAlphaMaskSubActorAll(al::LiveActor*, f32);
-void setupCapTargetInfoForHomeGlobe(sead::Vector3f*, CapTargetInfo*, al::LiveActor*,
-                                    al::LiveActor*);
-s32 calcRestShineNum(const al::LiveActor*);
-bool isDamageHomeModel(const al::LiveActor*);
-bool isNeedShowHomeSkyMessage(const ShineTowerRocket*);
-bool isPayShineEnoughForUnlock(const al::LiveActor*);
-bool isNeedDemoWalkPlayerToPoint(const al::LiveActor*);
-bool isEnableUnlockWorldByPayShine(const al::LiveActor*, s32, s32);
-f32 calcHomeMeterAnimFrame(const al::LiveActor*, s32);
-bool isHomeMeterComplete(const al::LiveActor*);
-
 static const sead::Vector3f sEntranceCameraOffset = {0.0f, 0.0f, 0.0f};
 static const sead::Vector3f sEntranceCameraOffsetWithRock = {0.0f, 200.0f, 0.0f};
 static const sead::Vector3f sEntranceAreaOffset = {0.0f, 0.0f, 250.0f};
@@ -193,18 +176,37 @@ NERVES_MAKE_STRUCT(ShineTowerRocket, Wait, DemoAppearFromEntrance, WaitDemo, Wai
                    DemoInformNewItem, DemoInformCompleteShineFadeIn, DemoInformPeachCastleCap,
                    DemoAwardMoon, DemoKoopaShip, DemoInformRepairHome, DemoInformNewHomeMessage,
                    DemoUpLevelCamera, DemoWarpWorld, DemoUpLevelCloseFade);
+
+void invalidateDitherAnimAll(al::LiveActor*);
+void validateDitherAnimAll(al::LiveActor*);
+void invalidateOcclusionQueryAll(al::LiveActor*);
+void validateOcclusionQueryAll(al::LiveActor*);
+void resetSubActorPositionAll(al::LiveActor*);
+void setModelAlphaMaskSubActorAll(al::LiveActor*, f32);
+void setupCapTargetInfoForHomeGlobe(sead::Vector3f*, CapTargetInfo*, al::LiveActor*,
+                                    al::LiveActor*);
+s32 calcRestShineNum(const al::LiveActor*);
+bool isNeedShowHomeSkyMessage(const ShineTowerRocket*);
+bool isPayShineEnoughForUnlock(const al::LiveActor*);
+bool isNeedDemoWalkPlayerToPoint(const al::LiveActor*);
+bool isEnableUnlockWorldByPayShine(const al::LiveActor*, s32, s32);
+f32 calcHomeMeterAnimFrame(const al::LiveActor*, s32);
+bool isHomeMeterComplete(const al::LiveActor*);
 }  // namespace
 
-template class al::FunctorV0M<ShineTowerRocket*, void (ShineTowerRocket::*)()>;
-
 ShineTowerRocket::ShineTowerRocket(const char* name) : al::LiveActor(name) {}
+
+static bool isDamageHomeModel(const al::LiveActor* actor) {
+    return (GameDataFunction::isCrashHome(actor) || GameDataFunction::isRepairHome(actor)) &&
+           GameDataFunction::getHomeLevel(actor) < 9;
+}
 
 void ShineTowerRocket::init(const al::ActorInitInfo& info) {
     al::initActorSceneInfo(this, info);
 
     if (!isDamageHomeModel(this) || rs::isModeE3LiveRom()) {
         al::initActorWithArchiveName(this, info, "ShineTower", nullptr);
-    } else if (GameDataFunction::isWorldSky(GameDataHolderAccessor(this))) {
+    } else if (GameDataFunction::isWorldSky(this)) {
         al::initActorWithArchiveName(this, info, "ShineTower", nullptr);
 
         mDamageModel = new DamageModel(this);
@@ -230,7 +232,7 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
 
     rs::registerShineTowerRocketToDemoDirector(this);
 
-    if (GameDataFunction::isWorldCity(GameDataHolderAccessor(this)))
+    if (GameDataFunction::isWorldCity(this))
         if (GameDataFunction::getScenarioNo(this) == 1 ||
             GameDataFunction::getScenarioNo(this) == 6 ||
             GameDataFunction::getScenarioNo(this) == 9)
@@ -267,9 +269,9 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
     }
 
     if (al::isExistLinkChild(info, "BeforeClear", 0)) {
-        s32 worldId = GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(this)) + 1;
+        s32 worldId = GameDataFunction::getCurrentWorldId(this) + 1;
         while (true) {
-            if (worldId >= GameDataFunction::getWorldNum(GameDataHolderAccessor(this))) {
+            if (worldId >= GameDataFunction::getWorldNum(this)) {
                 sead::Matrix34f beforeClearMtx = sead::Matrix34f::ident;
                 al::getLinksMatrix(&beforeClearMtx, info, "BeforeClear");
                 al::resetMtxPosition(this, beforeClearMtx);
@@ -277,7 +279,7 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
                 break;
             }
 
-            if (GameDataFunction::isAlreadyGoWorld(GameDataHolderAccessor(this), worldId++))
+            if (GameDataFunction::isAlreadyGoWorld(this, worldId++))
                 break;
         }
     }
@@ -306,7 +308,7 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
                                ShineTowerRocketFunctor(this, &ShineTowerRocket::onSwitchDither),
                                ShineTowerRocketFunctor(this, &ShineTowerRocket::offSwitchDither));
 
-    if (GameDataFunction::getPayShineNum(GameDataHolderAccessor(this)) >= 1)
+    if (GameDataFunction::getPayShineNum(this) >= 1)
         al::tryOnStageSwitch(this, "SwitchKidsModeOn");
 
     if (rs::isModeE3Rom() || rs::isModeE3LiveRom()) {
@@ -326,10 +328,9 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
     al::resetMtxPosition(mDoorAreaChange, *al::getJointMtxPtr(this, "ShineTowerDoor"));
     mDoorAreaChange->setHomeDoor(false);
 
-    bool isHomeNoStart = GameDataFunction::isCrashHome(GameDataHolderAccessor(this)) ||
-                         GameDataFunction::isBossAttackedHome(GameDataHolderAccessor(this)) ||
-                         !GameDataFunction::isEnableCap(GameDataHolderAccessor(this)) ||
-                         rs::isInvalidChangeStage(this);
+    bool isHomeNoStart = GameDataFunction::isCrashHome(this) ||
+                         GameDataFunction::isBossAttackedHome(this) ||
+                         !GameDataFunction::isEnableCap(this) || rs::isInvalidChangeStage(this);
     if (isHomeNoStart)
         mDoorAreaChange->setNoStart();
 
@@ -363,7 +364,7 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
     mDemoEventFlowExecutorSub = rs::initEventFlowForSystem(this, info, "Dirty", "Home", nullptr);
     al::initEventReceiver(mDemoEventFlowExecutor, this);
     al::initEventReceiver(mDemoEventFlowExecutorSub, this);
-    if (!GameDataFunction::isActivateHome(GameDataHolderAccessor(this))) {
+    if (!GameDataFunction::isActivateHome(this)) {
         mPlayerRestartLinkId.setCurrent(1);
         mDokanActor = al::tryCreateLinkArea(info, "InformationArea", "InformationArea");
     }
@@ -389,14 +390,12 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
     mEntranceCameraTicket =
         al::initEntranceCameraNoSave(this, al::getPlacementInfo(info), "ホーム入り口");
 
-    if (!GameDataFunction::isUnlockedWorld(
-            GameDataHolderAccessor(this),
-            GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(this)))) {
+    if (!GameDataFunction::isUnlockedWorld(this, GameDataFunction::getCurrentWorldId(this))) {
         makeActorDead();
         return;
     }
-    if (GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(this)) == 0 &&
-        !GameDataFunction::isUnlockedWorld(GameDataHolderAccessor(this), 1)) {
+    if (GameDataFunction::getCurrentWorldId(this) == 0 &&
+        !GameDataFunction::isUnlockedWorld(this, 1)) {
         makeActorDead();
         return;
     }
@@ -405,7 +404,7 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
         new al::WipeSimple("ホーム用白フェード", "FadeWhite", al::getLayoutInitInfo(info), nullptr);
     mDemoWipe->appear();
 
-    if (!GameDataFunction::isActivateHome(GameDataHolderAccessor(this))) {
+    if (!GameDataFunction::isActivateHome(this)) {
         mDirtyModel = new al::LiveActor("ホーム汚れモデル");
         al::initChildActorWithArchiveNameNoPlacementInfo(mDirtyModel, info, "ShineTowerDirty",
                                                          nullptr);
@@ -437,7 +436,7 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
         al::getSubActor(this, "フレーム")->kill();
     }
 
-    if (!GameDataFunction::isLaunchHome(GameDataHolderAccessor(this))) {
+    if (!GameDataFunction::isLaunchHome(this)) {
         mShineTowerRock = new al::LiveActor("ホーム岩モデル");
         al::initChildActorWithArchiveNameNoPlacementInfo(mShineTowerRock, info, "ShineTowerRock",
                                                          nullptr);
@@ -461,8 +460,7 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
         }
     }
 
-    if (GameDataFunction::isCrashHome(GameDataHolderAccessor(this)) ||
-        GameDataFunction::isBossAttackedHome(GameDataHolderAccessor(this))) {
+    if (GameDataFunction::isCrashHome(this) || GameDataFunction::isBossAttackedHome(this)) {
         mClashModel = new al::LiveActor("ホーム壊れ状態モデル");
         al::initChildActorWithArchiveNameNoPlacementInfo(mClashModel, info, "ShineTowerClash",
                                                          nullptr);
@@ -483,9 +481,9 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
     if (mDirtyModel || mClashModel)
         mHomeDemoActorGroup->makeActorDeadAll();
 
-    if (GameDataFunction::isWorldSea(GameDataHolderAccessor(this)))
+    if (GameDataFunction::isWorldSea(this))
         mRopeRootRotateDegree = -90.0f;
-    else if (GameDataFunction::isWorldLake(GameDataHolderAccessor(this)))
+    else if (GameDataFunction::isWorldLake(this))
         mRopeRootRotateDegree = 90.0f;
     else
         mRopeRootRotateDegree = 0.0f;
@@ -499,7 +497,7 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
         al::initActorWithArchiveName(demoShine, info, "Shine", "Dummy");
         demoShine->makeActorDead();
         mDemoShineGroup->registerActor(demoShine);
-        if (GameDataFunction::isWorldPeach(GameDataHolderAccessor(this)))
+        if (GameDataFunction::isWorldPeach(this))
             rs::setStageShineAnimFrame(demoShine, nullptr, 0, false);
         else
             rs::setStageShineAnimFrame(demoShine, nullptr, -1, false);
@@ -552,7 +550,7 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
         mDemoPlayerActor->makeActorDead();
         al::invalidateClipping(mDemoPlayerActor);
 
-        if (GameDataFunction::isWorldSky(GameDataHolderAccessor(this))) {
+        if (GameDataFunction::isWorldSky(this)) {
             mDemoPlayerActor2 = new DemoPlayer("ホーム用デモプレイヤー2");
             al::initLinksActor(mDemoPlayerActor2, info, "DemoPlayer2", 0);
             mDemoPlayerActor2->makeActorDead();
@@ -566,14 +564,14 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
     al::resetMtxPosition(mHomeSubActor, *al::getJointMtxPtr(this, "CheckPointFlag"));
     al::invalidateClipping(mHomeSubActor);
     al::registerSubActorSyncClippingAndHide(this, mHomeSubActor);
-    if (!GameDataFunction::isActivateHome(GameDataHolderAccessor(this)))
+    if (!GameDataFunction::isActivateHome(this))
         mHomeSubActor->makeActorDead();
 
     al::PartsModel* globeActor = static_cast<al::PartsModel*>(al::getSubActor(this, "地球儀"));
     mShineTowerGlobeAnimCtrl = new ShineTowerGlobeAnimCtrl(globeActor);
     mShineTowerGlobeAnimCtrl->init(info);
     globeActor->offSyncAppearAndHide();
-    if (GameDataFunction::isActivateHome(GameDataHolderAccessor(this)))
+    if (GameDataFunction::isActivateHome(this))
         globeActor->makeActorAlive();
     else
         globeActor->makeActorDead();
@@ -587,8 +585,7 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
     }
     mBackDoor->kill();
 
-    mIsPlayDemoAwardSpecial =
-        GameDataFunction::isPlayDemoAwardSpecial(GameDataHolderAccessor(this));
+    mIsPlayDemoAwardSpecial = GameDataFunction::isPlayDemoAwardSpecial(this);
     makeActorAlive();
 
     {
@@ -602,7 +599,7 @@ void ShineTowerRocket::init(const al::ActorInitInfo& info) {
     }
     setupCapTargetInfoForHomeGlobe(&mCapTargetOffset, mCapTargetInfo, this, mDirtyModel);
 
-    const char* playerStartId = GameDataFunction::tryGetPlayerStartId(GameDataHolderAccessor(this));
+    const char* playerStartId = GameDataFunction::tryGetPlayerStartId(this);
     rs::registerPlayerStartInfoToHolder(this, info, "HomeEntrance", nullptr, nullptr, nullptr);
     if (playerStartId && al::isEqualString(playerStartId, "HomeEntrance")) {
         mDoorAreaChange->setHomeDoor(true);
@@ -690,10 +687,9 @@ void ShineTowerRocket::initAfterPlacement() {
         return;
     }
 
-    if (!GameDataFunction::isPlayDemoWorldWarp(GameDataHolderAccessor(this)) ||
-        GameDataFunction::isCrashHome(GameDataHolderAccessor(this)) ||
-        GameDataFunction::isBossAttackedHome(GameDataHolderAccessor(this))) {
-        if (!GameDataFunction::isPlayDemoReturnToHome(GameDataHolderAccessor(this)))
+    if (!GameDataFunction::isPlayDemoWorldWarp(this) || GameDataFunction::isCrashHome(this) ||
+        GameDataFunction::isBossAttackedHome(this)) {
+        if (!GameDataFunction::isPlayDemoReturnToHome(this))
             return;
 
         rs::addDemoReturnToHomeToList(this);
@@ -748,10 +744,8 @@ void ShineTowerRocket::control() {
             al::startCamera(this, mFixDoorwayCameraTicket, -1);
     }
 
-    if (GameDataFunction::isCrashHome(GameDataHolderAccessor(this)) ||
-        GameDataFunction::isBossAttackedHome(GameDataHolderAccessor(this)) ||
-        !GameDataFunction::isEnableCap(GameDataHolderAccessor(this)) ||
-        rs::isInvalidChangeStage(this)) {
+    if (GameDataFunction::isCrashHome(this) || GameDataFunction::isBossAttackedHome(this) ||
+        !GameDataFunction::isEnableCap(this) || rs::isInvalidChangeStage(this)) {
         mHomeActor->setNoStart(true);
         mDoorAreaChange->setNoStart();
     } else {
@@ -808,7 +802,7 @@ void ShineTowerRocket::calcAnim() {
 }
 
 bool ShineTowerRocket::isFirstDemo() const {
-    return !GameDataFunction::isAlreadyGoWorld(GameDataHolderAccessor(this), mWorldId);
+    return !GameDataFunction::isAlreadyGoWorld(this, mWorldId);
 }
 
 void ShineTowerGlobeAnimCtrl::start(f32 accel) {
@@ -827,8 +821,7 @@ void ShineTowerGlobeAnimCtrl::start(f32 accel) {
     mBrakeTimer = 120;
 
     const char* musicBoxName = nullptr;
-    if (GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(mGlobeActor)) >=
-            GameDataFunction::getWorldIndexCity() &&
+    if (GameDataFunction::getCurrentWorldId(mGlobeActor) >= GameDataFunction::getWorldIndexCity() &&
         rs::isCollectedBgmCityWorldCelemony(mGlobeActor))
         musicBoxName = "MusicBox00";
     else
@@ -919,7 +912,7 @@ bool ShineTowerRocket::receiveMsg(const al::SensorMsg* message, al::HitSensor* o
     if (al::isSensorName(self, "MeterReaction")) {
         al::LiveActor* actor = this;
         const al::IUseSceneObjHolder* holder = actor ? actor : nullptr;
-        if (!GameDataFunction::isActivateHome(GameDataHolderAccessor(holder)))
+        if (!GameDataFunction::isActivateHome(holder))
             return false;
 
         if (mClashModel && al::isAlive(mClashModel))
@@ -984,11 +977,11 @@ bool ShineTowerRocket::receiveMsg(const al::SensorMsg* message, al::HitSensor* o
     if (al::isSensorName(self, "DokanMapObj")) {
         al::LiveActor* actor = this;
         const al::IUseSceneObjHolder* holder = actor ? actor : nullptr;
-        if (GameDataFunction::isCrashHome(GameDataHolderAccessor(holder)))
+        if (GameDataFunction::isCrashHome(holder))
             return false;
-        if (GameDataFunction::isBossAttackedHome(GameDataHolderAccessor(holder)))
+        if (GameDataFunction::isBossAttackedHome(holder))
             return false;
-        if (!GameDataFunction::isEnableCap(GameDataHolderAccessor(holder)))
+        if (!GameDataFunction::isEnableCap(holder))
             return false;
         if (rs::isInvalidChangeStage(this))
             return false;
@@ -1002,10 +995,8 @@ bool ShineTowerRocket::receiveMsg(const al::SensorMsg* message, al::HitSensor* o
     if (al::isSensorName(self, "Dokan")) {
         al::LiveActor* actor = this;
         const al::IUseSceneObjHolder* holder = actor ? actor : nullptr;
-        if (GameDataFunction::isCrashHome(GameDataHolderAccessor(holder)) ||
-            GameDataFunction::isBossAttackedHome(GameDataHolderAccessor(holder)) ||
-            !GameDataFunction::isEnableCap(GameDataHolderAccessor(holder)) ||
-            rs::isInvalidChangeStage(this))
+        if (GameDataFunction::isCrashHome(holder) || GameDataFunction::isBossAttackedHome(holder) ||
+            !GameDataFunction::isEnableCap(holder) || rs::isInvalidChangeStage(this))
             return false;
 
         al::resetPosition(mDokanDemoActor, al::getSensorPos(self));
@@ -1107,12 +1098,11 @@ bool ShineTowerRocket::receiveMsg(const al::SensorMsg* message, al::HitSensor* o
                 mShineTowerGlobeAnimCtrl->setWorldMapCameraAnim(1.0f, -1);
 
             al::tryOnStageSwitch(this, "SwitchKidsModeOn");
-            s32 currentShineNum =
-                GameDataFunction::getCurrentShineNum(GameDataHolderAccessor(this));
+            s32 currentShineNum = GameDataFunction::getCurrentShineNum(this);
             mPlayerRestartLinkId.setCurrent(0);
 
-            if (GameDataFunction::isFindKoopa(GameDataHolderAccessor(this)) ||
-                isNeedShowHomeSkyMessage(this) || rs::isInvalidChangeStage(this)) {
+            if (GameDataFunction::isFindKoopa(this) || isNeedShowHomeSkyMessage(this) ||
+                rs::isInvalidChangeStage(this)) {
                 al::setNerve(this, &NrvShineTowerRocket.NoStartEarth);
             } else {
                 mLinkObjAliveDeadCtrl->on();
@@ -1203,8 +1193,8 @@ void ShineTowerRocket::exeWait() {
             al::startAction(mDirtyModel, "WaitWaterfall");
         } else {
             const al::IUseSceneObjHolder* holder = this;
-            if (!GameDataFunction::isLaunchHome(GameDataHolderAccessor(holder)) &&
-                GameDataFunction::isActivateHome(GameDataHolderAccessor(holder))) {
+            if (!GameDataFunction::isLaunchHome(holder) &&
+                GameDataFunction::isActivateHome(holder)) {
                 al::tryStartActionIfNotPlaying(this, "WaitWaterfallNormal");
             } else if (mDamageModel && al::isAlive(mDamageModel)) {
                 al::tryStartActionIfNotPlaying(mDamageModel, "WaitNormal");
@@ -1241,8 +1231,8 @@ void ShineTowerRocket::exeWait() {
 
     const al::IUseSceneObjHolder* holder = this;
     bool isActivateHome = false;
-    if (!GameDataFunction::isLaunchHome(GameDataHolderAccessor(holder)))
-        isActivateHome = GameDataFunction::isActivateHome(GameDataHolderAccessor(holder));
+    if (!GameDataFunction::isLaunchHome(holder))
+        isActivateHome = GameDataFunction::isActivateHome(holder);
 
     bool isClashAlive = false;
     if (mClashModel)
@@ -1291,21 +1281,18 @@ void ShineTowerRocket::exeWait() {
             return;
         }
 
-        if (!GameDataFunction::isActivateHome(GameDataHolderAccessor(holder)))
+        if (!GameDataFunction::isActivateHome(holder))
             return;
         {
-            GameDataHolderAccessor crashHomeAccessor(holder);
-            if (GameDataFunction::isCrashHome(crashHomeAccessor))
+            if (GameDataFunction::isCrashHome(holder))
                 return;
         }
         {
-            GameDataHolderAccessor bossAttackedHomeAccessor(holder);
-            if (GameDataFunction::isBossAttackedHome(bossAttackedHomeAccessor))
+            if (GameDataFunction::isBossAttackedHome(holder))
                 return;
         }
         {
-            GameDataHolderAccessor enableCapAccessor(holder);
-            if (!GameDataFunction::isEnableCap(enableCapAccessor))
+            if (!GameDataFunction::isEnableCap(holder))
                 return;
         }
         if (rs::isInvalidChangeStage(this))
@@ -1321,11 +1308,9 @@ void ShineTowerRocket::exeWait() {
         al::connectPoseQT(this, mMtxConnector);
 
     {
-        GameDataHolderAccessor findKoopaAccessor(holder);
-        if (!GameDataFunction::isFindKoopa(findKoopaAccessor)) {
+        if (!GameDataFunction::isFindKoopa(holder)) {
             if (!rs::isExistKoopaShipInSky(this)) {
-                GameDataHolderAccessor unlockedAllWorldAccessor(holder);
-                if (!GameDataFunction::isUnlockedAllWorld(unlockedAllWorldAccessor))
+                if (!GameDataFunction::isUnlockedAllWorld(holder))
                     rs::updateEventFlow(mEventFlowExecutor);
             }
         }
@@ -1351,12 +1336,9 @@ void ShineTowerRocket::exeWait() {
 
     if (!mShineTowerGlobeAnimCtrl->isHoldingMusicBox()) {
         {
-            GameDataHolderAccessor crashHomeAccessor(holder);
-            if (!GameDataFunction::isCrashHome(crashHomeAccessor)) {
-                GameDataHolderAccessor bossAttackedHomeAccessor(holder);
-                if (!GameDataFunction::isBossAttackedHome(bossAttackedHomeAccessor)) {
-                    GameDataHolderAccessor activateHomeAccessor(holder);
-                    if (GameDataFunction::isActivateHome(activateHomeAccessor)) {
+            if (!GameDataFunction::isCrashHome(holder)) {
+                if (!GameDataFunction::isBossAttackedHome(holder)) {
+                    if (GameDataFunction::isActivateHome(holder)) {
                         al::holdSe(this, sead::SafeString("Engine_loop"));
                         al::holdSe(this, sead::SafeString("Tank_loop"));
                     }
@@ -1364,16 +1346,11 @@ void ShineTowerRocket::exeWait() {
             }
         }
 
-        GameDataHolderAccessor playDemoWorldWarpAccessor(holder);
-        if (!GameDataFunction::isPlayDemoWorldWarp(playDemoWorldWarpAccessor)) {
-            GameDataHolderAccessor crashHomeAccessor(holder);
-            if (GameDataFunction::isCrashHome(crashHomeAccessor)) {
+        if (!GameDataFunction::isPlayDemoWorldWarp(holder)) {
+            if (GameDataFunction::isCrashHome(holder))
                 al::holdSe(mClashModel, sead::SafeString("Crash_loop"));
-            } else {
-                GameDataHolderAccessor bossAttackedHomeAccessor(holder);
-                if (GameDataFunction::isBossAttackedHome(bossAttackedHomeAccessor))
-                    al::holdSe(mClashModel, sead::SafeString("Crash_loop"));
-            }
+            else if (GameDataFunction::isBossAttackedHome(holder))
+                al::holdSe(mClashModel, sead::SafeString("Crash_loop"));
         }
     }
 }
@@ -1415,7 +1392,7 @@ void ShineTowerRocket::exeNoStartEarth() {
     if (al::isFirstStep(this)) {
         al::LiveActor* actor = this;
         const al::IUseSceneObjHolder* holder = actor;
-        if (GameDataFunction::isFindKoopa(GameDataHolderAccessor(holder)))
+        if (GameDataFunction::isFindKoopa(holder))
             rs::showCapMessage(this, "Home_Cloud", 90, 0);
         else if (isNeedShowHomeSkyMessage(this))
             rs::showCapMessage(this, "Home_Sky", 90, 0);
@@ -1433,7 +1410,7 @@ void ShineTowerRocket::exeNoStart() {
     }
 
     if (al::isStep(this, 60)) {
-        if (GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(this)) == 1)
+        if (GameDataFunction::getCurrentWorldId(this) == 1)
             if (mIsFirstPayNotEnough)
                 rs::startEventFlow(mEventFlowExecutor, "FirstPayNotEnough");
             else
@@ -1574,11 +1551,9 @@ void ShineTowerRocket::exeDemoPrepare() {
 
         if (al::isNerve(this, &NrvShineTowerRocket.DemoPrepareNoShine)) {
             al::setNerve(this, &NrvShineTowerRocket.DemoWalkPlayerToPointNoShine);
-        } else if (!GameDataFunction::isLaunchHome(GameDataHolderAccessor(this)) ||
-                   GameDataFunction::isCrashHome(GameDataHolderAccessor(this)) ||
-                   GameDataFunction::isBossAttackedHome(GameDataHolderAccessor(this)) ||
-                   isPayShineEnoughForUnlock(this) ||
-                   GameDataFunction::isGameClear(GameDataHolderAccessor(this))) {
+        } else if (!GameDataFunction::isLaunchHome(this) || GameDataFunction::isCrashHome(this) ||
+                   GameDataFunction::isBossAttackedHome(this) || isPayShineEnoughForUnlock(this) ||
+                   GameDataFunction::isGameClear(this)) {
             al::setNerve(this, &NrvShineTowerRocket.DemoAppearShine);
         } else {
             al::setNerve(this, &NrvShineTowerRocket.DemoMeterRotate);
@@ -1637,8 +1612,7 @@ void ShineTowerRocket::exeDemoWalkPlayerToPoint() {
 
     if (GameDataFunction::checkEnableUnlockWorldSpecial1(this) ||
         GameDataFunction::checkEnableUnlockWorldSpecial2(this) ||
-        isEnableUnlockWorldByPayShine(
-            this, GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(this)), 0)) {
+        isEnableUnlockWorldByPayShine(this, GameDataFunction::getCurrentWorldId(this), 0)) {
         mIsWorldMap = true;
         al::setNerve(this, &NrvShineTowerRocket.GoToWorldMapWithFade);
     } else {
@@ -1693,7 +1667,7 @@ void ShineTowerRocket::exeDemoAppearShine() {
 
         al::makeMtxSRT(&mDemoPlayerMtx, this);
 
-        if (GameDataFunction::isLaunchHome(GameDataHolderAccessor(holder)))
+        if (GameDataFunction::isLaunchHome(holder))
             al::startAnimCamera(cameraUser, mDemoAppearFromHomeCameraTicket, "DemoPayToHome", 0);
         else
             al::startAnimCamera(cameraUser, mDemoAppearFromHomeCameraTicket,
@@ -1717,14 +1691,13 @@ void ShineTowerRocket::exeDemoAppearShine() {
         mIsDemoShineInEffectEmitted = false;
         mDemoShineIndex = demoShineIndex;
 
-        if (GameDataFunction::getTotalPayShineNum(GameDataHolderAccessor(holder)) < 999) {
-            s32 totalPayShineNum =
-                GameDataFunction::getTotalPayShineNum(GameDataHolderAccessor(holder));
+        if (GameDataFunction::getTotalPayShineNum(holder) < 999) {
+            s32 totalPayShineNum = GameDataFunction::getTotalPayShineNum(holder);
             if (mDemoShineNum + totalPayShineNum >= 999)
                 mIsCompleteShine = true;
         }
 
-        if (GameDataFunction::getPayShineNum(GameDataHolderAccessor(holder)) == 0)
+        if (GameDataFunction::getPayShineNum(holder) == 0)
             mIsFirstPayNotEnough = true;
 
         rs::setDemoInfoDemoName(this, "ムーン奉納デモ");
@@ -1774,16 +1747,14 @@ void ShineTowerRocket::exeDemoWaitAfterAppearShine() {
         calcPlayerPoseForPayDemo();
         al::LiveActor* actor = this;
         const al::IUseSceneObjHolder* holder = actor;
-        if (GameDataFunction::isCrashHome(GameDataHolderAccessor(holder)) ||
-            GameDataFunction::isBossAttackedHome(GameDataHolderAccessor(holder))) {
+        if (GameDataFunction::isCrashHome(holder) || GameDataFunction::isBossAttackedHome(holder)) {
             if (tryLevelUp())
                 return;
             al::setNerve(this, &NrvShineTowerRocket.NoStart);
             return;
         }
 
-        if (isPayShineEnoughForUnlock(this) ||
-            GameDataFunction::isGameClear(GameDataHolderAccessor(this)))
+        if (isPayShineEnoughForUnlock(this) || GameDataFunction::isGameClear(this))
             al::setNerve(this, &NrvShineTowerRocket.DemoWaitBeforeScaleUpDirect);
         else
             al::setNerve(this, &NrvShineTowerRocket.DemoMeterUpPrev);
@@ -1791,14 +1762,14 @@ void ShineTowerRocket::exeDemoWaitAfterAppearShine() {
 }
 
 bool ShineTowerRocket::tryLevelUp() {
-    bool wasAllPaid = GameDataFunction::isPayShineAllInAllWorld(GameDataHolderAccessor(this));
-    s32 currentWorldId = GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(this));
+    bool wasAllPaid = GameDataFunction::isPayShineAllInAllWorld(this);
+    s32 currentWorldId = GameDataFunction::getCurrentWorldId(this);
     bool isLevelUp = isEnableUnlockWorldByPayShine(this, currentWorldId, mDemoShineNum);
     s32 payShineNum = mDemoShineNum;
     al::LiveActor* actor = this;
     const al::IUseSceneObjHolder* holder = actor ? actor : nullptr;
 
-    if (GameDataFunction::isGameClear(GameDataHolderAccessor(holder)))
+    if (GameDataFunction::isGameClear(holder))
         GameDataFunction::addPayShineCurrentAll(GameDataHolderWriter(holder));
     else
         GameDataFunction::addPayShine(GameDataHolderWriter(holder), payShineNum);
@@ -1808,16 +1779,14 @@ bool ShineTowerRocket::tryLevelUp() {
         mDemoPayPlayerTrans.y -= 5.0f;
         mDemoPayPlayerQuat.set(rs::getDemoPlayerQuat(this));
 
-        if (!wasAllPaid &&
-            GameDataFunction::isPayShineAllInAllWorld(GameDataHolderAccessor(this))) {
+        if (!wasAllPaid && GameDataFunction::isPayShineAllInAllWorld(this)) {
             mIsDemoPeachCastleCap = true;
             al::setNerve(this, &NrvShineTowerRocket.DemoInformCompleteShineFadeIn);
             return true;
         }
 
-        if (GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(this)) ==
-            GameDataFunction::getWorldIndexSky()) {
-            if (!GameDataFunction::isGameClear(GameDataHolderAccessor(this))) {
+        if (GameDataFunction::getCurrentWorldId(this) == GameDataFunction::getWorldIndexSky()) {
+            if (!GameDataFunction::isGameClear(this)) {
                 mIsWorldMap = true;
                 al::rotateQuatYDirDegree(&mDemoPayPlayerQuat, mDemoPayPlayerQuat, 180.0f);
                 al::setNerve(this, &NrvShineTowerRocket.DemoUpLevelCloseFade);
@@ -1825,9 +1794,8 @@ bool ShineTowerRocket::tryLevelUp() {
             }
         }
 
-        if (GameDataFunction::isCrashHome(GameDataHolderAccessor(holder)) ||
-            GameDataFunction::isBossAttackedHome(GameDataHolderAccessor(holder)) ||
-            !GameDataFunction::isLaunchHome(GameDataHolderAccessor(this))) {
+        if (GameDataFunction::isCrashHome(holder) || GameDataFunction::isBossAttackedHome(holder) ||
+            !GameDataFunction::isLaunchHome(this)) {
             al::setNerve(this, &NrvShineTowerRocket.DemoUpLevelCloseFade);
         } else {
             al::setNerve(this, &NrvShineTowerRocket.DemoUpLevelCamera);
@@ -1838,7 +1806,7 @@ bool ShineTowerRocket::tryLevelUp() {
     if (wasAllPaid)
         return false;
 
-    if (GameDataFunction::isPayShineAllInAllWorld(GameDataHolderAccessor(this)))
+    if (GameDataFunction::isPayShineAllInAllWorld(this))
         mIsDemoPeachCastleCap = true;
     return false;
 }
@@ -1943,15 +1911,14 @@ void ShineTowerRocket::calcCameraMtxMeterUpPrev() {
 void ShineTowerRocket::exeDemoScaleUp() {
     bool isScaleAndColorChange = false;
     if (!mDirtyModel || !al::isAlive(mDirtyModel)) {
-        s32 currentWorldId = GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(this));
+        s32 currentWorldId = GameDataFunction::getCurrentWorldId(this);
         if (isEnableUnlockWorldByPayShine(this, currentWorldId, mDemoShineNum)) {
-            currentWorldId = GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(this));
+            currentWorldId = GameDataFunction::getCurrentWorldId(this);
             if (currentWorldId != GameDataFunction::getWorldIndexClash()) {
                 s32 bossWorldId = GameDataFunction::getWorldIndexBoss();
                 if (currentWorldId != 1 && currentWorldId != bossWorldId &&
-                    !GameDataFunction::isGameClear(GameDataHolderAccessor(this))) {
-                    isScaleAndColorChange =
-                        !GameDataFunction::isGameClear(GameDataHolderAccessor(this));
+                    !GameDataFunction::isGameClear(this)) {
+                    isScaleAndColorChange = !GameDataFunction::isGameClear(this);
                 }
             }
         }
@@ -1995,10 +1962,9 @@ void ShineTowerRocket::exeDemoScaleUp() {
         }
     }
 
-    s32 totalPayShineNum = GameDataFunction::getTotalPayShineNum(GameDataHolderAccessor(this));
-    s32 nextTotalPayShineNum =
-        mDemoShineNum + GameDataFunction::getTotalPayShineNum(GameDataHolderAccessor(this));
-    bool isGameClear = GameDataFunction::isGameClear(GameDataHolderAccessor(this));
+    s32 totalPayShineNum = GameDataFunction::getTotalPayShineNum(this);
+    s32 nextTotalPayShineNum = mDemoShineNum + GameDataFunction::getTotalPayShineNum(this);
+    bool isGameClear = GameDataFunction::isGameClear(this);
     if (rs::checkExistNewShopItem(this, totalPayShineNum, nextTotalPayShineNum, isGameClear)) {
         al::setNerve(this, &NrvShineTowerRocket.DemoInformNewItem);
         return;
@@ -2046,7 +2012,7 @@ void ShineTowerRocket::exeDemoMeterRotate() {
 
     al::LiveActor* actor = this;
     const al::IUseSceneObjHolder* holder = actor;
-    s32 homeLevel = GameDataFunction::getHomeLevel(GameDataHolderAccessor(holder));
+    s32 homeLevel = GameDataFunction::getHomeLevel(holder);
     u32 meterLevel = rs::isModeE3MovieRom() ? 3 : homeLevel;
     s32 rotateLevel = meterLevel - 1;
     if (rotateLevel < 0)
@@ -2123,8 +2089,7 @@ void ShineTowerRocket::calcCameraMtx() {
 
 void ShineTowerRocket::setupRotateMeter() {
     if (mDirtyModel) {
-        GameDataHolderAccessor accessor(this);
-        if (!GameDataFunction::isActivateHome(accessor)) {
+        if (!GameDataFunction::isActivateHome(this)) {
             mHomeMeterActor = al::getSubActor(al::getSubActor(mDirtyModel, "フレーム"), "帆真ん中");
             return;
         }
@@ -2154,7 +2119,7 @@ void ShineTowerRocket::setupRotateMeter() {
             al::setSklAnimFrameRate(meter, 0.0f, 0);
         }
     } else {
-        s32 homeLevel = GameDataFunction::getHomeLevel(GameDataHolderAccessor(this));
+        s32 homeLevel = GameDataFunction::getHomeLevel(this);
         s32 nextMeterIndex = homeLevel + 1;
         al::LiveActor* meterFrame = al::getSubActor(this, "フレーム");
         s32 meterIndex = 9;
@@ -2172,7 +2137,7 @@ void ShineTowerRocket::setupRotateMeter() {
     al::startMclAnimAndSetFrameAndStop(meter, "Color", colorFrame > 0 ? colorFrame : 0);
     al::startMtpAnimAndSetFrameAndStop(*homeMeterActor, "Color", 0.0f);
 
-    s32 homeLevel = GameDataFunction::getHomeLevel(GameDataHolderAccessor(this));
+    s32 homeLevel = GameDataFunction::getHomeLevel(this);
     u32 meterLevel = rs::isModeE3MovieRom() ? 3 : homeLevel;
     s32 rotateLevel = meterLevel - 1;
     if (rotateLevel < 0)
@@ -2275,10 +2240,9 @@ void ShineTowerRocket::exeDemoSelectGoOtherWorld() {
         al::EventFlowExecutor* eventFlowExecutor = mEventFlowExecutor;
         eventFlowExecutorPtr = &mEventFlowExecutor;
         if (isExistKoopaShip) {
-            GameDataHolderAccessor accessor(this);
             al::StringTmp<128> koopaShipEventFlowName(
                 "SelectGoOtherWorldExistKoopa_%s",
-                GameDataFunction::getWorldDevelopNameCurrent(accessor));
+                GameDataFunction::getWorldDevelopNameCurrent(this));
             eventFlowName = koopaShipEventFlowName.cstr();
         }
         rs::startEventFlow(eventFlowExecutor, eventFlowName);
@@ -2293,11 +2257,11 @@ void ShineTowerRocket::exeDemoSelectGoOtherWorld() {
 void ShineTowerRocket::exeDemoAwardMoon() {
     if (al::isFirstStep(this)) {
         const al::IUseSceneObjHolder* holder = this;
-        s32 currentWorld = GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(holder));
+        s32 currentWorld = GameDataFunction::getCurrentWorldId(holder);
         if (currentWorld == GameDataFunction::getWorldIndexSpecial1()) {
             rs::buyCloth(holder, "MarioKing");
             rs::buyCap(holder, "MarioKing");
-        } else if (GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(holder)) ==
+        } else if (GameDataFunction::getCurrentWorldId(holder) ==
                    GameDataFunction::getWorldIndexSpecial2()) {
             rs::buyCap(holder, "MarioInvisible");
         }
@@ -2310,7 +2274,7 @@ void ShineTowerRocket::exeDemoAwardMoon() {
     }
 
     if (al::isStep(this, 10)) {
-        s32 currentWorld = GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(this));
+        s32 currentWorld = GameDataFunction::getCurrentWorldId(this);
         if (currentWorld == GameDataFunction::getWorldIndexSpecial1())
             rs::startEventFlow(mEventFlowExecutor, "AwardSpecial1");
         else
@@ -2381,14 +2345,10 @@ void ShineTowerRocket::calcCameraMtxLevelUp() {
     const al::IUseSceneObjHolder* holder = actor ? actor : nullptr;
     f32 angle = 0.0f;
     {
-        GameDataHolderAccessor accessor(holder);
-        if (GameDataFunction::isWorldSea(accessor)) {
+        if (GameDataFunction::isWorldSea(holder))
             angle = -90.0f;
-        } else {
-            GameDataHolderAccessor accessor2(holder);
-            if (GameDataFunction::isWorldLake(accessor2))
-                angle = 90.0f;
-        }
+        else if (GameDataFunction::isWorldLake(holder))
+            angle = 90.0f;
     }
     al::rotateMtxYDirDegree(&mDemoPlayerMtx, mDemoPlayerMtx, angle);
 
@@ -2404,11 +2364,11 @@ void ShineTowerRocket::exeDemoUpLevel() {
     if (al::isFirstStep(this)) {
         al::LiveActor* actor = this;
         const al::IUseSceneObjHolder* holder = actor ? actor : nullptr;
-        s32 currentWorld = GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(holder));
+        s32 currentWorld = GameDataFunction::getCurrentWorldId(holder);
         if (currentWorld != GameDataFunction::getWorldIndexClash()) {
             s32 bossWorld = GameDataFunction::getWorldIndexBoss();
             if (currentWorld != 1 && currentWorld != bossWorld &&
-                !GameDataFunction::isGameClear(GameDataHolderAccessor(holder))) {
+                !GameDataFunction::isGameClear(holder)) {
                 GameDataFunction::upHomeLevel(GameDataHolderWriter(this));
             }
         }
@@ -2456,7 +2416,7 @@ void ShineTowerRocket::exeDemoUpLevelCloseFade() {
             rs::setDemoInfoDemoName(this, "ホーム初起動デモ");
         }
 
-        if (GameDataFunction::isWorldSky(GameDataHolderAccessor(this))) {
+        if (GameDataFunction::isWorldSky(this)) {
             cameraName.format("DemoChangeHomeFullMoon");
             rs::setDemoInfoDemoName(this, "ホーム最終変化デモ");
             al::startHitReaction(this, "ホーム最終変化デモ");
@@ -2500,7 +2460,7 @@ void ShineTowerRocket::exeDemoUpLevelWaitFade() {
             GameDataFunction::upHomeLevel(GameDataHolderWriter(this));
         }
 
-        if (GameDataFunction::isWorldSky(GameDataHolderAccessor(this))) {
+        if (GameDataFunction::isWorldSky(this)) {
             if (mDamageModel)
                 mDamageModel->kill();
             al::tryStartActionIfNotPlaying(this, "WaitDemo");
@@ -2516,7 +2476,7 @@ void ShineTowerRocket::exeDemoUpLevelWaitFade() {
             al::getSubActor(this, "ステッカー")->makeActorAlive();
             al::tryStartActionIfNotPlaying(this, "WaitDemo");
 
-            if (GameDataFunction::isCrashHome(GameDataHolderAccessor(this))) {
+            if (GameDataFunction::isCrashHome(this)) {
                 GameDataFunction::repairHome(GameDataHolderWriter(this));
                 GameDataFunction::unlockWorld(GameDataHolderWriter(this),
                                               GameDataFunction::getWorldIndexCity());
@@ -2589,10 +2549,9 @@ void rs::setupHomeMeter(al::LiveActor* actor) {
     }
 
     const al::IUseSceneObjHolder* holder = actor ? actor : nullptr;
-    if (!GameDataFunction::isActivateHome(GameDataHolderAccessor(holder)) ||
-        (!GameDataFunction::isPlayDemoWorldWarp(GameDataHolderAccessor(holder)) &&
-         (GameDataFunction::isCrashHome(GameDataHolderAccessor(holder)) ||
-          GameDataFunction::isBossAttackedHome(GameDataHolderAccessor(holder))))) {
+    if (!GameDataFunction::isActivateHome(holder) ||
+        (!GameDataFunction::isPlayDemoWorldWarp(holder) &&
+         (GameDataFunction::isCrashHome(holder) || GameDataFunction::isBossAttackedHome(holder)))) {
         for (s32 i = 1; i != 10; i++) {
             al::LiveActor* meterFrame = al::getSubActor(actor, "フレーム");
             al::StringTmp<32> name("帆%d", i);
@@ -2604,11 +2563,11 @@ void rs::setupHomeMeter(al::LiveActor* actor) {
         return;
     }
 
-    bool isAllPay = GameDataFunction::isPayShineAllInAllWorld(GameDataHolderAccessor(holder));
+    bool isAllPay = GameDataFunction::isPayShineAllInAllWorld(holder);
     if (isAllPay) {
         al::startMclAnimAndSetFrameAndStop(al::getSubActor(actor, "フレーム"), "FrameColor", 2.0f);
     } else {
-        s32 homeLevel = GameDataFunction::getHomeLevel(GameDataHolderAccessor(holder));
+        s32 homeLevel = GameDataFunction::getHomeLevel(holder);
         if (homeLevel == 9) {
             al::startMclAnimAndSetFrameAndStop(al::getSubActor(actor, "フレーム"), "FrameColor",
                                                1.0f);
@@ -2619,7 +2578,7 @@ void rs::setupHomeMeter(al::LiveActor* actor) {
     }
 
     for (s32 i = 1; i != 10; i++) {
-        if (GameDataFunction::getHomeLevel(GameDataHolderAccessor(holder)) == 9) {
+        if (GameDataFunction::getHomeLevel(holder) == 9) {
             al::LiveActor* meterFrame = al::getSubActor(actor, "フレーム");
             al::StringTmp<32> name("帆%d", i);
             al::LiveActor* meter = al::getSubActor(meterFrame, name.cstr());
@@ -2635,7 +2594,7 @@ void rs::setupHomeMeter(al::LiveActor* actor) {
             continue;
         }
 
-        s32 homeLevel = GameDataFunction::getHomeLevel(GameDataHolderAccessor(holder));
+        s32 homeLevel = GameDataFunction::getHomeLevel(holder);
         al::LiveActor* meterFrame = al::getSubActor(actor, "フレーム");
         al::StringTmp<32> name("帆%d", i);
         al::LiveActor* meter = al::getSubActor(meterFrame, name.cstr());
@@ -2663,12 +2622,11 @@ void rs::setupHomeMeter(al::LiveActor* actor) {
         }
     }
 
-    if (GameDataFunction::getHomeLevel(GameDataHolderAccessor(holder)) < 9 &&
+    if (GameDataFunction::getHomeLevel(holder) < 9 &&
         GameDataFunction::getPayShineNum(
-            GameDataHolderAccessor(holder),
-            GameDataFunction::getLatestUnlockWorldIdForShineTowerMeter(actor)) != 0) {
+            holder, GameDataFunction::getLatestUnlockWorldIdForShineTowerMeter(actor)) != 0) {
         if (!isHomeMeterComplete(actor)) {
-            s32 homeLevel = GameDataFunction::getHomeLevel(GameDataHolderAccessor(holder));
+            s32 homeLevel = GameDataFunction::getHomeLevel(holder);
             al::LiveActor* meterFrame = al::getSubActor(actor, "フレーム");
             s32 nextMeterIndex = homeLevel + 1;
             if (nextMeterIndex > 9)
@@ -2692,13 +2650,12 @@ void rs::setupHomeMeter(al::LiveActor* actor) {
         }
     }
 
-    if (GameDataFunction::getHomeLevel(GameDataHolderAccessor(holder)) <= 8 &&
+    if (GameDataFunction::getHomeLevel(holder) <= 8 &&
         GameDataFunction::getPayShineNum(
-            GameDataHolderAccessor(holder),
-            GameDataFunction::getLatestUnlockWorldIdForShineTowerMeter(actor)) == 0 &&
-        (GameDataFunction::isPlayDemoWorldWarp(GameDataHolderAccessor(holder)) ||
-         (!GameDataFunction::isCrashHome(GameDataHolderAccessor(holder)) &&
-          !GameDataFunction::isBossAttackedHome(GameDataHolderAccessor(holder))))) {
+            holder, GameDataFunction::getLatestUnlockWorldIdForShineTowerMeter(actor)) == 0 &&
+        (GameDataFunction::isPlayDemoWorldWarp(holder) ||
+         (!GameDataFunction::isCrashHome(holder) &&
+          !GameDataFunction::isBossAttackedHome(holder)))) {
         al::LiveActor* nextMeter = al::getSubActor(al::getSubActor(actor, "フレーム"), "帆真ん中");
         nextMeter->makeActorAlive();
         al::startSklAnim(nextMeter, "Meter");
@@ -2758,21 +2715,20 @@ void rs::setupHomeMeterDitherParam(al::LiveActor* actor, ShineTowerCommonKeeper*
 void rs::setupHomeSticker(al::LiveActor* actor) {
     al::LiveActor* stickerActor = al::getSubActor(actor, "ステッカー");
     const al::IUseSceneObjHolder* holder = actor;
-    const sead::PtrArray<ShopItem::ItemInfo>& stickerList =
-        rs::getStickerList(GameDataHolderAccessor(holder));
+    const sead::PtrArray<ShopItem::ItemInfo>& stickerList = rs::getStickerList(holder);
     s32 lastIdx = stickerList.size() - 1;
     if (lastIdx >= 0) {
         const al::IUseSceneObjHolder* stickerHolder = stickerActor;
         for (s32 i = 0;; i++) {
             if (al::isExistJoint(stickerActor, stickerList[i]->name)) {
-                bool isHave = rs::isHaveSticker(GameDataHolderAccessor(stickerHolder), i);
+                bool isHave = rs::isHaveSticker(stickerHolder, i);
                 if (isHave)
                     al::setJointVisibility(stickerActor, stickerList[i]->name, true);
                 else
                     al::setJointVisibility(stickerActor, stickerList[i]->name, false);
             }
             if (al::isExistJoint(actor, stickerList[i]->name)) {
-                bool isHave = rs::isHaveSticker(GameDataHolderAccessor(holder), i);
+                bool isHave = rs::isHaveSticker(holder, i);
                 if (isHave)
                     al::setJointVisibility(actor, stickerList[i]->name, true);
                 else
@@ -2787,20 +2743,17 @@ void rs::setupHomeSticker(al::LiveActor* actor) {
 void rs::setupHomeCompLight(al::LiveActor* actor) {
     al::LiveActor* compLightActor = al::getSubActor(actor, "コンプライト");
     const al::IUseSceneObjHolder* holder = actor;
-    for (s32 i = 0; i < GameDataFunction::getWorldNum(GameDataHolderAccessor(holder)); i++) {
-        al::StringTmp<64> name("CompLight%s", GameDataFunction::getWorldDevelopName(
-                                                  GameDataHolderAccessor(holder), i));
+    for (s32 i = 0; i < GameDataFunction::getWorldNum(holder); i++) {
+        al::StringTmp<64> name("CompLight%s", GameDataFunction::getWorldDevelopName(holder, i));
         if (al::isExistJoint(compLightActor, name.cstr())) {
-            bool isComplete = GameDataFunction::calcIsGetShineAllInWorld(
-                GameDataHolderAccessor(compLightActor), i);
+            bool isComplete = GameDataFunction::calcIsGetShineAllInWorld(compLightActor, i);
             if (isComplete)
                 al::setJointVisibility(compLightActor, name.cstr(), true);
             else
                 al::setJointVisibility(compLightActor, name.cstr(), false);
         }
         if (al::isExistJoint(actor, name.cstr())) {
-            bool isComplete =
-                GameDataFunction::calcIsGetShineAllInWorld(GameDataHolderAccessor(holder), i);
+            bool isComplete = GameDataFunction::calcIsGetShineAllInWorld(holder, i);
             if (isComplete)
                 al::setJointVisibility(actor, name.cstr(), true);
             else
@@ -2909,7 +2862,7 @@ void DemoShine::startDemo(s32 index) {
     actor->makeActorAlive();
 
     const al::IUseSceneObjHolder* holder = actor;
-    bool isLaunchHome = GameDataFunction::isLaunchHome(GameDataHolderAccessor(holder));
+    bool isLaunchHome = GameDataFunction::isLaunchHome(holder);
     s32 actionIndex;
     if (index + 1 < 10)
         actionIndex = index + 1;
@@ -3003,7 +2956,7 @@ void ShineTowerRocket::startDemoAppearPlayerFromHome() {
 }
 
 void ShineTowerRocket::startDemoReturnToHome() {
-    if (GameDataFunction::isWorldWaterfall(GameDataHolderAccessor(this)))
+    if (GameDataFunction::isWorldWaterfall(this))
         rs::replaceDemoPlayer(this, mDemoReturnPlayerTrans, mDemoReturnPlayerQuat);
 
     al::makeMtxQuatPos(&mDemoReturnToHomeMtx, rs::getDemoPlayerQuat(this),
@@ -3090,7 +3043,7 @@ void ShineTowerRocket::exeDemoReturnToHome() {
 
     s32 cameraStep = al::getAnimCameraStep(mDemoReturnToHomeCameraTicket);
     if (cameraStep == al::getAnimCameraStepMax(mDemoReturnToHomeCameraTicket) - 1) {
-        const char* stageName = GameDataFunction::getCurrentStageName(GameDataHolderAccessor(this));
+        const char* stageName = GameDataFunction::getCurrentStageName(this);
         if (stageName)
             al::isEqualString(stageName, "CityWorldHomeStage");
         al::requestCaptureScreenCover(this, 5);
@@ -3114,10 +3067,9 @@ void ShineTowerRocket::exeDemoReturnToHome() {
 void ShineTowerRocket::exeDemoWorldTakeoff() {
     const al::IUseSceneObjHolder* holder = this;
     bool isTakeoffMoonFromOther = false;
-    if (GameDataFunction::isWorldTypeMoon(GameDataHolderAccessor(holder), mWorldId)) {
-        isTakeoffMoonFromOther = !GameDataFunction::isWorldTypeMoon(
-            GameDataHolderAccessor(holder),
-            GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(holder)));
+    if (GameDataFunction::isWorldTypeMoon(holder, mWorldId)) {
+        isTakeoffMoonFromOther =
+            !GameDataFunction::isWorldTypeMoon(holder, GameDataFunction::getCurrentWorldId(holder));
     }
 
     if (al::isFirstStep(this)) {
@@ -3137,18 +3089,16 @@ void ShineTowerRocket::exeDemoWorldTakeoff() {
         const char* demoName = nullptr;
         bool isInvalidateCameraAngleSwing = false;
         bool isStartDemoPlayer = true;
-        if (GameDataFunction::isWorldTypeMoon(GameDataHolderAccessor(holder), mWorldId)) {
-            if (GameDataFunction::isWorldTypeMoon(
-                    GameDataHolderAccessor(holder),
-                    GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(holder)))) {
+        if (GameDataFunction::isWorldTypeMoon(holder, mWorldId)) {
+            if (GameDataFunction::isWorldTypeMoon(holder,
+                                                  GameDataFunction::getCurrentWorldId(holder))) {
                 actionName = "DemoWorldTakeoff";
                 al::LiveActor* poseCopyActor = mPoseCopyActor;
                 al::startAction(poseCopyActor, actionName);
                 poseCopyActor->makeActorAlive();
                 al::copyPose(poseCopyActor, this);
             } else if (mDemoPlayerActor && GameDataFunction::getWorldIndexMoon() == mWorldId &&
-                       !GameDataFunction::isAlreadyGoWorld(GameDataHolderAccessor(holder),
-                                                           mWorldId)) {
+                       !GameDataFunction::isAlreadyGoWorld(holder, mWorldId)) {
                 const char* tuxedoName = "MarioTuxedo";
                 rs::buyCloth(holder, tuxedoName);
                 GameDataFunction::wearCostume(GameDataHolderWriter(holder), tuxedoName);
@@ -3254,13 +3204,11 @@ void ShineTowerRocket::exeDemoWorldTakeoff() {
 
         GameDataFunction::launchHome(GameDataHolderWriter(holder));
         GameDataFunction::tryChangeNextStageWithDemoWorldWarp(
-            GameDataHolderWriter(holder),
-            GameDataFunction::getMainStageName(GameDataHolderAccessor(holder), mWorldId));
+            GameDataHolderWriter(holder), GameDataFunction::getMainStageName(holder, mWorldId));
 
         if (!demoName) {
-            demoName = GameDataFunction::isForwardWorldWarpDemo(GameDataHolderAccessor(holder)) ?
-                           "ホーム離陸デモ(東へ)" :
-                           "ホーム離陸デモ(西へ)";
+            demoName = GameDataFunction::isForwardWorldWarpDemo(holder) ? "ホーム離陸デモ(東へ)" :
+                                                                          "ホーム離陸デモ(西へ)";
         }
         rs::setDemoInfoDemoName(this, demoName);
     }
@@ -3301,8 +3249,7 @@ void ShineTowerRocket::exeDemoWorldTakeoff() {
 void ShineTowerRocket::exeDemoWorldTakeoffNext() {
     if (al::isFirstStep(this)) {
         al::hideShadowMask(mDoorAreaChange);
-        bool isForwardWorldWarpDemo =
-            GameDataFunction::isForwardWorldWarpDemo(GameDataHolderAccessor(this));
+        bool isForwardWorldWarpDemo = GameDataFunction::isForwardWorldWarpDemo(this);
         al::setAnimCameraRotateBaseUp(mDemoAppearFromHomeCameraTicket);
         al::invalidateAnimCameraAngleSwing(mDemoAppearFromHomeCameraTicket);
 
@@ -3415,8 +3362,7 @@ void ShineTowerRocket::exeDemoInformPowerUpMessage() {
         rs::startEventFlow(mEventFlowExecutor, "PowerUp");
 
     if (rs::updateEventFlow(mEventFlowExecutor)) {
-        if (GameDataFunction::isWorldSand(GameDataHolderAccessor(this)) &&
-            GameDataFunction::getScenarioNo(this) == 1 &&
+        if (GameDataFunction::isWorldSand(this) && GameDataFunction::getScenarioNo(this) == 1 &&
             rs::tryStartKoopaShipDemoHomeFlyAway(this)) {
             al::endCamera(this, mDemoAppearFromHomeCameraTicket, -1, false);
             if (al::isActiveCamera(mWorldMapFadeCameraTicket))
@@ -3453,8 +3399,7 @@ void ShineTowerRocket::exeDemoInformNewHome() {
         rs::setDemoInfoDemoName(this, "ホームメッセージデモ");
 
     if (al::isGreaterEqualStep(this, 0)) {
-        if (GameDataFunction::isWorldClash(GameDataHolderAccessor(this)) ||
-            GameDataFunction::isWorldBoss(GameDataHolderAccessor(this)))
+        if (GameDataFunction::isWorldClash(this) || GameDataFunction::isWorldBoss(this))
             al::setNerve(this, &NrvShineTowerRocket.DemoInformRepairHome);
         else
             al::setNerve(this, &NrvShineTowerRocket.DemoInformNewHomeMessage);
@@ -3464,7 +3409,7 @@ void ShineTowerRocket::exeDemoInformNewHome() {
 void ShineTowerRocket::exeDemoInformNewHomeMessage() {
     al::EventFlowExecutor** executor;
     if (al::isFirstStep(this)) {
-        bool isWorldSky = GameDataFunction::isWorldSky(GameDataHolderAccessor(this));
+        bool isWorldSky = GameDataFunction::isWorldSky(this);
         al::EventFlowExecutor* eventFlowExecutor = mDemoEventFlowExecutor;
         executor = &mDemoEventFlowExecutor;
         if (isWorldSky)
@@ -3658,14 +3603,14 @@ void validateOcclusionQueryAll(al::LiveActor* actor) {
         validateOcclusionQueryAll(al::getSubActor(actor, i));
 }
 
-__attribute__((noinline)) s32 calcRestShineNum(const al::LiveActor* actor) {
+// Probably new
+s32 calcRestShineNum(const al::LiveActor* actor) {
     bool isGameClear = false;
     const al::IUseSceneObjHolder* holder = actor;
-    s32 unlockShineNum =
-        GameDataFunction::findUnlockShineNum(&isGameClear, GameDataHolderAccessor(holder));
-    s32 payShineNum = GameDataFunction::getPayShineNum(GameDataHolderAccessor(holder));
+    s32 unlockShineNum = GameDataFunction::findUnlockShineNum(&isGameClear, holder);
+    s32 payShineNum = GameDataFunction::getPayShineNum(holder);
     if (isGameClear)
-        payShineNum = GameDataFunction::getTotalPayShineNum(GameDataHolderAccessor(holder));
+        payShineNum = GameDataFunction::getTotalPayShineNum(holder);
 
     s32 rest = unlockShineNum - payShineNum;
     if (rest < 0)
@@ -3673,29 +3618,18 @@ __attribute__((noinline)) s32 calcRestShineNum(const al::LiveActor* actor) {
     return rest;
 }
 
-__attribute__((noinline)) bool isDamageHomeModel(const al::LiveActor* actor) {
-    const al::IUseSceneObjHolder* holder = actor;
-
-    GameDataHolderAccessor accessorCrashHome(holder);
-    if (!GameDataFunction::isCrashHome(accessorCrashHome)) {
-        if (!GameDataFunction::isRepairHome(GameDataHolderAccessor(holder)))
-            return false;
-    }
-
-    return GameDataFunction::getHomeLevel(GameDataHolderAccessor(holder)) < 9;
-}
-
-__attribute__((noinline)) bool isNeedShowHomeSkyMessage(const ShineTowerRocket* actor) {
+// Probably new
+bool isNeedShowHomeSkyMessage(const ShineTowerRocket* actor) {
     u8 isNeedShow = 0;
 
     if (rs::isExistKoopaShipInSky(actor)) {
         isNeedShow = 1;
     } else {
         const al::IUseSceneObjHolder* holder = actor;
-        if (GameDataFunction::getCurrentShineNum(GameDataHolderAccessor(holder)) == 0) {
-            if (GameDataFunction::isWorldSky(GameDataHolderAccessor(holder))) {
+        if (GameDataFunction::getCurrentShineNum(holder) == 0) {
+            if (GameDataFunction::isWorldSky(holder)) {
                 if (GameDataFunction::getScenarioNo(actor) == 2) {
-                    if (!GameDataFunction::isAlreadyGoWorld(GameDataHolderAccessor(holder),
+                    if (!GameDataFunction::isAlreadyGoWorld(holder,
                                                             GameDataFunction::getWorldIndexMoon()))
                         isNeedShow = 1;
                 }
@@ -3705,32 +3639,32 @@ __attribute__((noinline)) bool isNeedShowHomeSkyMessage(const ShineTowerRocket* 
     return isNeedShow & 1;
 }
 
-__attribute__((used, noinline)) bool isPayShineEnoughForUnlock(const al::LiveActor* actor) {
+// Probably new
+bool isPayShineEnoughForUnlock(const al::LiveActor* actor) {
     bool isGameClear = false;
     const al::IUseSceneObjHolder* holder = actor;
-    s32 unlockShineNum =
-        GameDataFunction::findUnlockShineNum(&isGameClear, GameDataHolderAccessor(holder));
-    s32 payShineNum = GameDataFunction::getPayShineNum(GameDataHolderAccessor(holder));
+    s32 unlockShineNum = GameDataFunction::findUnlockShineNum(&isGameClear, holder);
+    s32 payShineNum = GameDataFunction::getPayShineNum(holder);
     if (isGameClear)
-        payShineNum = GameDataFunction::getTotalPayShineNum(GameDataHolderAccessor(holder));
+        payShineNum = GameDataFunction::getTotalPayShineNum(holder);
 
     return payShineNum >= unlockShineNum;
 }
 
-__attribute__((noinline)) bool isNeedDemoWalkPlayerToPoint(const al::LiveActor* actor) {
+// Probably new
+bool isNeedDemoWalkPlayerToPoint(const al::LiveActor* actor) {
     const al::IUseSceneObjHolder* holder = actor;
-    if (GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(holder)) == 1 &&
-        !GameDataFunction::isUnlockedWorld(GameDataHolderAccessor(holder), 2))
+    if (GameDataFunction::getCurrentWorldId(holder) == 1 &&
+        !GameDataFunction::isUnlockedWorld(holder, 2))
         return true;
-    if (GameDataFunction::isCrashHome(GameDataHolderAccessor(holder)))
+    if (GameDataFunction::isCrashHome(holder))
         return true;
-    return GameDataFunction::isBossAttackedHome(GameDataHolderAccessor(holder));
+    return GameDataFunction::isBossAttackedHome(holder);
 }
 
-__attribute__((noinline)) bool isEnableUnlockWorldByPayShine(const al::LiveActor* actor,
-                                                             s32 worldId, s32 payShineNum) {
-    if (GameDataFunction::getWorldIndexMoon() == worldId &&
-        !GameDataFunction::isGameClear(GameDataHolderAccessor(actor)))
+// Probably new
+bool isEnableUnlockWorldByPayShine(const al::LiveActor* actor, s32 worldId, s32 payShineNum) {
+    if (GameDataFunction::getWorldIndexMoon() == worldId && !GameDataFunction::isGameClear(actor))
         return false;
 
     if (GameDataFunction::checkEnableUnlockWorldSpecial1(actor))
@@ -3740,35 +3674,32 @@ __attribute__((noinline)) bool isEnableUnlockWorldByPayShine(const al::LiveActor
 
     bool isGameClear = false;
     const al::IUseSceneObjHolder* holder = actor;
-    s32 unlockShineNum =
-        GameDataFunction::findUnlockShineNum(&isGameClear, GameDataHolderAccessor(holder));
-    s32 currentPayShineNum = GameDataFunction::getPayShineNum(GameDataHolderAccessor(holder));
+    s32 unlockShineNum = GameDataFunction::findUnlockShineNum(&isGameClear, holder);
+    s32 currentPayShineNum = GameDataFunction::getPayShineNum(holder);
     if (isGameClear)
-        currentPayShineNum = GameDataFunction::getTotalPayShineNum(GameDataHolderAccessor(holder));
+        currentPayShineNum = GameDataFunction::getTotalPayShineNum(holder);
 
     if (currentPayShineNum < unlockShineNum)
         return currentPayShineNum + payShineNum >= unlockShineNum;
 
     s32 unlockWorldNum = GameDataFunction::getUnlockWorldNumForWorldMap(actor);
-    if (unlockWorldNum == GameDataFunction::getWorldNum(GameDataHolderAccessor(holder)))
+    if (unlockWorldNum == GameDataFunction::getWorldNum(holder))
         return false;
 
     s32 unlockWorldId = GameDataFunction::getUnlockWorldIdForWorldMap(actor, unlockWorldNum - 1);
-    return GameDataFunction::getCurrentWorldId(GameDataHolderAccessor(holder)) == unlockWorldId;
+    return GameDataFunction::getCurrentWorldId(holder) == unlockWorldId;
 }
 
-__attribute__((used, noinline)) f32 calcHomeMeterAnimFrame(const al::LiveActor* actor,
-                                                           s32 worldId) {
+// Probably new
+f32 calcHomeMeterAnimFrame(const al::LiveActor* actor, s32 worldId) {
     bool isGameClear = false;
     const al::IUseSceneObjHolder* holder = actor;
     s32 unlockShineNum = GameDataFunction::findUnlockShineNumByWorldId(
-        &isGameClear, GameDataHolderAccessor(holder),
-        GameDataFunction::getLatestUnlockWorldIdForShineTowerMeter(actor));
+        &isGameClear, holder, GameDataFunction::getLatestUnlockWorldIdForShineTowerMeter(actor));
     s32 payShineNum = GameDataFunction::getPayShineNum(
-        GameDataHolderAccessor(holder),
-        GameDataFunction::getLatestUnlockWorldIdForShineTowerMeter(actor));
+        holder, GameDataFunction::getLatestUnlockWorldIdForShineTowerMeter(actor));
     if (isGameClear)
-        payShineNum = GameDataFunction::getTotalPayShineNum(GameDataHolderAccessor(holder));
+        payShineNum = GameDataFunction::getTotalPayShineNum(holder);
 
     s32 totalPayShineNum = payShineNum + worldId;
     if (totalPayShineNum >= unlockShineNum)
@@ -3788,17 +3719,16 @@ __attribute__((used, noinline)) f32 calcHomeMeterAnimFrame(const al::LiveActor* 
     return maxFrame;
 }
 
-__attribute__((used, noinline)) bool isHomeMeterComplete(const al::LiveActor* actor) {
+// Probably new
+bool isHomeMeterComplete(const al::LiveActor* actor) {
     bool isGameClear = false;
     const al::IUseSceneObjHolder* holder = actor;
     s32 unlockShineNum = GameDataFunction::findUnlockShineNumByWorldId(
-        &isGameClear, GameDataHolderAccessor(holder),
-        GameDataFunction::getLatestUnlockWorldIdForShineTowerMeter(actor));
+        &isGameClear, holder, GameDataFunction::getLatestUnlockWorldIdForShineTowerMeter(actor));
     s32 payShineNum = GameDataFunction::getPayShineNum(
-        GameDataHolderAccessor(holder),
-        GameDataFunction::getLatestUnlockWorldIdForShineTowerMeter(actor));
+        holder, GameDataFunction::getLatestUnlockWorldIdForShineTowerMeter(actor));
     if (isGameClear)
-        payShineNum = GameDataFunction::getTotalPayShineNum(GameDataHolderAccessor(holder));
+        payShineNum = GameDataFunction::getTotalPayShineNum(holder);
     return payShineNum >= unlockShineNum;
 }
 
