@@ -1,5 +1,11 @@
 #include "Layout/MapLayout.h"
 
+#include <message/euiFontMgr.h>
+#include <message/euiScalableFontMgr.h>
+#include <message/euiTextBoxEx.h>
+#include <nn/ui2d/Layout.h>
+#include <nn/ui2d/Pane.h>
+
 #include "Library/Area/AreaObj.h"
 #include "Library/Area/AreaObjUtil.h"
 #include "Library/Base/StringUtil.h"
@@ -33,12 +39,6 @@
 #include "System/MapDataHolder.h"
 #include "Util/PlayerUtil.h"
 #include "Util/StageLayoutFunction.h"
-
-#include <euiFontMgr.h>
-#include <euiScalableFontMgr.h>
-#include <euiTextBoxEx.h>
-#include <nn/ui2d/Layout.h>
-#include <nn/ui2d/Pane.h>
 
 namespace {
 NERVE_IMPL(MapLayout, Appear)
@@ -1036,7 +1036,7 @@ void MapLayout::appearParts(bool withMoonRockHints) {
                     "Sea",
                     GameDataFunction::getWorldDevelopName(
                         this, GameDataFunction::getCurrentWorldId(this))) ||
-                questInfo->getMapLabel().getStringTop()[0] == sead::SafeString::cNullChar) {
+                questInfo->getStageName().getStringTop()[0] == sead::SafeString::cNullChar) {
                 calcMapTransAndAppear(&mScenarioIconLayouts[i], mMapIconInfo, questInfo->getTrans(),
                                       IconType::Scenario1, false);
             }
@@ -1615,15 +1615,15 @@ void MapLayout::exeAppear() {
         eui::ScalableFontMgr* scalableFontMgr =
             getLayoutSceneInfo()->getFontMgr()->getScalableFontMgr();
 
-        if (!scalableFontMgr->getTextureCacheNoSpaceErrorInline()) {
-            s32 worldId = mWorldId;
+        if (!scalableFontMgr->getTextureCacheNoSpaceError()) {
+            /*s32 worldId = mWorldId;
             scalableFontMgr->getFont("nintendo_udsg-r_std_003_10.fcpx");
             const nn::font::ScalableFont* font40 =
                 scalableFontMgr->getFont("nintendo_udsg-r_std_003_40.fcpx");
             const nn::font::ScalableFont* font80 =
                 scalableFontMgr->getFont("nintendo_udsg-r_std_003_80.fcpx");
 
-            nn::ui2d::Pane* rootPane = getLayoutKeeper()->getLayout()->getRootPane();
+            nn::ui2d::Pane* rootPane = getLayoutKeeper()->getLayout()->GetPane();
 
             s32 i = 0;
             do {
@@ -1676,7 +1676,7 @@ void MapLayout::exeAppear() {
             scalableFontMgr->registerGlyphs(iconTextBox->getTextBuffer(),
                                             iconTextBox->getTextBufferLength(), font80,
                                             getLayoutSceneInfo()->getFontMgr(), -1);
-            mIsSharila = true;
+            mIsSharila = true;*/
         }
     }
     if (al::isActionEnd(this, nullptr)) {
