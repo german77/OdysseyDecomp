@@ -55,6 +55,11 @@ public:
 
     void setOffsetY(f32 offsetY) { mOffsetY = offsetY; };
 
+    void set_40(sead::Vector3f* value) {
+        _40 = value;
+        mFlag &= 0xfb;
+    };
+
     s32 getPlaneNum() const { return mPlaneNum; }
 
     u32 getStoredPlaneNum() const { return mStoredPlaneNum; }

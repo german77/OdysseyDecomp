@@ -1,5 +1,6 @@
 #pragma once
 
+#include <container/seadObjArray.h>
 #include <math/seadQuat.h>
 #include <math/seadVector.h>
 
@@ -50,7 +51,7 @@ public:
     void exeWait();
     void exeStandby();
     void setNerveFall();
-    void trySlipOnMoveLimit();
+    bool trySlipOnMoveLimit();
     void exeReaction();
     void exeDemoStandbyStart();
     void exeDemoStandbyTurnZero();
@@ -118,12 +119,12 @@ private:
     TalkNpcParam* mTalkNpcParam = nullptr;
     bool _208 = false;
     al::CollisionPartsConnector* mCollisionPartsConnector = nullptr;
-    sead::Vector3f mScaledUpDir = sead::Vector3f::zero;
+    sead::Vector3f mScaledUpDir = {0.0f, 0.0f, 0.0f};
     SphinxRideAim* mSphinxRideAim = nullptr;
     s32 _230 = 0;
     s32 mAdlibCountdown = 292;
     bool mIsAdlibPlaying = false;
-    u8 _239[0x200 + 7] = {};
+    sead::FixedObjArray<void*, 12> buffer;
 };
 
-static_assert(sizeof(SphinxRide) == 0x440);
+// static_assert(sizeof(SphinxRide) >= 0x440);

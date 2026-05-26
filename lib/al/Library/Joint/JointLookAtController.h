@@ -18,6 +18,8 @@ public:
     void invalidJoint(s32 jointIndex);
     void validAllJoint();
 
+    void set_52(bool value) { _52 = value; }
+
 private:
     sead::Vector3f mLookAtTarget = sead::Vector3f::zero;
     const sead::Matrix34f* mBaseMtxPtr = nullptr;
@@ -30,5 +32,7 @@ private:
     bool mIsValid = true;
     bool _54 = false;
 };
+
+static_assert(sizeof(JointLookAtController) == 0x58);
 
 }  // namespace al

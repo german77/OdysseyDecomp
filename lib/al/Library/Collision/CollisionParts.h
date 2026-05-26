@@ -86,6 +86,8 @@ public:
 
     void setConnectedSensor(HitSensor* sensor) { mConnectedSensor = sensor; }
 
+    const char* getSpecialPurpose() const { return mSpecialPurpose; }
+
     void setSpecialPurpose(const char* specialPurpose) { mSpecialPurpose = specialPurpose; }
 
     void setOptionalPurpose(const char* optionalPurpose) { mOptionalPurpose = optionalPurpose; }

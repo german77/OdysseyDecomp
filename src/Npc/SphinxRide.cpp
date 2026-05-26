@@ -12,6 +12,7 @@
 #include "Library/Bgm/BgmLineFunction.h"
 #include "Library/Camera/ActorCameraTarget.h"
 #include "Library/Camera/CameraUtil.h"
+#include "Library/Collision/Collider.h"
 #include "Library/Collision/CollisionParts.h"
 #include "Library/Collision/CollisionPartsKeeperUtil.h"
 #include "Library/Collision/PartsConnector.h"
@@ -86,10 +87,12 @@ NERVES_MAKE_STRUCT(SphinxRide, Wait, Stop, Reaction, Standby, Revival, DemoStand
 NERVES_MAKE_NOSTRUCT(SphinxRide, GetOn, Land);
 }  // namespace
 
-static NpcStateReactionParam sReactionWaitParam(u8"ReactionWait", u8"ReactionCapWait");
-static NpcStateReactionParam sReactionCapStandbyParam(u8"ReactionCapStandby",
-                                                      u8"ReactionCapStandby");
-static constexpr SphinxRideParam sSphinxRideParam = {0.95f, 0.9f};
+NpcStateReactionParam sReactionWaitParam(u8"ReactionWait", u8"ReactionCapWait");
+NpcStateReactionParam sReactionCapStandbyParam(u8"ReactionCapStandby", u8"ReactionCapStandby");
+f32 szero = 0;
+f32 stwe = 12.0f;
+f32 svent = 25.0f;
+SphinxRideParam sSphinxRideParam = {0.95f, 0.9f};
 
 struct RumbleParam {
     f32 volumeLeft;
@@ -131,27 +134,40 @@ static s32 getMaterialRumbleIndex(al::LiveActor* actor) {
     return 0;
 }
 
-static bool calcSlopeProjectedFront(sead::Vector3f* out, al::LiveActor* actor) {
+bool calcSlopeProjectedFront(sead::Vector3f* out, al::LiveActor* actor) {
     if (!al::isOnGround(actor, 0))
         return false;
 
-    const sead::Vector3f& normal = al::getOnGroundNormal(actor, 0);
+    sead::Vector3f normal = al::getOnGroundNormal(actor, 0);
     sead::Vector3f frontDir;
     al::calcFrontDir(&frontDir, actor);
 
-    sead::Vector3f cross1 = normal.cross(frontDir);
+    sead::Vector3f cross1 = frontDir.cross(normal);
     al::tryNormalizeOrDirZ(&cross1);
 
-    *out = cross1.cross(normal);
+    out->set(cross1.cross(normal));
     al::tryNormalizeOrDirZ(out);
     return true;
 }
 
-static void addGravityScaleAndLimitVelocity(SphinxRide* actor, f32 gravity, f32 hScale, f32 vScale);
+void addGravityScaleAndLimitVelocity(SphinxRide* actor, f32 gravity, f32 hScale, f32 vScale) {
+    sead::Vector3f gravDir;
+    if (al::isOnGround(actor, 0))
+        gravDir = -al::getOnGroundNormal(actor, 0);
+    else
+        gravDir = -sead::Vector3f::ey;
 
-SphinxRide::SphinxRide(const char* name) : al::LiveActor(name) {}
+    al::scaleVelocityHV(actor, hScale, vScale);
+    al::addVelocity(actor, gravDir * gravity);
 
-// NON_MATCHING: complex init with direct collider/joint memory writes
+    sead::Vector3f frontDir;
+    al::calcFrontDir(&frontDir, actor);
+    al::limitVelocityDir(actor, frontDir, 50.0f);
+}
+
+SphinxRide::SphinxRide(const char* name) : al::LiveActor("乗れるスフィンクス") {}
+
+// NON_MATCHING: wrong sSphinxRideParam
 void SphinxRide::init(const al::ActorInitInfo& initInfo) {
     al::initActor(this, initInfo);
     al::initNerve(this, &NrvSphinxRide.Wait, 3);
@@ -182,14 +198,27 @@ void SphinxRide::init(const al::ActorInitInfo& initInfo) {
     bool isStartStandby = false;
     al::tryGetArg(&isStartStandby, initInfo, "IsStartStandby");
 
-    const char* flowName = "PayCoin";
-    if (isStartStandby || isPayCoin) {
+    const char* flowName;
+    if (isStartStandby) {
         mIsCanRidePlacement = true;
         al::validateShadowMask(this, "StandByFront");
         al::validateShadowMask(this, "StandByBack");
         al::invalidateShadowMask(this, "Wait");
         al::setNerve(this, &NrvSphinxRide.Standby);
         flowName = "Standby";
+    } else {
+        flowName = "Standby";
+        if (!isPayCoin)
+            flowName = "PayCoin";
+
+        if (GameDataFunction::isPayCoinToSphinx(this)) {
+            mIsCanRidePlacement = true;
+            al::validateShadowMask(this, "StandByFront");
+            al::validateShadowMask(this, "StandByBack");
+            al::invalidateShadowMask(this, "Wait");
+            al::setNerve(this, &NrvSphinxRide.Standby);
+            flowName = "Standby";
+        }
     }
 
     rs::startEventFlow(mEventFlowExecutor, flowName);
@@ -205,17 +234,25 @@ void SphinxRide::init(const al::ActorInitInfo& initInfo) {
 
     mSphinxRideAim = new SphinxRideAim(this);
 
-    s32 cameraAngle = -1;
-    al::tryGetArg(&cameraAngle, initInfo, "CameraAngle");
-    mCameraAngle = (f32)cameraAngle;
-    al::tryGetArg(&cameraAngle, initInfo, "StartDegree");
-    mStartDegree = (f32)cameraAngle;
+    s32 argValue = -1;
+    al::tryGetArg(&argValue, initInfo, "CameraAngle");
+    mCameraAngle = argValue;
+    al::tryGetArg(&argValue, initInfo, "StartDegree");
+    mStartDegree = argValue;
+
+    mJointLookAtController = al::initJointLookAtController(this, 3);
+    mJointLookAtController->set_52(true);
 
     al::setEffectFollowPosPtr(this, "HitSmallWallClash", &mEffectFollowPos);
     al::hideSilhouetteModel(this);
     mBindKeepDemoInfo = rs::initBindKeepDemoInfo();
     al::createAndSetColliderSpecialPurpose(this, "MoveLimit");
-    al::setColliderRadius(this, 100.0f);
+
+    mCollisionPartsConnector = new al::CollisionPartsConnector();
+    mCollisionPartsConnector->init(nullptr, sead::Matrix34f::ident, nullptr);
+
+    getCollider()->setRadius(100.0f);
+    getCollider()->set_40(&mScaledUpDir);
 
     if (al::isExistLinkChild(initInfo, "SphinxRevivalPoint", 0) &&
         rs::isKidsMode((const al::LiveActor*)this)) {
@@ -223,15 +260,12 @@ void SphinxRide::init(const al::ActorInitInfo& initInfo) {
         mStateRevival = revival;
         al::initNerveState(this, revival, &NrvSphinxRide.Revival, u8"復活状態");
         al::invalidateClipping(this);
-    } else {
-        GameDataHolderAccessor accessor(this);
-        if (GameDataFunction::isTimeBalloonSequence(accessor) ||
-            GameDataFunction::isRaceStartFlag(accessor)) {
-            auto* revival = new SphinxRideStateRevival(this, initInfo, true);
-            mStateRevival = revival;
-            al::initNerveState(this, revival, &NrvSphinxRide.Revival, u8"復活状態");
-            al::invalidateClipping(this);
-        }
+    } else if (GameDataFunction::isTimeBalloonSequence(this) ||
+               GameDataFunction::isRaceStartFlag(this)) {
+        auto* revival = new SphinxRideStateRevival(this, initInfo, true);
+        mStateRevival = revival;
+        al::initNerveState(this, revival, &NrvSphinxRide.Revival, u8"復活状態");
+        al::invalidateClipping(this);
     }
 
     al::registActorToDemoInfo(this, initInfo);
@@ -239,24 +273,25 @@ void SphinxRide::init(const al::ActorInitInfo& initInfo) {
     makeActorAlive();
 }
 
-// NON_MATCHING: complex joint pose computation with ground normal projection
 void SphinxRide::updateJointPose() {
     if (al::isNerve(this, &NrvSphinxRide.DemoStandbyStart) ||
         al::isNerve(this, &NrvSphinxRide.DemoStandbyTurnZero) ||
         al::isNerve(this, &NrvSphinxRide.DemoTurnEnd) ||
+        al::isNerve(this, &NrvSphinxRide.DemoStandbyTurnZero) ||
         al::isNerve(this, &NrvSphinxRide.EventWait)) {
         al::calcFrontDir(&mFrontDir, this);
         al::calcUpDir(&mUpDir, this);
     } else {
-        sead::Vector3f frontDir;
-        al::calcFrontDir(&frontDir, this);
-
-        if (al::isOnGround(this, 0)) {
-            const sead::Vector3f& groundNormal = al::getCollidedGroundNormal(this);
-            al::lerpVec(&mUpDir, mUpDir, groundNormal, 0.1f);
+        sead::Vector3f frontDir2;
+        sead::Vector3f frontDir = sead::Vector3f::ey;
+        if (calcSlopeProjectedFront(&frontDir2, this)) {
+            frontDir = al::getOnGroundNormal(this, 0);
+            al::lerpVec(&mUpDir, mUpDir, frontDir, 0.1f);
+        } else {
+            al::calcFrontDir(&frontDir2, this);
         }
 
-        al::lerpVec(&mFrontDir, mFrontDir, frontDir, 0.1f);
+        al::lerpVec(&mFrontDir, mFrontDir, frontDir2, 0.1f);
     }
 
     al::makeQuatUpFront(&mJointQuat, mUpDir, mFrontDir);
@@ -284,14 +319,13 @@ void SphinxRide::movement() {
 // NON_MATCHING: compiler reordering, evaluation optimization, MI cast codegen
 void SphinxRide::control() {
     if (mPlayerPuppet) {
-        const sead::Vector2f& moveStick = rs::getPuppetMoveStick(mPlayerPuppet);
         sead::Vector3f viewInput;
-        const sead::Matrix34f* viewMtx = al::getViewMtxPtr(this, 0);
-        al::calcVecViewInput(&viewInput, moveStick, sead::Vector3f::ey, viewMtx);
+        al::calcVecViewInput(&viewInput, rs::getPuppetMoveStick(mPlayerPuppet), sead::Vector3f::ey,
+                             al::getViewMtxPtr(this, 0));
         rs::copyPuppetDitherAlpha(mPlayerPuppet, this);
 
-        const sead::Vector3f& trans = al::getTrans(this);
-        al::AreaObj* forceOffArea = al::tryFindAreaObj(this, "SphinxRideGetOffForceArea", trans);
+        al::AreaObj* forceOffArea =
+            al::tryFindAreaObj(this, "SphinxRideGetOffForceArea", al::getTrans(this));
         if (forceOffArea) {
             requestGetOffForce();
             forceOffArea->invalidate();
@@ -306,7 +340,7 @@ void SphinxRide::control() {
 
         al::AreaObjGroup* keepOnGroup =
             al::tryFindAreaObjGroup(this, "SphinxRideInCheckAreaKeepOn");
-        if (keepOnGroup && keepOnGroup->getSize() >= 1) {
+        if (keepOnGroup) {
             for (s32 i = 0; i < keepOnGroup->getSize(); i++) {
                 al::AreaObj* area = keepOnGroup->getAreaObj(i);
                 if (al::isInAreaPos(area, al::getTrans(this)))
@@ -318,7 +352,7 @@ void SphinxRide::control() {
 
         al::AreaObjGroup* rideOffGroup =
             al::tryFindAreaObjGroup(this, "SphinxRideInRideOffCheckAreaKeepOn");
-        if (rideOffGroup && rideOffGroup->getSize() >= 1) {
+        if (rideOffGroup) {
             for (s32 i = 0; i < rideOffGroup->getSize(); i++) {
                 al::AreaObj* area = rideOffGroup->getAreaObj(i);
                 al::tryOffStageSwitch(area, "SwitchAreaOn");
@@ -327,7 +361,7 @@ void SphinxRide::control() {
     } else {
         al::AreaObjGroup* rideOffGroup =
             al::tryFindAreaObjGroup(this, "SphinxRideInRideOffCheckAreaKeepOn");
-        if (rideOffGroup && rideOffGroup->getSize() >= 1) {
+        if (rideOffGroup) {
             for (s32 i = 0; i < rideOffGroup->getSize(); i++) {
                 al::AreaObj* area = rideOffGroup->getAreaObj(i);
                 if (al::isInAreaPos(area, al::getTrans(this)))
@@ -382,9 +416,8 @@ void SphinxRide::control() {
 
     updateJointPose();
 
-    bool isRunSlow = al::isActionPlaying(this, "RunSlow");
     f32 targetPlayerRotateZ;
-    if (isRunSlow) {
+    if (al::isActionPlaying(this, "RunSlow")) {
         mPlayerRotateZTarget = 0.0f;
         mAllRootRotateZTarget = 0.0f;
         targetPlayerRotateZ = 0.0f;
@@ -392,10 +425,10 @@ void SphinxRide::control() {
         targetPlayerRotateZ = mPlayerRotateZTarget;
     }
 
-    if (!al::isNear(mPlayerRotateZ, targetPlayerRotateZ, 0.001f))
+    if (!al::isNear(mPlayerRotateZ, targetPlayerRotateZ))
         mPlayerRotateZ = al::lerpValue(mPlayerRotateZ, targetPlayerRotateZ, 0.2f);
 
-    if (!al::isNear(mAllRootRotateZ, mAllRootRotateZTarget, 0.001f))
+    if (!al::isNear(mAllRootRotateZ, mAllRootRotateZTarget))
         mAllRootRotateZ = al::lerpValue(mAllRootRotateZ, mAllRootRotateZTarget, 0.1f);
 
     if (al::isOnGround(this, 0)) {
@@ -404,15 +437,54 @@ void SphinxRide::control() {
     }
 }
 
+void FUN_71003d54f4(al::LiveActor* actor, const sead::Vector3f& param_2, IUsePlayerPuppet* param_3,
+                    al::CameraTargetBase* param_4, bool param_5)
+
+{
+    rs::showPuppetShadow(param_3);
+    al::hideSilhouetteModelIfShow(actor);
+    alCollisionUtil::SphereMoveHitInfo sphereMoveHitInfos[16];
+
+    sead::Vector3f local_910 = al::getTrans(actor) + param_2;
+
+    sead::Vector3f local_920;
+    rs::calcPuppetUp(&local_920, param_3);
+
+    sead::Vector3f local_930 = rs::getPuppetTrans(param_3);
+    /*pVVar4 = rs::getPuppetTrans(*param_3);
+    local_930.x = (local_920.x * 80.0 + pVVar4->x) - fVar5;
+    local_930.y = (local_920.y * 80.0 + pVVar4->y) - fVar6;
+    local_930.z = (local_920.z * 80.0 + pVVar4->z) - fVar7;*/
+
+    if (alCollisionUtil::checkStrikeSphereMove(actor, sphereMoveHitInfos, 16, local_910, 80.0f,
+                                               local_930, nullptr, nullptr)) {
+        /*local_80.x = (hitInfo.bloat * local_930.x + local_910.x) - local_920.x * 80.0;
+        local_80.y = (hitInfo.bloat * local_930.y + local_910.y) - local_920.y * 80.0;
+        local_80.z = (hitInfo.bloat * local_930.z + local_910.z) - local_920.z * 80.0;
+        rs::setPuppetTrans(*param_3,&local_80);*/
+    }
+    sead::Vector3f local_940;
+    al::calcFrontDir(&local_940, actor);
+    local_940.y = 0.0;
+    al::tryNormalizeOrDirZ(&local_940);
+    rs::validatePuppetCollider(param_3);
+    rs::startPuppetAction(param_3, "Jump");
+    if (!param_5) {
+        rs::endBindAndPuppetNull(&param_3);
+    } else {
+        sead::Vector3f local_80 = svent * local_940;
+        local_80.y = stwe;
+        rs::endBindJumpAndPuppetNull(&param_3, local_80, 0x14);
+    }
+    al::resetCameraTarget(actor, param_4);
+}
+
 // NON_MATCHING: missing call to sub_71003D54F4 (unbind helper, not yet decompiled)
 void SphinxRide::requestGetOffForce() {
     if (!mPlayerPuppet)
         return;
 
-    // sub_71003D54F4: complex unbind helper (664 bytes)
-    // showPuppetShadow, hideSilhouetteModelIfShow, calculate puppet position,
-    // checkStrikeSphereMove, validatePuppetCollider, startPuppetAction("Jump"),
-    // endBindJumpAndPuppetNull, resetCameraTarget
+    FUN_71003d54f4(this, mScaledUpDir, mPlayerPuppet, mCameraTarget, true);
 
     al::invalidateHitSensor(this, "BindFront");
     al::invalidateHitSensor(this, "BindBack");
@@ -424,7 +496,7 @@ void SphinxRide::requestGetOffForce() {
     if (al::isOnGround(this, 0))
         al::setNerve(this, &NrvSphinxRide.GetOff);
     else
-        al::setNerve(this, &NrvSphinxRide.Fall);
+        setNerveFall();
 }
 
 void SphinxRide::updateCollider() {
@@ -442,23 +514,24 @@ void SphinxRide::calcAnim() {
 
     rs::setPuppetVelocity(mPlayerPuppet, sead::Vector3f::zero);
 
+    sead::Quatf quat = sead::Quatf::unit;
+    sead::Vector3f trans = {0.0f, 0.0f, 0.0f};
+
     const sead::Matrix34f* jointMtx = al::getJointMtxPtr(this, "Player");
 
-    sead::Quatf quat;
     sead::Matrix34CalcCommon<f32>::toQuat(quat, *jointMtx);
     quat.normalize();
 
-    sead::Vector3f pos = {(*jointMtx)(0, 3), (*jointMtx)(1, 3), (*jointMtx)(2, 3)};
+    trans.set(jointMtx->getTranslation());
 
     if (al::isNerve(this, &NrvSphinxRide.RideStartLeft) ||
         al::isNerve(this, &NrvSphinxRide.RideStartRight) ||
         al::isNerve(this, &NrvSphinxRide.GetOnStartOn)) {
-        f32 frameMax = rs::getPuppetAnimFrameMax(mPlayerPuppet);
-        f32 rate = al::calcNerveRate(this, (s32)frameMax);
+        f32 rate = al::calcNerveRate(this, rs::getPuppetAnimFrameMax(mPlayerPuppet));
         al::slerpQuat(&quat, mSavedPuppetQuat, quat, rate);
-        al::lerpVec(&pos, mSavedPuppetTrans, pos, rate);
+        al::lerpVec(&trans, mSavedPuppetTrans, trans, rate);
     }
-    rs::setPuppetTrans(mPlayerPuppet, pos);
+    rs::setPuppetTrans(mPlayerPuppet, trans);
     rs::setPuppetQuat(mPlayerPuppet, quat);
 }
 
@@ -524,13 +597,14 @@ bool SphinxRide::receiveMsg(const al::SensorMsg* msg, al::HitSensor* self, al::H
         return true;
 
     if (rs::isMsgSphinxQuizRouteKill(msg)) {
-        if (!al::isAlive(this))
-            return false;
-        rs::addDemoActor(this, false);
-        al::startHitReaction(this, "消滅");
-        al::hideModelIfShow(this);
-        makeActorDead();
-        return true;
+        if (al::isAlive(this)) {
+            rs::addDemoActor(this, false);
+            al::startHitReaction(this, "消滅");
+            al::hideModelIfShow(this);
+            makeActorDead();
+            return true;
+        }
+        return false;
     }
 
     if (mPlayerPuppet) {
@@ -545,7 +619,7 @@ bool SphinxRide::receiveMsg(const al::SensorMsg* msg, al::HitSensor* self, al::H
             if (al::isOnGround(this, 0))
                 al::setNerve(this, &NrvSphinxRide.GetOff);
             else
-                al::setNerve(this, &NrvSphinxRide.Fall);
+                setNerveFall();
             return true;
         }
 
@@ -568,8 +642,7 @@ bool SphinxRide::receiveMsg(const al::SensorMsg* msg, al::HitSensor* self, al::H
         }
 
         if (rs::isMsgRequestSphinxJump(msg)) {
-            f32 selfY = al::getSensorPos(self).y;
-            if (selfY <= al::getSensorPos(other).y && !al::isNerve(this, &NrvSphinxRide.Jump) &&
+            if (al::getSensorPos(self).y <= al::getSensorPos(other).y && !al::isNerve(this, &NrvSphinxRide.Jump) &&
                 al::getVelocity(this).y <= 0.0f && rs::tryGetRequestSphinxJumpInfo(&_1bc, msg)) {
                 al::setNerve(this, &NrvSphinxRide.Jump);
                 return true;
@@ -724,7 +797,7 @@ bool SphinxRide::receiveEvent(const al::EventFlowEventData* event) {
 const char* SphinxRide::judgeQuery(const char* query) const {
     if (!al::isEqualString(query, "SphinxTurn"))
         return nullptr;
-    if (al::isNearZero(mStartDegree, 0.001f))
+    if (al::isNearZero(mStartDegree))
         return "No";
     return "Yes";
 }
@@ -772,12 +845,10 @@ void SphinxRide::exeStandby() {
         al::scaleVelocityHV(this, 0.5f, 0.98f);
     al::addVelocityToGravityNaturalOrFittedGround(this, 1.0f);
 
-    const al::IUseCollision* collision = this;
-    sead::Vector3f arrowStart = al::getTrans(this) + sArrowCheckOffset;
-    if (alCollisionUtil::checkStrikeArrow(collision, arrowStart, sArrowCheckDir, nullptr,
-                                          nullptr) == 0 &&
+    if (alCollisionUtil::checkStrikeArrow(this, al::getTrans(this) + sArrowCheckOffset,
+                                          sArrowCheckDir, nullptr, nullptr) == 0 &&
         !al::isOnGround(this, 15)) {
-        al::setNerve(this, &NrvSphinxRide.Fall);
+        setNerveFall();
         return;
     }
 
@@ -805,36 +876,33 @@ void SphinxRide::setNerveFall() {
     al::setNerve(this, &NrvSphinxRide.Fall);
 }
 
-void SphinxRide::trySlipOnMoveLimit() {
+bool SphinxRide::trySlipOnMoveLimit() {
     if (!al::isOnGround(this, 0))
-        return;
+        return false;
 
     const al::CollisionParts* parts = al::tryGetCollidedGroundCollisionParts(this);
     if (!parts)
-        return;
+        return false;
 
-    // Check special purpose name (offset 0x140 in CollisionParts is mSpecialPurpose)
-    const char* purpose = reinterpret_cast<const char*>(
-        *reinterpret_cast<const uintptr_t*>(reinterpret_cast<const u8*>(parts) + 0x140));
+    const char* purpose = parts->getSpecialPurpose();
     if (!purpose || !al::isEqualString(purpose, "MoveLimit"))
-        return;
+        return false;
 
-    const sead::Vector3f& normal = al::getOnGroundNormal(this, 0);
-    f32 angle = al::calcAngleDegree(normal, sead::Vector3f::ey);
-    if (angle <= 30.0f)
-        return;
+    sead::Vector3f normal = al::getOnGroundNormal(this, 0);
+    if (al::calcAngleDegree(normal, sead::Vector3f::ey) <= 30.0f)
+        return false;
 
-    sead::Vector3f cross = sead::Vector3f::ey.cross(normal);
-    if (al::isNearZero(cross, 0.001f))
-        return;
+    sead::Vector3f cross = normal.cross(sead::Vector3f::ey);
+    if (al::isNearZero(cross))
+        return false;
 
     al::tryNormalizeOrDirZ(&cross);
 
     sead::Vector3f slip = normal.cross(cross);
 
-    sead::Vector3f slipVel = slip * 6.0f;
-    al::addVelocity(this, slipVel);
+    al::addVelocity(this, slip * 6.0f);
     al::limitVelocityDir(this, slip, 300.0f);
+    return true;
 }
 
 void SphinxRide::exeReaction() {
@@ -899,9 +967,9 @@ void SphinxRide::exeGetOn() {
         rs::rideSphinx(this);
         al::showSilhouetteModel(this);
         rs::hidePuppetShadow(mPlayerPuppet);
-        if (!al::isNear(mCameraAngle, -1.0f, 0.001f))
+        if (!al::isNear(mCameraAngle, -1.0f))
             rs::requestSetCameraAngleV(this, mCameraAngle, 0);
-        *(reinterpret_cast<u8*>(mJointLookAtController) + 82) = 0;
+        mJointLookAtController->set_52(false);
     }
 
     rs::requestCameraTurnToFront(this, 0.5f, 0.2f, 0);
@@ -913,7 +981,7 @@ void SphinxRide::exeGetOn() {
 }
 
 bool SphinxRide::isValidateCameraAngleV(f32 angle) {
-    return !al::isNear(angle, -1.0f, 0.001f);
+    return !al::isNear(angle, -1.0f);
 }
 
 // NON_MATCHING: complex run state with rumble, wall collision, animation rate
@@ -1055,7 +1123,7 @@ bool SphinxRide::tryGetOffAndCancelBind() {
     if (al::isOnGround(this, 0))
         al::setNerve(this, &NrvSphinxRide.GetOff);
     else
-        al::setNerve(this, &NrvSphinxRide.Fall);
+        setNerveFall();
     return true;
 }
 
@@ -1078,7 +1146,7 @@ void SphinxRide::updateRun(f32 turnRate) {
     if (alCollisionUtil::checkStrikeArrow(collision, arrowStart, sArrowCheckDir, nullptr,
                                           nullptr) == 0 &&
         !al::isOnGround(this, 15)) {
-        al::setNerve(this, &NrvSphinxRide.Fall);
+        setNerveFall();
         return;
     }
 
@@ -1169,24 +1237,6 @@ void SphinxRide::exeClash() {
         al::setNerve(this, &NrvSphinxRide.Run);
 }
 
-static void addGravityScaleAndLimitVelocity(SphinxRide* actor, f32 gravity, f32 hScale,
-                                            f32 vScale) {
-    sead::Vector3f gravDir;
-    if (al::isOnGround(actor, 0)) {
-        const sead::Vector3f& normal = al::getCollidedGroundNormal(actor);
-        gravDir = {-normal.x, -normal.y, -normal.z};
-    } else {
-        gravDir = {0.0f, -1.0f, 0.0f};
-    }
-
-    al::scaleVelocityHV(actor, hScale, vScale);
-    al::addVelocity(actor, gravDir * gravity);
-
-    sead::Vector3f frontDir;
-    al::calcFrontDir(&frontDir, actor);
-    al::limitVelocityDirSign(actor, frontDir, 50.0f);
-}
-
 void SphinxRide::updateGravityAndDump(f32 hScale, f32 vScale) {
     f32 gravity = al::isOnGround(this, 0) ? 1.0f : 4.3f;
     addGravityScaleAndLimitVelocity(this, gravity, hScale, vScale);
@@ -1227,7 +1277,7 @@ void SphinxRide::exeStop() {
         if (alCollisionUtil::checkStrikeArrow(collision, arrowStart, sArrowCheckDir, nullptr,
                                               nullptr) == 0 &&
             !al::isOnGround(this, 15))
-            al::setNerve(this, &NrvSphinxRide.Fall);
+            setNerveFall();
     }
 }
 
@@ -1339,11 +1389,11 @@ void SphinxRide::exeGetOff() {
             al::validateClipping(this);
         al::setNerve(this, &NrvSphinxRide.Standby);
     } else {
-        al::setNerve(this, &NrvSphinxRide.Fall);
+        setNerveFall();
     }
 }
 
-// NON_MATCHING: IUseCollision MI null check codegen, data offsets
+// NON_MATCHING
 void SphinxRide::exeJump() {
     if (al::isFirstStep(this)) {
         al::startAction(this, "JumpStart");
@@ -1364,12 +1414,12 @@ void SphinxRide::exeJump() {
     if (mPlayerPuppet) {
         sead::Vector3f inputDir;
         al::calcFrontDir(&inputDir, this);
-        const sead::Vector2f& moveStick = rs::getPuppetMoveStick(mPlayerPuppet);
-        const sead::Matrix34f* viewMtx = al::getViewMtxPtr(this, 0);
-        al::calcVecViewInput(&inputDir, moveStick, sead::Vector3f::ey, viewMtx);
+        al::calcVecViewInput(&inputDir, rs::getPuppetMoveStick(mPlayerPuppet), sead::Vector3f::ey,
+                             al::getViewMtxPtr(this, 0));
         al::turnToDirection(this, inputDir, 0.7f);
         sead::Vector3f newFront;
         al::calcFrontDir(&newFront, this);
+
         al::addVelocity(this, newFront);
     }
 
@@ -1403,22 +1453,22 @@ bool SphinxRide::isPlayerInputSwingSphinxStop() const {
     return rs::isPuppetInputSwing(mPlayerPuppet);
 }
 
-// NON_MATCHING: zero-init from const pool, member-by-member Vector3f copy codegen
-// NON_MATCHING: same codegen pattern as sendMsgCollidedCactus
 bool SphinxRide::sendMsgCollidedTouch() {
-    if (!al::isCollidedWallVelocity(this))
-        return false;
+    sead::Vector3f wallPos = sead::Vector3f::zero;
+    sead::Vector3f wallNormal = sead::Vector3f::zero;
+    if (al::isCollidedWallVelocity(this)) {
+        wallPos = al::getCollidedWallPos(this);
+        wallNormal = al::getCollidedWallNormal(this);
 
-    sead::Vector3f wallPos = al::getCollidedWallPos(this);
-    sead::Vector3f wallNormal = al::getCollidedWallNormal(this);
-    al::HitSensor* wallSensor = al::getCollidedWallSensor(this);
-    al::HitSensor* bodySensor = al::getHitSensor(this, "PlayerBody");
+        if (rs::sendMsgSphinxRideAttackTouch(al::getCollidedWallSensor(this),
+                                             al::getHitSensor(this, "PlayerBody"), wallPos,
+                                             wallNormal)) {
+            al::startHitReactionHitEffect(this, "スフィンクス壁突進", wallPos);
+            return true;
+        }
+    }
 
-    if (!rs::sendMsgSphinxRideAttackTouch(wallSensor, bodySensor, wallPos, wallNormal))
-        return false;
-
-    al::startHitReactionHitEffect(this, "スフィンクス壁突進", wallPos);
-    return true;
+    return false;
 }
 
 bool SphinxRide::calcCheckCollidedWallCommon(sead::Vector3f* wallPos, sead::Vector3f* wallNormal,
@@ -1459,7 +1509,7 @@ void SphinxRide::startEventWait() {
 }
 
 void SphinxRide::endEventWait(f32 startDegree) {
-    if (al::isNearZero(startDegree, 0.001f)) {
+    if (al::isNearZero(startDegree)) {
         mStartDegree = startDegree;
         al::setNerve(this, &NrvSphinxRide.DemoStandbyTurnZero);
     } else {
