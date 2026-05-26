@@ -8,9 +8,22 @@ struct ActorInitInfo;
 class EventFlowExecutor;
 class LiveActor;
 class MessageTagDataHolder;
+class IEventFlowQueryJudge;
+class HitSensor;
 }  // namespace al
 
+
+class TalkNpcActionAnimInfo;
+class TalkNpcParam;
+
 namespace rs {
+
+TalkNpcParam* initTalkNpcParam(al::LiveActor*, const char*);
+void initEventQueryJudge(al::EventFlowExecutor*, const al::IEventFlowQueryJudge*);
+void initEventCharacterName(al::EventFlowExecutor*, const al::ActorInitInfo&, const char*);
+void initEventParam(al::EventFlowExecutor*, const TalkNpcParam*, const char*);
+void tryRegisterSphinxQuizRouteKillSensorAfterPlacement(al::HitSensor*);
+
 al::EventFlowExecutor* initEventFlow(al::LiveActor*, const al::ActorInitInfo&, const char*,
                                      const char*);
 al::EventFlowExecutor* initEventFlowSuffix(al::LiveActor*, const al::ActorInitInfo&, const char*,
