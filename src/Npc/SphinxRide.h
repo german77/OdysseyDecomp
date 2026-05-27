@@ -3,6 +3,7 @@
 #include <container/seadObjArray.h>
 #include <math/seadQuat.h>
 #include <math/seadVector.h>
+#include <prim/seadDelegate.h>
 
 #include "Library/Event/IEventFlowEventReceiver.h"
 #include "Library/Event/IEventFlowQueryJudge.h"
@@ -85,9 +86,11 @@ public:
     void startEventWait();
     void endEventWait(f32 startDegree);
 
-private:
-    friend class SphinxRideStateStop;
+    f32 getStartDegree() const { return mStartDegree; }
 
+    sead::Vector3f* get_160Ptr() { return &_160; }
+
+private:
     IUsePlayerPuppet* mPlayerPuppet = nullptr;
     al::EventFlowExecutor* mEventFlowExecutor = nullptr;
     s32 mBgmLineChangeCount = 0;
@@ -124,7 +127,9 @@ private:
     s32 _230 = 0;
     s32 mAdlibCountdown = 292;
     bool mIsAdlibPlaying = false;
-    sead::FixedObjArray<void*, 12> buffer;
+    sead::FixedObjArray<sead::AnyDelegateR<bool>, 12> buffer;
 };
 
-// static_assert(sizeof(SphinxRide) >= 0x440);
+static_assert(sizeof(SphinxRide) >= 0x440);
+
+f32 calcRunSpeedRate(const al::LiveActor* actor);
