@@ -924,7 +924,7 @@ void SphinxRide::exeDemoStandbyStart() {
         al::startAction(this, "StandbyStart");
         buffer.clear();
 
-        buffer.emplaceBack(sead::makeLambdaDelegateR([this]() -> bool {
+        *buffer.emplaceBack() = sead::makeLambdaDelegateR([this]() -> bool {
             if (al::isActionEnd(this)) {
                 al::calcFrontDir(this->get_160Ptr(), this);
                 al::rotateVectorDegreeY(this->get_160Ptr(), -this->getStartDegree());
@@ -932,17 +932,18 @@ void SphinxRide::exeDemoStandbyStart() {
                 return true;
             }
             return false;
-        }));
+        });
 
-        buffer.emplaceBack(sead::makeLambdaDelegateR([this]() -> bool {
+        *buffer.emplaceBack() = sead::makeLambdaDelegateR([this]() -> bool {
             if (!al::isNearZero(this->getStartDegree()))
                 al::turnToDirection(this, *this->get_160Ptr(), 3.5f);
+
             if (al::isActionEnd(this)) {
                 al::setNerve(this, &NrvSphinxRide.DemoTurnEnd);
                 return true;
             }
             return false;
-        }));
+        });
 
         return;
     }
@@ -961,21 +962,21 @@ void SphinxRide::exeDemoStandbyTurnZero() {
         al::startAction(this, "StandbyStart");
         buffer.clear();
 
-        buffer.emplaceBack(sead::makeLambdaDelegateR([this]() -> bool {
+        *buffer.emplaceBack() = sead::makeLambdaDelegateR([this]() -> bool {
             if (al::isActionEnd(this)) {
                 al::startAction(this, "TurnZero");
                 return true;
             }
             return false;
-        }));
+        });
 
-        buffer.emplaceBack(sead::makeLambdaDelegateR([this]() -> bool {
+        *buffer.emplaceBack() = sead::makeLambdaDelegateR([this]() -> bool {
             if (al::isActionEnd(this)) {
                 al::setNerve(this, &NrvSphinxRide.DemoTurnEnd);
                 return true;
             }
             return false;
-        }));
+        });
 
         return;
     }
