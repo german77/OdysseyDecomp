@@ -87,12 +87,11 @@ NERVES_MAKE_STRUCT(SphinxRide, Wait, Stop, Reaction, Standby, Revival, DemoStand
 NERVES_MAKE_NOSTRUCT(SphinxRide, GetOn, Land);
 }  // namespace
 
+
 NpcStateReactionParam sReactionWaitParam("ReactionWait", "ReactionCapWait");
 NpcStateReactionParam sReactionCapStandbyParam("ReactionCapStandby", "ReactionCapStandby");
-f32 szero = 0;
-f32 stwe = 12.0f;
-f32 svent = 25.0f;
-SphinxRideParam sSphinxRideParam = {0.95f, 0.9f};
+SphinxRideParam sSphinxRideParamA ={12.0, 25.0,{0.0f, 40.0f, 0.0f},{0.0f, -345.0f, 0.0f},{0.0f, -45.0f, 0.0f}};
+SphinxRideParam sSphinxRideParam = {0.95f, 0.9f,{0.0f, 40.0f, 0.0f},{0.0f, -345.0f, 0.0f},{0.0f, -45.0f, 0.0f}};
 
 struct RumbleParam {
     f32 volumeLeft;
@@ -115,9 +114,6 @@ static RumbleParam sStopRumbleParams[] = {
     {0.12f, 0.12f, "PresetKott"},
     {0.05f, 0.05f, "PresetDon"},
 };
-
-static sead::Vector3f sArrowCheckOffset = {0.0f, 40.0f, 0.0f};
-static sead::Vector3f sArrowCheckDir = {0.0f, -345.0f, 0.0f};
 
 static s32 getMaterialRumbleIndex(al::LiveActor* actor) {
     if (al::isCollidedFloorCode(actor, "Poison") || al::isCollidedGroundFloorCode(actor, "Poison"))
@@ -470,8 +466,8 @@ void FUN_71003d54f4(al::LiveActor* actor, const sead::Vector3f& param_2, IUsePla
     if (!param_5) {
         rs::endBindAndPuppetNull(&param_3);
     } else {
-        sead::Vector3f local_80 = svent * local_940;
-        local_80.y = stwe;
+        sead::Vector3f local_80 = sSphinxRideParamA.dumpRatio * local_940;
+        local_80.y = sSphinxRideParamA.gravBase;
         rs::endBindJumpAndPuppetNull(&param_3, local_80, 0x14);
     }
     al::resetCameraTarget(actor, param_4);
@@ -843,8 +839,8 @@ void SphinxRide::exeStandby() {
         al::scaleVelocityHV(this, 0.5f, 0.98f);
     al::addVelocityToGravityNaturalOrFittedGround(this, 1.0f);
 
-    if (alCollisionUtil::checkStrikeArrow(this, al::getTrans(this) + sArrowCheckOffset,
-                                          sArrowCheckDir, nullptr, nullptr) == 0 &&
+    if (alCollisionUtil::checkStrikeArrow(this, al::getTrans(this) + sSphinxRideParamA.a,
+                                          sSphinxRideParamA.b, nullptr, nullptr) == 0 &&
         !al::isOnGround(this, 15)) {
         setNerveFall();
         return;
@@ -1203,8 +1199,8 @@ void SphinxRide::updateRun(f32 turnRate) {
     }
 
     const al::IUseCollision* collision = this;
-    sead::Vector3f arrowStart = al::getTrans(this) + sArrowCheckOffset;
-    if (alCollisionUtil::checkStrikeArrow(collision, arrowStart, sArrowCheckDir, nullptr,
+    sead::Vector3f arrowStart = al::getTrans(this) + sSphinxRideParamA.a;
+    if (alCollisionUtil::checkStrikeArrow(collision, arrowStart, sSphinxRideParamA.b, nullptr,
                                           nullptr) == 0 &&
         !al::isOnGround(this, 15)) {
         setNerveFall();
@@ -1331,8 +1327,8 @@ void SphinxRide::exeStop() {
             al::setNerve(this, &NrvSphinxRide.Run);
     } else {
         const al::IUseCollision* collision = this;
-        sead::Vector3f arrowStart = al::getTrans(this) + sArrowCheckOffset;
-        if (alCollisionUtil::checkStrikeArrow(collision, arrowStart, sArrowCheckDir, nullptr,
+        sead::Vector3f arrowStart = al::getTrans(this) + sSphinxRideParamA.a;
+        if (alCollisionUtil::checkStrikeArrow(collision, arrowStart, sSphinxRideParamA.b, nullptr,
                                               nullptr) == 0 &&
             !al::isOnGround(this, 15))
             setNerveFall();
@@ -1431,8 +1427,8 @@ void SphinxRide::exeGetOff() {
     al::addVelocityToGravityNaturalOrFittedGround(this, 1.0f);
 
     const al::IUseCollision* collision = this;
-    sead::Vector3f arrowStart = al::getTrans(this) + sArrowCheckOffset;
-    if (alCollisionUtil::checkStrikeArrow(collision, arrowStart, sArrowCheckDir, nullptr,
+    sead::Vector3f arrowStart = al::getTrans(this) + sSphinxRideParamA.a;
+    if (alCollisionUtil::checkStrikeArrow(collision, arrowStart, sSphinxRideParamA.b, nullptr,
                                           nullptr) ||
         al::isOnGround(this, 15)) {
         trySlipOnMoveLimit();
