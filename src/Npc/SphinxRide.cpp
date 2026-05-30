@@ -88,31 +88,16 @@ NERVES_MAKE_NOSTRUCT(SphinxRide, GetOn, Land);
 }  // namespace
 
 
-NpcStateReactionParam sReactionWaitParam("ReactionWait", "ReactionCapWait");
-NpcStateReactionParam sReactionCapStandbyParam("ReactionCapStandby", "ReactionCapStandby");
-SphinxRideParam sSphinxRideParamA ={12.0, 25.0,{0.0f, 40.0f, 0.0f},{0.0f, -345.0f, 0.0f},{0.0f, -45.0f, 0.0f}};
-SphinxRideParam sSphinxRideParam = {0.95f, 0.9f,{0.0f, 40.0f, 0.0f},{0.0f, -345.0f, 0.0f},{0.0f, -45.0f, 0.0f}};
+const NpcStateReactionParam sReactionWaitParam("ReactionWait", "ReactionCapWait");
+const NpcStateReactionParam sReactionCapStandbyParam("ReactionCapStandby", "ReactionCapStandby");
+const s32 baddata=0; // not actually generated
+const SphinxRideParam sSphinxRideParamA ={25.0, 12.0,{0.0f, 40.0f, 0.0f},{0.0f, -345.0f, 0.0f},{0.0f, -45.0f, 0.0f}};
+const SphinxRideParam sSphinxRideParam = {0.95f, 0.9f,{0.0f, 40.0f, 0.0f},{0.0f, -345.0f, 0.0f},{0.0f, -45.0f, 0.0f}};
 
 struct RumbleParam {
     f32 volumeLeft;
     f32 volumeRight;
     const char* name;
-};
-
-static RumbleParam sRunRumbleParams[] = {
-    {0.12f, 0.05f, "PresetZaZa_nvibEdit"},
-    {0.12f, 0.05f, "PresetKott"},
-    {0.1f, 0.1f, "PresetDon"},
-};
-static RumbleParam sRunSlowRumbleParams[] = {
-    {0.06f, 0.06f, "PresetZaZa_nvibEdit"},
-    {0.05f, 0.05f, "PresetKott"},
-    {0.02f, 0.02f, "PresetDon"},
-};
-static RumbleParam sStopRumbleParams[] = {
-    {0.13f, 0.13f, "PresetZaZa_nvibEdit"},
-    {0.12f, 0.12f, "PresetKott"},
-    {0.05f, 0.05f, "PresetDon"},
 };
 
 static s32 getMaterialRumbleIndex(al::LiveActor* actor) {
@@ -1046,6 +1031,18 @@ bool SphinxRide::isValidateCameraAngleV(f32 angle) {
 
 // NON_MATCHING: complex run state with rumble, wall collision, animation rate
 void SphinxRide::exeRun() {
+
+static RumbleParam sRunSlowRumbleParams[] = {
+    {0.06f, 0.06f, "PresetZaZa_nvibEdit"},
+    {0.05f, 0.05f, "PresetKott"},
+    {0.02f, 0.02f, "PresetDon"},
+};
+static RumbleParam sRunRumbleParams[] = {
+    {0.12f, 0.05f, "PresetZaZa_nvibEdit"},
+    {0.12f, 0.05f, "PresetKott"},
+    {0.1f, 0.1f, "PresetDon"},
+};
+
     if (al::isFirstStep(this)) {
         al::startAction(this, "Run");
         rs::startPuppetAction(mPlayerPuppet, "SphinxRideRide");
@@ -1317,6 +1314,11 @@ void SphinxRide::exeStop() {
         idx = 0;
     }
 
+static RumbleParam sStopRumbleParams[] = {
+    {0.13f, 0.13f, "PresetZaZa_nvibEdit"},
+    {0.12f, 0.12f, "PresetKott"},
+    {0.05f, 0.05f, "PresetDon"},
+};
     alPadRumbleFunction::startPadRumbleWithVolume(this, sStopRumbleParams[idx].name,
                                                   sStopRumbleParams[idx].volumeLeft,
                                                   sStopRumbleParams[idx].volumeLeft);
