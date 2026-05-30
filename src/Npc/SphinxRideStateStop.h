@@ -19,6 +19,10 @@ public:
     void updateStopStrong();
     void exeStopSwing();
 
+    void setSwingStop() { mIsSwingStop = true; }
+
+    bool isGetOff() const { return mIsGetOff; }
+
 private:
     const SphinxRideParam* mParam;
     bool mIsSwingStop = false;
