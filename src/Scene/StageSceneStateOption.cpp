@@ -205,7 +205,7 @@ StageSceneStateOption::StageSceneStateOption(const char* name, al::Scene* scene,
     field_e8->addStringData(field_108, "TxtDay");
     field_e8->addStringData(field_110, "TxtPlay");
 
-    //mTextureInfo = new nn::ui2d::TextureInfo();
+    // mTextureInfo = new nn::ui2d::TextureInfo();
     al::Resource* resource = al::findOrCreateResource("ObjectData/TextureSaveData", nullptr);
 
     for (s32 i = 0; i < 5; i++) {
@@ -550,7 +550,39 @@ void StageSceneStateOption::exeWaitEndDecideAnimAndAutoSave() {
         al::setNerve(this, &WaitEndAutoSave);
 }
 
-void StageSceneStateOption::exeWaitEndAutoSave() {}
+void StageSceneStateOption::exeWaitEndAutoSave() {
+    if (al ::isFirstStep(this)) {
+        field_d0 = false;
+        mActiveLayout->kill();
+        field_c8->startAppear("Appear");
+        al::startAction(field_c8, "Loop", "Loop");
+    }
+    if (rs::isHoldUiCancel(getHost()) || al::isGreaterEqualStep(field_c8, 600)) {
+        field_d0 = true;
+        field_c8->startEnd("End");
+    }
+    if (field_c8->isWait() && al::isGreaterEqualStep(field_c8, 45) &&
+        SaveDataAccessFunction::isDoneSave(mGameDataHolder))
+        field_c8->startEnd("End");
+
+    if (field_c8->isEndWait()) {
+        if (field_d0 || al::isGreaterEqualStep(field_c8, 600)) {
+            mActiveList = nullptr;
+            mActiveNerve = nullptr;
+            mActiveLayout = nullptr;
+            field_48 = nullptr;
+            field_40 = "LeftIn";
+            al::setNerve(this, &NrvStageSceneStateOption.DataManager);
+            return;
+        }
+
+        al::setNerve(this, mActiveNerve);
+        field_48 = nullptr;
+        mActiveLayout = nullptr;
+        mActiveList = nullptr;
+        mActiveNerve = nullptr;
+    }
+}
 
 void StageSceneStateOption::exeClose() {
     if (al ::isFirstStep(this)) {
