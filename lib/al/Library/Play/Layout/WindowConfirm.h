@@ -55,10 +55,13 @@ public:
 
     SelectionType getPrevSelectionType() { return mSelection.prevSelectionType; }
 
+    SelectionType GetSelectionIdx() const { return mSelection.prevSelectionType;}
+    SelectionType GetCancelIdx() const { return mCancelIdx;}
+
 private:
     Direction mDirection;
     Selection mSelection;
-    s32 mCancelIdx;
+    SelectionType mCancelIdx;
     bool mIsDecided;
     s32 mCooldown;
     sead::PtrArray<LayoutActor> mParListArray;

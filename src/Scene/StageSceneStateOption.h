@@ -1,7 +1,12 @@
 #pragma once
 
+#include "Library/Base/StringUtil.h"
 #include "Library/Message/IUseMessageSystem.h"
 #include "Library/Nerve/NerveStateBase.h"
+
+namespace nn::ui2d {
+class TextureInfo;
+}  // namespace nn::ui2d
 
 namespace al {
 class LayoutInitInfo;
@@ -10,6 +15,7 @@ class SimpleLayoutAppearWaitEnd;
 class MessageSystem;
 class WindowConfirm;
 }  // namespace al
+
 class CommonVerticalList;
 class FooterParts;
 class GameConfigData;
@@ -31,11 +37,14 @@ public:
     bool isModeSelectEnd() const;
     s32 getSelectedFileId() const;
     bool isChangeLanguage() const;
-    void exeOptionTop();
     void decide(const al::Nerve*, SimpleLayoutMenu*, CommonVerticalList*);
-    void exeModeSelectSelecting();
     void openConfirm(const al::Nerve*, SimpleLayoutMenu*, CommonVerticalList*);
     void cancel(const al::Nerve*, SimpleLayoutMenu*, CommonVerticalList*);
+    void updateSaveDataInfo(bool);
+    void changeNerve(const al::Nerve*, SimpleLayoutMenu*, CommonVerticalList*);
+
+    void exeOptionTop();
+    void exeModeSelectSelecting();
     void exeModeSelectSelectingByHelp();
     void exeModeSelectConfirmYesNo();
     void exeModeSelectConfirmEnd();
@@ -43,7 +52,6 @@ public:
     void endConfig();
     void exeDataManager();
     void exeSaveDataSelecting();
-    void updateSaveDataInfo(bool);
     void exeSaveDataConfirmYesNo();
     void exeSaveDataSaving();
     void exeSaveDataSaved();
@@ -62,63 +70,64 @@ public:
     void exeWaitEndDecideAnimAndAutoSave();
     void exeWaitEndAutoSave();
     void exeClose();
-    void changeNerve(const al::Nerve*, SimpleLayoutMenu*, CommonVerticalList*);
 
-    const al::MessageSystem* getMessageSystem() const override;
+    const al::MessageSystem* getMessageSystem() const override { return mMessageSystem; }
 
     const char* getLanguage() const { return mLanguage; };
 
-    void set_51(bool isTrue) { field_51 = isTrue; }
+    void set_51(bool isTrue) { mIsOptionMode = isTrue; }
 
     bool isLoadData() const { return mIsLoadData; }
 
 private:
-    void* field_28;
-    void* field_30;
-    void* field_38;
-    char* field_40;
-    char* field_48;
+    const al::Nerve* mActiveNerve = nullptr;
+    SimpleLayoutMenu* mActiveLayout = nullptr;
+    CommonVerticalList* mActiveList = nullptr;
+    const char* field_40 = nullptr;
+    const char* field_48 = nullptr;
     bool field_50;
-    bool field_51;
+    bool mIsOptionMode = false;
     FooterParts* mFooterParts;
-    void* field_60;
-    SimpleLayoutMenu* field_68;
-    CommonVerticalList* field_70;
-    al::SimpleLayoutAppearWaitEnd* field_78;
-    CommonVerticalList* field_80;
-    SimpleLayoutMenu* field_88;
-    CommonVerticalList* field_90;
-    al::SimpleLayoutAppearWaitEnd* field_98;
-    FooterParts* field_a0;
-    SimpleLayoutMenu* field_a8;
-    CommonVerticalList* mCtrlSettingsList;
-    SimpleLayoutMenu* field_b8;
-    CommonVerticalList* field_c0;
-    SimpleLayoutMenu* field_c8;
-    void* field_d0;
-    WindowConfirmData* field_d8;
-    SimpleLayoutMenu* field_e0;
-    CommonVerticalList* field_e8;
-    void* field_f0;
-    void* field_f8;
-    void* field_100;
-    void* field_108;
-    void* field_110;
-    void* field_118;
-    void* field_120;
-    void* field_128;
-    void* field_130;
-    void* field_138;
-    s32 field_140;
-    s32 field_144;
-    SimpleLayoutMenu* field_148;
-    FooterParts* field_150;
-    CommonVerticalList* field_158;
-    al::WindowConfirm* field_160;
-    const char* mLanguage;
+    al::WindowConfirm* mWindowConfirm = nullptr;
+    SimpleLayoutMenu* mOptionSelect = nullptr;
+    CommonVerticalList* field_70 = nullptr;
+    SimpleLayoutMenu* field_78 = nullptr;
+    CommonVerticalList* field_80 = nullptr;
+    SimpleLayoutMenu* mOptionMode = nullptr;
+    CommonVerticalList* field_90 = nullptr;
+    al::SimpleLayoutAppearWaitEnd* mMenuGuide = nullptr;
+    FooterParts* mParFooter = nullptr;
+    SimpleLayoutMenu* mOptionConfig = nullptr;
+    CommonVerticalList* mCtrlSettingsList = nullptr;
+    SimpleLayoutMenu* field_b8 = nullptr;
+    CommonVerticalList* field_c0 = nullptr;
+    SimpleLayoutMenu* field_c8 = nullptr;
+    bool field_d0 = false;
+    WindowConfirmData* mWindowConfirmData = nullptr;
+    SimpleLayoutMenu* field_e0 = nullptr;
+    CommonVerticalList* field_e8 = nullptr;
+    sead::WFixedSafeString<512>* field_f0 = nullptr;
+    sead::WFixedSafeString<512>* field_f8 = nullptr;
+    sead::WFixedSafeString<512>* field_100 = nullptr;
+    sead::WFixedSafeString<512>* field_108 = nullptr;
+    sead::WFixedSafeString<512>* field_110 = nullptr;
+    nn::ui2d::TextureInfo* mTextureInfo = nullptr;
+    void* field_120 = nullptr;
+    void* field_128 = nullptr;
+    void* field_130 = nullptr;
+    void* field_138 = nullptr;
+    s32 field_140 = 0;
+    s32 field_144 = 0;
+    SimpleLayoutMenu* field_148 = nullptr;
+    FooterParts* field_150 = nullptr;
+    CommonVerticalList* field_158 = nullptr;
+    al::WindowConfirm* field_160 = nullptr;
+    const char* mLanguage = nullptr;
     al::Scene* mScene;
     GameDataHolder* mGameDataHolder;
     bool mIsLoadData;
     al::MessageSystem* mMessageSystem;
-    InputSeparator* mInputSeperator;
+    InputSeparator* mInputSeparator;
 };
+
+static_assert(sizeof(StageSceneStateOption) == 0x198);
