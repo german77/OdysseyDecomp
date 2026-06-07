@@ -12,9 +12,10 @@ class TextureInfo;
 namespace al {
 class LayoutActor;
 class LayoutInitInfo;
+class RollParts;
 }  // namespace al
 
-struct RollPartsData{
+struct RollPartsData {
     char filler[0x18];
 };
 
@@ -34,9 +35,9 @@ public:
     void setSelectedIdx(s32, s32);
     void setRollPartsData(RollPartsData*);
     void setRollPartsSelected(s32, s32);
-    void getRollPartsSelected(s32);
-    void getSelectedParts() const;
-    al::IUseLayoutAction* getParts(s32) const;
+    s32 getRollPartsSelected(s32);
+    al::RollParts* getSelectedParts() const;
+    al::RollParts* getParts(s32) const;
     s32 getListPartsNum() const;
     void startLoopActionAll(const char*, const char*);
     void calcCursorPos(sead::Vector2f*) const;
@@ -73,10 +74,22 @@ public:
 
     void set_c8(f32 value) { _c8 = value; }
 
+    void set_cc(bool value) { _cc = value; }
+
+    s32 getFirstId() const { return mFirstId; }
+
+    s32 getLastId() const { return mLastId; }
+
 private:
     char filler[0x2c];
     s32 mSelectedId;
-    char filler2[0x98];
+    char filler2s[0x28];
+    s32 mFirstId;
+    char filler2[0x30];
+    s32 mLastId;
+    char filler44[0x2c];
+    bool _cc;
+    char filler3[0xc];
     f32 _c8;
 };
 

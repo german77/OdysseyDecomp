@@ -75,44 +75,46 @@ public:
 
     const char* getLanguage() const { return mLanguage; };
 
-    void set_51(bool isTrue) { mIsOptionMode = isTrue; }
+    void set_51(bool isTrue) { mIsCalledByHelp = isTrue; }
 
     bool isLoadData() const { return mIsLoadData; }
 
 private:
-    const al::Nerve* mActiveNerve = nullptr;
+    void decideImpl_(const al::Nerve*, SimpleLayoutMenu*, CommonVerticalList*, bool autoSave);
+
+    const al::Nerve* mNextNerve = nullptr;
     SimpleLayoutMenu* mActiveLayout = nullptr;
     CommonVerticalList* mActiveList = nullptr;
-    const char* field_40 = nullptr;
-    const char* field_48 = nullptr;
-    bool field_50;
-    bool mIsOptionMode = false;
+    const char* mAppearAnimName = nullptr;
+    const char* mEndAnimName = nullptr;
+    bool mIsNewGameFile;
+    bool mIsCalledByHelp = false;
     FooterParts* mFooterParts;
     al::WindowConfirm* mWindowConfirm = nullptr;
-    SimpleLayoutMenu* mOptionSelect = nullptr;
-    CommonVerticalList* field_70 = nullptr;
-    SimpleLayoutMenu* field_78 = nullptr;
-    CommonVerticalList* field_80 = nullptr;
-    SimpleLayoutMenu* mOptionMode = nullptr;
-    CommonVerticalList* field_90 = nullptr;
-    al::SimpleLayoutAppearWaitEnd* mMenuGuide = nullptr;
-    FooterParts* mParFooter = nullptr;
-    SimpleLayoutMenu* mOptionConfig = nullptr;
-    CommonVerticalList* mCtrlSettingsList = nullptr;
-    SimpleLayoutMenu* field_b8 = nullptr;
-    CommonVerticalList* field_c0 = nullptr;
-    SimpleLayoutMenu* field_c8 = nullptr;
-    bool field_d0 = false;
-    WindowConfirmData* mWindowConfirmData = nullptr;
-    SimpleLayoutMenu* field_e0 = nullptr;
-    CommonVerticalList* field_e8 = nullptr;
+    SimpleLayoutMenu* mTopMenu = nullptr;
+    CommonVerticalList* mTopList = nullptr;
+    SimpleLayoutMenu* mModeMenu = nullptr;
+    CommonVerticalList* mModeList = nullptr;
+    SimpleLayoutMenu* mModeMenuHelp = nullptr;
+    CommonVerticalList* mModeListHelp = nullptr;
+    al::SimpleLayoutAppearWaitEnd* mModeHelpGuideLayout = nullptr;
+    FooterParts* mModeHelpFooter = nullptr;
+    SimpleLayoutMenu* mConfigMenu = nullptr;
+    CommonVerticalList* mConfigList = nullptr;
+    SimpleLayoutMenu* mDataTopMenu = nullptr;
+    CommonVerticalList* mDataTopList = nullptr;
+    SimpleLayoutMenu* mAutoSaveWaitMenu = nullptr;
+    bool mIsAutoSaveWaitInterrupted = false;
+    WindowConfirmData* mFileSelectConfirmWindow = nullptr;
+    SimpleLayoutMenu* mFileSelectMenu = nullptr;
+    CommonVerticalList* mFileSelectList = nullptr;
     sead::WFixedSafeString<512>* field_f0 = nullptr;
     sead::WFixedSafeString<512>* field_f8 = nullptr;
     sead::WFixedSafeString<512>* field_100 = nullptr;
     sead::WFixedSafeString<512>* field_108 = nullptr;
     sead::WFixedSafeString<512>* field_110 = nullptr;
-    nn::ui2d::TextureInfo* mTextureInfo = nullptr;
-    void* field_120 = nullptr;
+    nn::ui2d::TextureInfo** mTextureInfo = nullptr;
+    nn::ui2d::TextureInfo* field_120 = nullptr;
     void* field_128 = nullptr;
     void* field_130 = nullptr;
     void* field_138 = nullptr;
