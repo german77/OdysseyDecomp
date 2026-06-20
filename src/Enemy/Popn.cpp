@@ -2,7 +2,7 @@
 
 #include <math/seadVector.h>
 
-#include "Library/Collision/KCollisionServer.h"
+#include "Library/Collision/PartsInterpolator.h"
 #include "Library/Effect/EffectSystemInfo.h"
 #include "Library/Item/ItemUtil.h"
 #include "Library/Joint/JointControllerKeeper.h"

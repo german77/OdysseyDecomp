@@ -7,7 +7,7 @@
 #include "Library/Collision/CollisionPartsKeeperUtil.h"
 #include "Library/Collision/CollisionPartsTriangle.h"
 #include "Library/Collision/ICollisionPartsKeeper.h"
-#include "Library/Collision/KCollisionServer.h"
+#include "Library/Collision/PartsInterpolator.h"
 #include "Library/LiveActor/ActorMovementFunction.h"
 #include "Library/LiveActor/ActorPoseUtil.h"
 #include "Library/LiveActor/LiveActor.h"

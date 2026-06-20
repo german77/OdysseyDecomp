@@ -1,137 +1,238 @@
 #include "Library/Collision/KCollisionServer.h"
 
 #include "Library/Math/MathUtil.h"
+#include "Library/Yaml/ByamlIter.h"
 
 namespace al {
 
-void SphereInterpolator::startInterp(const sead::Vector3f& posStart, const sead::Vector3f& posEnd,
-                                     f32 sizeStart, f32 sizeEnd, f32 steps) {
-    mCurrentStep = 0.0f;
-    mPrevStep = 0.0f;
-    mPos = posStart;
-    mMove = posEnd - posStart;
-    mSizeStart = sizeStart;
-    mSizeEnd = sizeEnd;
-
-    f32 dist = mMove.length() + sizeEnd - sizeStart;
-    mStepSize = (dist <= 0.0f) ? 1.0f : steps / dist;
+template <typename T>
+const T* getData(const KCPrismHeader* header, u32 offset) {
+    return reinterpret_cast<const T*>(uintptr_t(header) + offset);
 }
 
-void SphereInterpolator::nextStep() {
-    // re-interpreting between f32/s32 required to match
-    s32 curStep = *(s32*)&mCurrentStep;
-    f32 stepAsFloat = *(f32*)&curStep;
-    f32 newStep = sead::Mathf::clampMax(stepAsFloat + mStepSize, 1.0f);
-    *(s32*)&mPrevStep = curStep;
-    mCurrentStep = newStep;
+void KCollisionServer::initKCollisionServer(void* data, const void* attributeData) {}
+
+void KCollisionServer::setData(void* data) {}
+
+const KCPrismHeader& KCollisionServer::getInnerKcl(s32 index) const {}
+
+u32 KCollisionServer::getNumInnerKcl() const {}
+
+const KCPrismHeader* KCollisionServer::getV1Header(s32 index) const {}
+
+bool KCollisionServer::calcFarthestVertexDistance() {}
+
+s32 KCollisionServer::getTriangleNum(const KCPrismHeader* header) const {}
+
+const KCPrismData& KCollisionServer::getPrismData(u32 index, const KCPrismHeader* header) const {
+    return getData<KCPrismData>(header, header->prismOffset)[(s32)index];
 }
 
-void SphereInterpolator::calcInterpPos(sead::Vector3f* pos) const {
-    f32 step = mCurrentStep;
-    pos->x = mMove.x * step + mPos.x;
-    pos->y = mMove.y * step + mPos.y;
-    pos->z = mMove.z * step + mPos.z;
+bool KCollisionServer::isNearParallelNormal(const KCPrismData* data,
+                                            const KCPrismHeader* header) const {}
+
+bool KCollisionServer::isNanPrism(const KCPrismData* data, const KCPrismHeader* header) const {
+    if (sead::Mathf::isNan(data->length))
+        return true;
+
+    sead::Vector3f normalFace = getFaceNormal(data, header);
+    sead::Vector3f normalA = getEdgeNormal1(data, header);
+    sead::Vector3f normalB = getEdgeNormal2(data, header);
+    sead::Vector3f normalC = getEdgeNormal3(data, header);
+    sead::Vector3f pos = getVertexData(data->vertexIndex, header);
+
+    sead::Vector3f firstResult;
+    calcPosLocal(&firstResult, data, 1, header);
+
+    if (firstResult.isNan() || normalFace.isNan() || normalA.isNan() || normalB.isNan() ||
+        normalC.isNan() || pos.isNan())
+        return true;
+
+    sead::Vector3f secondResult;
+    calcPosLocal(&secondResult, data, 2, header);
+    return secondResult.isNan();
 }
 
-void SphereInterpolator::calcInterp(sead::Vector3f* pos, f32* size,
-                                    sead::Vector3f* remainMoveVec) const {
-    calcInterpPos(pos);
-    *size = mSizeStart + (mSizeEnd - mSizeStart) * mCurrentStep;
-    calcRemainMoveVector(remainMoveVec);
+void calcPos(sead::Vector3f* out, const KCPrismData* data, const sead::Vector3f& position,
+             const sead::Vector3f& a, const sead::Vector3f& b, const sead::Vector3f& c) {
+    sead::Vector3f v21 = a.cross(b);
+    f32 dot = v21.dot(c);
+
+    f32 factor = data->length / sead::Mathf::max(dot, sead::Mathf::epsilon());
+    out->setScaleAdd(factor, v21, position);
 }
 
-void SphereInterpolator::calcRemainMoveVector(sead::Vector3f* remainMoveVec) const {
-    if (remainMoveVec) {
-        f32 remainStep = 1.0f - mCurrentStep;
-        remainMoveVec->x = mMove.x * remainStep;
-        remainMoveVec->y = mMove.y * remainStep;
-        remainMoveVec->z = mMove.z * remainStep;
+void KCollisionServer::calcPosLocal(sead::Vector3f* out, const KCPrismData* data, s32 location,
+                                    const KCPrismHeader* header) const {
+    switch (location) {
+    case 0: {
+        sead::Vector3f position = getVertexData(data->vertexIndex, header);
+        *out = position;
+        return;
+    }
+    case 1: {
+        calcPos(out, data, getVertexData(data->vertexIndex, header), getFaceNormal(data, header),
+                getEdgeNormal2(data, header), getEdgeNormal3(data, header));
+        return;
+    }
+    case 2: {
+        calcPos(out, data, getVertexData(data->vertexIndex, header), getEdgeNormal1(data, header),
+                getFaceNormal(data, header), getEdgeNormal3(data, header));
+        return;
+    }
+    default:
+        *out = {0.0f, 0.0f, 0.0f};
+        return;
     }
 }
 
-void SphereInterpolator::getMoveVector(sead::Vector3f* moveVec) {
-    f32 step = mCurrentStep;
-    moveVec->x = mMove.x * step;
-    moveVec->y = mMove.y * step;
-    moveVec->z = mMove.z * step;
+void KCollisionServer::getMinMax(sead::Vector3f* min, sead::Vector3f* max) const {}
+
+void KCollisionServer::getAreaSpaceSize(sead::Vector3f* size, const KCPrismHeader* header) const {}
+
+void KCollisionServer::getAreaSpaceSize(s32* sizeX, s32* sizeY, s32* sizeZ,
+                                        const KCPrismHeader* header) const {}
+
+void KCollisionServer::getAreaSpaceSize(sead::Vector3u* size, const KCPrismHeader* header) const {}
+
+const KCPrismData* KCollisionServer::checkPoint(sead::Vector3f*, f32, f32*) {}
+
+const u8* KCollisionServer::searchBlock(s32* widthShift, const sead::Vector3u& block,
+                                        const KCPrismHeader* header) const {}
+
+s32 KCollisionServer::checkSphere(const sead::Vector3f*, f32, f32, u32,
+                                  sead::FixedRingBuffer<KCHitInfo, 512>* hits) {}
+
+bool KCollisionServer::outCheckAndCalcArea(sead::Vector3u* blockMin, sead::Vector3u* blockMax,
+                                           const sead::Vector3f& posMin,
+                                           const sead::Vector3f& posMax,
+                                           const KCPrismHeader* header) const {}
+
+bool KCollisionServer::KCHitSphere(const KCPrismData* data, const KCPrismHeader* header,
+                                   const sead::Vector3f*, f32, f32, f32*, u8*) {}
+
+const KCPrismData* KCollisionServer::checkArrow(const sead::Vector3f&, const sead::Vector3f&,
+                                                sead::FixedRingBuffer<KCHitInfo, 512>* hits, u32*,
+                                                u32) const {}
+
+void KCollisionServer::objectSpaceToAreaOffsetSpaceV3f(sead::Vector3f* areaOff,
+                                                       const sead::Vector3f& objSpace,
+                                                       const KCPrismHeader* header) const {}
+
+bool KCollisionServer::isInsideMinMaxInAreaOffsetSpace(const sead::Vector3u& block,
+                                                       const KCPrismHeader* header) const {}
+
+bool KCollisionServer::KCHitArrow(const KCPrismData* data, const KCPrismHeader* header,
+                                  const sead::Vector3f&, const sead::Vector3f&, f32*, u8*) const {}
+
+s32 KCollisionServer::checkSphereForPlayer(const sead::Vector3f*, f32, f32, u32,
+                                           sead::FixedRingBuffer<KCHitInfo, 512>*) {}
+
+bool KCollisionServer::KCHitSphereForPlayer(const KCPrismData* data, const KCPrismHeader* header,
+                                            const sead::Vector3f*, f32, f32, f32*, u8*) {}
+
+s32 KCollisionServer::checkDisk(const sead::Vector3f*, f32, f32, const sead::Vector3f&, f32, u32,
+                                sead::FixedRingBuffer<KCHitInfo, 512>*) {}
+
+bool KCHitDisk(const KCPrismData* data, const KCPrismHeader* header, const sead::Vector3f*, f32,
+               f32, f32, const sead::Vector3f&, f32*, u8*) {}
+
+void KCollisionServer::searchPrism(
+    sead::Vector3f* pos, f32 searchRadius,
+    sead::IDelegate2<const KCPrismData*, const KCPrismHeader*>& callback) {}
+
+void KCollisionServer::searchPrismMinMax(
+    const sead::Vector3f& min, const sead::Vector3f& max,
+    sead::IDelegate2<const KCPrismData*, const KCPrismHeader*>& callback) {}
+
+void KCollisionServer::searchPrismArrow(
+    const sead::Vector3f& pos1, const sead::Vector3f& pos2,
+    sead::IDelegate2<const KCPrismData*, const KCPrismHeader*>& callback) {}
+
+void KCollisionServer::searchPrismDisk(
+    const sead::Vector3f&, const sead::Vector3f&, f32, f32,
+    sead::IDelegate2<const KCPrismData*, const KCPrismHeader*>& callback) {}
+
+bool KCollisionServer::isParallelNormal(const KCPrismData* data,
+                                        const KCPrismHeader* header) const {}
+
+const sead::Vector3f& KCollisionServer::getFaceNormal(const KCPrismData* data,
+                                                      const KCPrismHeader* header) const {
+    return getNormal(data->faceNormalIndex, header);
 }
 
-void SphereInterpolator::calcStepMoveVector(sead::Vector3f* moveVec) const {
-    f32 step = mCurrentStep - mPrevStep;
-    moveVec->x = mMove.x * step;
-    moveVec->y = mMove.y * step;
-    moveVec->z = mMove.z * step;
+const sead::Vector3f& KCollisionServer::getEdgeNormal1(const KCPrismData* data,
+                                                       const KCPrismHeader* header) const {
+    return getNormal(data->edgeNormalIndex[0], header);
 }
 
-void SpherePoseInterpolator::startInterp(const sead::Vector3f& posStart,
-                                         const sead::Vector3f& posEnd, f32 sizeStart, f32 sizeEnd,
-                                         const sead::Quatf& quatStart, const sead::Quatf& quatEnd,
-                                         f32 steps) {
-    mCurrentStep = 0.0f;
-    mPrevStep = 0.0f;
-    mPos = posStart;
-    mMove = posEnd - posStart;
-
-    mQuatStart.x = quatStart.x;
-    mQuatStart.y = quatStart.y;
-    mQuatStart.z = quatStart.z;
-    mQuatStart.w = quatStart.w;
-
-    mQuatEnd.x = quatEnd.x;
-    mQuatEnd.y = quatEnd.y;
-    mQuatEnd.z = quatEnd.z;
-    mQuatEnd.w = quatEnd.w;
-
-    mSizeStart = sizeStart;
-    mSizeEnd = sizeEnd;
-
-    f32 dist = mMove.length() + sizeEnd - sizeStart;
-    mStepSize = (dist <= 0.0f) ? 1.0f : steps / dist;
+const sead::Vector3f& KCollisionServer::getEdgeNormal2(const KCPrismData* data,
+                                                       const KCPrismHeader* header) const {
+    return getNormal(data->edgeNormalIndex[1], header);
 }
 
-void SpherePoseInterpolator::nextStep() {
-    // re-interpreting between f32/s32 required to match
-    s32 curStep = *(s32*)&mCurrentStep;
-    f32 stepAsFloat = *(f32*)&curStep;
-    f32 newStep = sead::Mathf::clampMax(stepAsFloat + mStepSize, 1.0f);
-    *(s32*)&mPrevStep = curStep;
-    mCurrentStep = newStep;
+const sead::Vector3f& KCollisionServer::getEdgeNormal3(const KCPrismData* data,
+                                                       const KCPrismHeader* header) const {
+    return getNormal(data->edgeNormalIndex[2], header);
 }
 
-void SpherePoseInterpolator::calcInterpPos(sead::Vector3f* pos) const {
-    f32 step = mCurrentStep;
-    pos->x = mMove.x * step + mPos.x;
-    pos->y = mMove.y * step + mPos.y;
-    pos->z = mMove.z * step + mPos.z;
+bool KCollisionServer::KCHitDisc(const KCPrismData* data, const KCPrismHeader* header,
+                                 const sead::Vector3f&, const sead::Vector3f&, f32, f32,
+                                 sead::Vector3f*, f32*) {}
+
+s32 KCollisionServer::toIndex(const KCPrismData* data, const KCPrismHeader* header) const {}
+
+const sead::Vector3f& KCollisionServer::getNormal(u32 index, const KCPrismHeader* header) const {
+    return getData<sead::Vector3f>(header, header->normalsOffset)[(s32)index];
 }
 
-void SpherePoseInterpolator::calcInterp(sead::Vector3f* pos, f32* size, sead::Quatf* quat,
-                                        sead::Vector3f* remainMoveVec) const {
-    calcInterpPos(pos);
-    *size = mSizeStart + (mSizeEnd - mSizeStart) * mCurrentStep;
-    slerpQuat(quat, mQuatStart, mQuatEnd, mCurrentStep);
-    quat->normalize();
-    calcRemainMoveVector(remainMoveVec);
+void KCollisionServer::calXvec(const sead::Vector3f* a, const sead::Vector3f* b,
+                               sead::Vector3f* result) {
+    result->x = a->z * b->y - a->y * b->z;
+    result->y = a->x * b->z - a->z * b->x;
+    result->z = a->y * b->x - a->x * b->y;
 }
 
-void SpherePoseInterpolator::calcRemainMoveVector(sead::Vector3f* remainMoveVec) const {
-    if (remainMoveVec) {
-        f32 remainStep = 1.0f - mCurrentStep;
-        remainMoveVec->x = mMove.x * remainStep;
-        remainMoveVec->y = mMove.y * remainStep;
-        remainMoveVec->z = mMove.z * remainStep;
-    }
+const sead::Vector3f& KCollisionServer::getVertexData(u32 index,
+                                                      const KCPrismHeader* header) const {
+    return getData<sead::Vector3f>(header, header->vertexOffset)[(s32)index];
 }
 
-f32 SpherePoseInterpolator::calcRadiusBaseScale(f32 unk) const {
-    return calcRate01(unk, 0.0f, mSizeEnd);
+u32 KCollisionServer::getVertexNum(const KCPrismHeader* header) const {
+    return 0xAAAAAAAB * ((uintptr_t(header->normalsOffset) - header->vertexOffset) >> 2);
 }
 
-void SpherePoseInterpolator::getMoveVector(sead::Vector3f* moveVec) {
-    f32 step = mCurrentStep;
-    moveVec->x = mMove.x * step;
-    moveVec->y = mMove.y * step;
-    moveVec->z = mMove.z * step;
+s32 KCollisionServer::getNormalNum(const KCPrismHeader* header) const {}
+
+s32 KCollisionServer::getAttributeElementNum() const {
+    return 0;
+}
+
+bool KCollisionServer::getAttributes(ByamlIter* destIter, u32 triIndex,
+                                     const KCPrismHeader* header) const {}
+
+bool KCollisionServer::getAttributes(ByamlIter* destIter, const KCPrismData* data) const {
+    return mAttributeIter->tryGetIterByIndex(destIter, data->collisionType);
+}
+
+void KCollisionServer::objectSpaceToAreaOffsetSpace(sead::Vector3u* areaOffSpace,
+                                                    const sead::Vector3f& objSpace,
+                                                    const KCPrismHeader* header) const {}
+
+void KCollisionServer::areaOffsetSpaceToObjectSpace(sead::Vector3f* objSpace,
+                                                    const sead::Vector3u& areaOffSpace,
+                                                    const KCPrismHeader* header) const {}
+
+bool KCollisionServer::doBoxCheck(const sead::Vector3f*, const sead::Vector3f*, sead::Vector3u*,
+                                  sead::Vector3u*, const KCPrismHeader* header) {}
+
+s32 KCollisionServer::calcAreaBlockOffset(const sead::Vector3u& block,
+                                          const KCPrismHeader* header) const {}
+
+s32 KCollisionServer::calcChildBlockOffset(const sead::Vector3u& block, s32 shift) {}
+
+u32 KCollisionServer::getBlockData(const u32* data, u32 offset) {
+    return *reinterpret_cast<const u32*>(reinterpret_cast<const char*>(data) + offset);
 }
 
 }  // namespace al

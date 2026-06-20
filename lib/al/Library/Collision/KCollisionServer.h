@@ -2,19 +2,16 @@
 
 #include <container/seadPtrArray.h>
 #include <container/seadRingBuffer.h>
-#include <math/seadQuat.h>
 #include <math/seadVector.h>
 #include <prim/seadDelegate.h>
 
 namespace al {
 class ByamlIter;
-class CollisionParts;
-class LiveActor;
 
 struct KCPrismHeader {
-    u32 positionsOffset;
+    u32 vertexOffset;
     u32 normalsOffset;
-    u32 trianglesOffset;
+    u32 prismOffset;
     u32 octreeOffset;
     f32 thickness;
     sead::Vector3f octreeOrigin;
@@ -25,12 +22,14 @@ struct KCPrismHeader {
 
 struct KCPrismData {
     f32 length;
-    u16 posIndex;
+    u16 vertexIndex;
     u16 faceNormalIndex;
     u16 edgeNormalIndex[3];
     u16 collisionType;
     u32 triIndex;
 };
+
+static_assert(sizeof(KCPrismData) == 0x14);
 
 struct KCHitInfo {
     const KCPrismHeader* header;
@@ -141,115 +140,6 @@ private:
     f32 mFarthestVertexDistance;
 };
 
-class SphereInterpolator {
-public:
-    SphereInterpolator() {}
-
-    void startInterp(const sead::Vector3f& posStart, const sead::Vector3f& posEnd, f32 sizeStart,
-                     f32 sizeEnd, f32 steps);
-    void nextStep();
-    void calcInterpPos(sead::Vector3f* pos) const;
-    void calcInterp(sead::Vector3f* pos, f32* size, sead::Vector3f* remainMoveVec) const;
-    void calcRemainMoveVector(sead::Vector3f* remainMoveVec) const;
-    void getMoveVector(sead::Vector3f* moveVec);
-    void calcStepMoveVector(sead::Vector3f* moveVec) const;
-
-private:
-    sead::Vector3f mPos;
-    sead::Vector3f mMove;
-    f32 mSizeStart;
-    f32 mSizeEnd;
-    f32 mStepSize;
-    f32 mCurrentStep;
-    f32 mPrevStep;
-};
-
-class SpherePoseInterpolator {
-public:
-    SpherePoseInterpolator() {}
-
-    void startInterp(const sead::Vector3f& posStart, const sead::Vector3f& posEnd, f32 sizeStart,
-                     f32 sizeEnd, const sead::Quatf& quatStart, const sead::Quatf& quatEnd,
-                     f32 steps);
-    void nextStep();
-    void calcInterpPos(sead::Vector3f* pos) const;
-    void calcInterp(sead::Vector3f* pos, f32* size, sead::Quatf* quat,
-                    sead::Vector3f* remainMoveVec) const;
-    void calcRemainMoveVector(sead::Vector3f* remainMoveVec) const;
-    f32 calcRadiusBaseScale(f32 unk) const;
-    void getMoveVector(sead::Vector3f* moveVec);
-
-private:
-    sead::Vector3f mPos;
-    sead::Vector3f mMove;
-    f32 mSizeStart;
-    f32 mSizeEnd;
-    sead::Quatf mQuatStart;
-    sead::Quatf mQuatEnd;
-    f32 mStepSize;
-    f32 mCurrentStep;
-    f32 mPrevStep;
-};
-
-class CollisionPartsFilterBase {
-public:
-    virtual bool isInvalidParts(CollisionParts* collisionParts) = 0;
-};
-
-class CollisionPartsFilterActor : public CollisionPartsFilterBase {
-public:
-    CollisionPartsFilterActor(const LiveActor* actor) : mActor(actor) {}
-
-    bool isInvalidParts(CollisionParts* collisionParts) override;
-
-private:
-    const LiveActor* mActor;
-    bool mIsCompareEqual = true;
-};
-
-class CollisionPartsFilterSubActor : public CollisionPartsFilterBase {
-public:
-    CollisionPartsFilterSubActor(const LiveActor* actor) : mActor(actor) {}
-
-    bool isInvalidParts(CollisionParts* collisionParts) override;
-
-private:
-    const LiveActor* mActor;
-};
-
-class CollisionPartsFilterSpecialPurpose : public CollisionPartsFilterBase {
-public:
-    CollisionPartsFilterSpecialPurpose(const char* specialPurpose)
-        : mSpecialPurpose(specialPurpose) {}
-
-    bool isInvalidParts(CollisionParts* collisionParts) override;
-
-private:
-    const char* mSpecialPurpose;
-};
-
-class CollisionPartsFilterIgnoreOptionalPurpose : public CollisionPartsFilterBase {
-public:
-    CollisionPartsFilterIgnoreOptionalPurpose(const char* specialPurpose)
-        : mSpecialPurpose(specialPurpose) {}
-
-    bool isInvalidParts(CollisionParts* collisionParts) override;
-
-private:
-    const char* mSpecialPurpose;
-};
-
-class CollisionPartsFilterMergePair : public CollisionPartsFilterBase {
-public:
-    CollisionPartsFilterMergePair(CollisionPartsFilterBase* firstFilter,
-                                  CollisionPartsFilterBase* secondFilter)
-        : mFirstFilter(firstFilter), mSecondFilter(secondFilter) {}
-
-    bool isInvalidParts(CollisionParts* collisionParts) override;
-
-private:
-    CollisionPartsFilterBase* mFirstFilter;
-    CollisionPartsFilterBase* mSecondFilter;
-};
+static_assert(sizeof(KCollisionServer) == 0x50);
 
 }  // namespace al
