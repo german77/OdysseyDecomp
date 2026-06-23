@@ -10,26 +10,122 @@ const T* getData(const KCPrismHeader* header, u32 offset) {
     return reinterpret_cast<const T*>(uintptr_t(header) + offset);
 }
 
-void KCollisionServer::initKCollisionServer(void* data, const void* attributeData) {}
+template <typename T>
+T* getData(void* data, u32 offset) {
+    return reinterpret_cast<T*>(uintptr_t(data) + offset);
+}
 
-void KCollisionServer::setData(void* data) {}
+KCollisionServer::KCollisionServer() = default;
 
-const KCPrismHeader& KCollisionServer::getInnerKcl(s32 index) const {}
+void KCollisionServer::initKCollisionServer(void* data, const void* attributeData) {
+    setData(data);
+    if (attributeData != nullptr)
+        mAttributeIter = new ByamlIter((u8*)attributeData);
+}
 
-u32 KCollisionServer::getNumInnerKcl() const {}
+u32 getOctreeOffset(u8* data) {
+    return *getData<u32>(data, 0x4);
+}
 
-const KCPrismHeader* KCollisionServer::getV1Header(s32 index) const {}
+u32 getModelListOffset(u8* data) {
+    return *getData<u32>(data, 0x8);
+}
 
-bool KCollisionServer::calcFarthestVertexDistance() {}
+u32 getCoordShiftX(u8* data) {
+    return *getData<u32>(data, 0x28);
+}
 
-s32 KCollisionServer::getTriangleNum(const KCPrismHeader* header) const {}
+u32 getCoordShiftY(u8* data) {
+    return *getData<u32>(data, 0x2C);
+}
+
+u32 getCoordShiftZ(u8* data) {
+    return *getData<u32>(data, 0x30);
+}
+
+void KCollisionServer::setData(void* data) {
+    mData = (u8*)data;
+    mModelsOffset = getData<u32>(mData, getModelListOffset(mData));
+    mOctreeData = getData<OctreeData>(mData, getOctreeOffset(mData));
+
+    mCoordShift.x = getCoordShiftX(mData) - 1;
+    mCoordShift.y = getCoordShiftY(mData) - 1;
+    mCoordShift.z = getCoordShiftZ(mData) - 1;
+    unkShiftedByCoordShift.x = -1 << getCoordShiftX(mData);
+    unkShiftedByCoordShift.y = -1 << getCoordShiftY(mData);
+    unkShiftedByCoordShift.z = -1 << getCoordShiftZ(mData);
+
+    mModelsData.allocBuffer(getNumInnerKcl(), nullptr);
+    for (s32 i = 0; i < getNumInnerKcl(); i++)
+        mModelsData.pushBack(getInnerKcl(i));
+}
+
+KCPrismHeader* KCollisionServer::getInnerKcl(s32 index) const {
+    return reinterpret_cast<KCPrismHeader*>(mData + mModelsOffset[index]);
+}
+
+s32 KCollisionServer::getNumInnerKcl() const {
+    return *getData<u32>(mData, 0xC);
+}
+
+const KCPrismHeader* KCollisionServer::getV1Header(s32 index) const {
+    return mModelsData[index];
+}
+
+bool KCollisionServer::calcFarthestVertexDistance() {
+    f32 maxSquaredLength = 0.0f;
+    bool isFirstModel = true;
+    for (int i = 0; i < getNumInnerKcl(); i++) {
+        const KCPrismHeader* header = getV1Header(i);
+        s32 numTriangles = getTriangleNum(header);
+        for (int j = 0; j < numTriangles; j++) {
+            const KCPrismData& data = getPrismData(j, header);
+            if (isNearParallelNormal(&data, header)) {
+                const_cast<KCPrismData&>(data).length = -sead::Mathf::abs(data.length);
+                break;
+            }
+            if (isNanPrism(&data, header)) {
+                f32 v16 = sead::Mathf::abs(data.length);
+                if (!isnan(data.length))
+                    const_cast<KCPrismData&>(data).length = 0.0f;
+                else
+                    const_cast<KCPrismData&>(data).length = -v16;
+                break;
+            }
+
+            sead::Vector3f pos;
+            calcPosLocal(&pos, &data, 0, header);
+            if (pos.squaredLength() > maxSquaredLength)
+                maxSquaredLength = pos.squaredLength();
+            calcPosLocal(&pos, &data, 1, header);
+            if (pos.squaredLength() > maxSquaredLength)
+                maxSquaredLength = pos.squaredLength();
+            calcPosLocal(&pos, &data, 2, header);
+            if (pos.squaredLength() > maxSquaredLength)
+                maxSquaredLength = pos.squaredLength();
+        }
+        isFirstModel = false;
+    }
+    mFarthestVertexDistance = sead::Mathf::sqrt(maxSquaredLength);
+    return isFirstModel;
+}
+
+s32 KCollisionServer::getTriangleNum(const KCPrismHeader* header) const {
+    return (header->octreeOffset - (u64)header->prismOffset) / sizeof(KCPrismData);
+}
 
 const KCPrismData& KCollisionServer::getPrismData(u32 index, const KCPrismHeader* header) const {
     return getData<KCPrismData>(header, header->prismOffset)[(s32)index];
 }
 
 bool KCollisionServer::isNearParallelNormal(const KCPrismData* data,
-                                            const KCPrismHeader* header) const {}
+                                            const KCPrismHeader* header) const {
+    sead::Vector3f edge1 = getEdgeNormal1(data, header);
+    sead::Vector3f edge2 = getEdgeNormal2(data, header);
+    sead::Vector3f edge3 = getEdgeNormal3(data, header);
+    return isParallelDirection(edge1, edge2, 0.01f) || isParallelDirection(edge1, edge3, 0.01f) ||
+           isParallelDirection(edge2, edge3, 0.01f);
+}
 
 bool KCollisionServer::isNanPrism(const KCPrismData* data, const KCPrismHeader* header) const {
     if (sead::Mathf::isNan(data->length))
@@ -199,20 +295,28 @@ const sead::Vector3f& KCollisionServer::getVertexData(u32 index,
 }
 
 u32 KCollisionServer::getVertexNum(const KCPrismHeader* header) const {
-    return 0xAAAAAAAB * ((uintptr_t(header->normalsOffset) - header->vertexOffset) >> 2);
+    return (sead::Vector3f*)header->normalsOffset - (sead::Vector3f*)header->vertexOffset;
 }
 
-s32 KCollisionServer::getNormalNum(const KCPrismHeader* header) const {}
+u32 getPrismNum(const KCPrismHeader* header) {
+    return ((u64)header->octreeOffset - (u64)header->prismOffset )/ sizeof(KCPrismData);
+}
+
+u32 KCollisionServer::getNormalNum(const KCPrismHeader* header) const {
+    return 4 * getPrismNum(header);
+}
 
 s32 KCollisionServer::getAttributeElementNum() const {
     return 0;
 }
 
-bool KCollisionServer::getAttributes(ByamlIter* destIter, u32 triIndex,
-                                     const KCPrismHeader* header) const {}
+bool KCollisionServer::getAttributes(ByamlIter* iter, u32 prismIndex,
+                                     const KCPrismHeader* header) const {
+    return mAttributeIter->tryGetIterByIndex(iter, getPrismData(prismIndex, header).collisionType);
+}
 
-bool KCollisionServer::getAttributes(ByamlIter* destIter, const KCPrismData* data) const {
-    return mAttributeIter->tryGetIterByIndex(destIter, data->collisionType);
+bool KCollisionServer::getAttributes(ByamlIter* iter, const KCPrismData* data) const {
+    return mAttributeIter->tryGetIterByIndex(iter, data->collisionType);
 }
 
 void KCollisionServer::objectSpaceToAreaOffsetSpace(sead::Vector3u* areaOffSpace,

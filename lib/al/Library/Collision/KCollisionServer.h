@@ -38,14 +38,22 @@ struct KCHitInfo {
     u8 _14;  // collision location, enum
 };
 
+struct ModelListData {
+    char _0;
+};
+
+struct OctreeData {
+    char _0;
+};
+
 class KCollisionServer {
 public:
     KCollisionServer();
 
     void initKCollisionServer(void* data, const void* attributeData);
     void setData(void* data);
-    const KCPrismHeader& getInnerKcl(s32 index) const;
-    u32 getNumInnerKcl() const;
+    KCPrismHeader* getInnerKcl(s32 index) const;
+    s32 getNumInnerKcl() const;
     const KCPrismHeader* getV1Header(s32 index) const;
     bool calcFarthestVertexDistance();
     s32 getTriangleNum(const KCPrismHeader* header) const;
@@ -114,7 +122,7 @@ public:
 
     const sead::Vector3f& getVertexData(u32 index, const KCPrismHeader* header) const;
     u32 getVertexNum(const KCPrismHeader* header) const;
-    s32 getNormalNum(const KCPrismHeader* header) const;
+    u32 getNormalNum(const KCPrismHeader* header) const;
     s32 getAttributeElementNum() const;
     bool getAttributes(ByamlIter* destIter, u32 triIndex, const KCPrismHeader* header) const;
     bool getAttributes(ByamlIter* destIter, const KCPrismData* data) const;
@@ -131,13 +139,13 @@ public:
 
 private:
     sead::PtrArray<KCPrismHeader> mModelsData;
-    void* mData;
-    ByamlIter* mAttributeIter;
-    void* mModelListData;
-    void* mOctreeData;
-    s32 mAreaWidthShift[3];
-    s32 mAreaWidthMask[3];
-    f32 mFarthestVertexDistance;
+    u8* mData = nullptr;
+    ByamlIter* mAttributeIter = nullptr;
+    u32* mModelsOffset = nullptr;
+    OctreeData* mOctreeData = nullptr;
+    sead::Vector3u mCoordShift = {0, 0, 0};
+    sead::Vector3u unkShiftedByCoordShift = {0, 0, 0};
+    f32 mFarthestVertexDistance = 1.0f;
 };
 
 static_assert(sizeof(KCollisionServer) == 0x50);
