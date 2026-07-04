@@ -19,7 +19,11 @@ class PlacementInfo;
 }  // namespace al
 
 namespace alCameraPoserFunction {
-class CameraCollisionHitResult;
+struct CameraCollisionHitResult {
+    sead::Vector3f mCollisionHitPos = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f mTriangleNormal = {0.0f, 0.0f, 0.0f};
+    int mCollisionLocation = 0;
+};
 
 s32 getViewIndex(const al::CameraPoser*);
 sead::LookAtCamera* getLookAtCamera(const al::CameraPoser*);
