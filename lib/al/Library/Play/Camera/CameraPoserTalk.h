@@ -4,6 +4,16 @@
 
 namespace al {
 
+struct CameraPoserTalkParam {
+    f32 angleH = 60.0f;
+    f32 angleV = 5.0f;
+    f32 minDistance = 600.0f;
+    f32 offsetY = 90.0f;
+    bool isKeepPreDir = false;
+};
+
+static_assert(sizeof(CameraPoserTalkParam) == 0x14);
+
 class CameraPoserTalk : public CameraPoser {
 public:
     CameraPoserTalk(const char* name);
@@ -14,9 +24,9 @@ public:
     void setMinDistance(f32);
 
 private:
-    s8 filler[0x148 - sizeof(CameraPoser)];
+    CameraPoserTalkParam* param;
 };
 
-}  // namespace al
+ static_assert(sizeof(CameraPoserTalk) == 0x148);
 
-static_assert(sizeof(al::CameraPoserTalk) == 0x148, "al::CameraPoserTalk size");
+}  // namespace al
