@@ -1,6 +1,8 @@
 #include "MapObj/Motorcycle.h"
 
 #include "Library/Camera/CameraUtil.h"
+#include "Library/Collision/CollisionParts.h"
+#include "Library/Collision/CollisionPartsKeeperUtil.h"
 #include "Library/Collision/PartsConnectorUtil.h"
 #include "Library/Controller/PadRumbleFunction.h"
 #include "Library/Effect/EffectSystemInfo.h"
@@ -63,7 +65,8 @@ NERVES_MAKE_STRUCT(Motorcycle, Wait, Jump, RideWaitJump, RideRunFall, RideRunWhe
 NERVES_MAKE_NOSTRUCT(Motorcycle, RideRunClash, RideParking, RideParkingAfter)
 }  // namespace
 
-const sead::Vector3f verticalUp = {0.0f, -1.0f, 0.0};
+const sead::Vector3f verticalUp = {0.0f, -1.0f, 0.0f};
+const sead::Vector3f forceField = {0.0f, 50.0f, 10.0f};
 
 bool funA(Motorcycle* actor) {
     if (!rs::isOnGround(actor, actor))
@@ -290,6 +293,95 @@ void funJ(f32 a, Motorcycle* actor, IUsePlayerPuppet* playerPuppet) {
                                (al::getVelocity(actor).y - a) * sead::Vector3f::ey * 0.95f);
 }
 
+bool funM(Motorcycle* actor) {
+    if (rs::isCollisionCodePoleClimbWall(actor))
+        return false;
+
+    s32 hitNum = rs::getWallHitInfoNum(actor);
+    s32 i = 0;
+    bool isCollision = false;
+    for (; i < hitNum; i++) {
+        isCollision |= rs::sendMsgMotorcycleDashCollide(rs::getWallHitInfoSensor(actor, i),
+                                                        al::getHitSensor(actor, "PlayerBody"));
+    }
+    if (isCollision) {
+        al::LiveActor* host = al::getSensorHost(rs::tryGetCollidedWallSensor(actor));
+        if (al::isDead(host))
+            return false;
+        al::CollisionParts* parts = host->getCollisionParts();
+        if (parts && !parts->isValidCollision())
+            return false;
+    }
+
+    sead::Vector3f front = {al::getFront(actor).x, 0.0f, al::getFront(actor).z};
+    if (!al::tryNormalizeOrZero(&front))
+        return false;
+
+    if (sead::Mathf::cos(sead::Mathf::deg2rad(15.0f)) <
+        front.dot(-rs::getCollidedWallNormal(actor))) {
+        al::setVelocityZeroX(actor);
+        al::setVelocityZeroZ(actor);
+        al::setNerve(actor, &RideRunClash);
+        return true;
+    }
+    return false;
+}
+
+bool funP(Motorcycle* actor, const sead::Vector3f& vec) {
+    if (!rs::isCollidedWallVelocity(actor, actor))
+        return false;
+
+    s32 hitNum = rs::getWallHitInfoNum(actor);
+    bool isCollision = false;
+    for (s32 i = 0; i < hitNum; i++) {
+        isCollision |= rs::sendMsgMotorcycleDashCollide(rs::getWallHitInfoSensor(actor, i),
+                                                        al::getHitSensor(actor, "PlayerBody"));
+    }
+    if (isCollision)
+        return false;
+
+    if (al::calcSpeedMax(1.8f, 0.95f) * 0.9f >= al::calcSpeedH(actor))
+        return true;
+    if (funM(actor))
+        return true;
+
+    sead::Vector3f sudovec = vec;
+    al::verticalizeVec(&sudovec, al::getGravity(actor), sudovec);
+    if (sudovec.length() >= 10.0f) {
+        al::setNerve(actor, &NrvMotorcycle.RideRunCollide);
+        return true;
+    }
+    return false;
+}
+
+bool funS(Motorcycle* actor) {
+    if (rs::isCollidedGround(actor))
+        return false;
+    if (1 < actor->getParams()->val_c58) {
+        if (17.5f < sead::Mathf::rad2deg(sead::Mathf::sin(al::getFront(actor).y))) {
+            sead::Vector3f trans = {0.0f, 0.0f, 0.0f};
+            al::calcTransLocalOffset(&trans, actor, forceField);
+
+            if (!alCollisionUtil::getFirstPolyOnArrow(actor, nullptr, nullptr, trans,
+                                                      al::getGravity(actor) * 125.0f, nullptr,
+                                                      nullptr)) {
+                al::limitVelocityDirSign(actor, al::getGravity(actor), 0.0f);
+                al::setNerve(actor, &NrvMotorcycle.RideRunWheelie);
+                return true;
+            }
+        }
+    }
+
+    MotorcycleParams* params = actor->getParams();
+    if (params->val_c58 >= 6) {
+        funT(actor, -params->normal, verticalUp);
+        al::limitVelocityDirSign(actor, verticalUp, 3.0f);
+        al::setNerve(actor, &NrvMotorcycle.RideRunFall);
+        return true;
+    }
+    return false;
+}
+
 Motorcycle::Motorcycle(const char* name) : al::LiveActor(name) {}
 
 void Motorcycle::init(const al::ActorInitInfo& info) {}
@@ -429,7 +521,31 @@ LAB_71002ca074:
     return;
 }
 
-void Motorcycle::exeJump() {}
+void Motorcycle::exeJump() {
+    if (al::isFirstStep(this))
+        al::setVelocity(this, 0.0f, 50.0f, 0.0f);
+
+    bool isInWater = al::isInWater(this);
+    al::addVelocityY(this, isInWater ? -2.0f : -1.0f);
+    if (!isInWater)
+        al::scaleVelocityExceptDirection(this, verticalUp, 0.95f);
+    else
+        al::scaleVelocityParallelVertical(this, verticalUp, 0.8f, 0.925f);
+
+    if (al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}) > 0.0f)
+        al::limitVelocityDir(this, verticalUp, 35.0f);
+
+    if (al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}) > 0.0f || al::isInDeathArea(this)) {
+        al::setVelocityZero(this);
+        al::invalidateHitSensors(this);
+        al::hideModelIfShow(this);
+        al::setNerve(this, &NrvMotorcycle.Reset);
+        return;
+    }
+
+    if (!funA(this) && al::isInWater(this) && !_248)
+        al::startHitReaction(this, "着水");
+}
 
 void Motorcycle::endJump() {
     mPlayerAnimator->tryStartBindRideLandIfJump();
