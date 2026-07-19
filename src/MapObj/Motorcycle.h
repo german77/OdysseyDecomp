@@ -101,53 +101,60 @@ public:
 
     MotorcycleParams* getParams() const { return mParams; }
 
-    bool isStickWorldPose()const{return mIsStickWorldPose;}
+    bool isStickWorldPose() const { return mIsStickWorldPose; }
+
+    BindKeepDemoInfo* getBindKeepDemoInfo() const { return mBindKeepDemoInfo; }
+
+    s32* get_23c() { return &_23c; }
+
+    IUsePlayerPuppet** getPuppy() { return &mPlayerPuppet; }
+
 private:
     bool isRideRun_();
 
-    IUsePlayerPuppet* mPlayerPuppet;
-    PlayerCollider* mPlayerCollider;
-    MotorcycleParams* mParams;
-    MotorcyclePlayerAnimator* mPlayerAnimator;
-    void* kk2;
-    f32 floatA;
-    f32 floatB;
-    f32 floatC;
-    f32 floatJump;
-    void* kk3;
-    ParkingParams* mParkingParams;
-    BindKeepDemoInfo* mBindKeepDemoInfo;
-    al::CollisionPartsConnector* mCollisionPartsConnector;
-    al::CameraTargetBase* mCameraTargetBase;
-    al::CameraSubTargetBase* mCameraSubTargetBase;
-    CameraSubTargetTurnParam* mCameraSubTargetTurnParam;
-    sead::Vector3f vectorA;
-    f32 floatD;
+    IUsePlayerPuppet* mPlayerPuppet = nullptr;
+    PlayerCollider* mPlayerCollider = nullptr;
+    MotorcycleParams* mParams = nullptr;
+    MotorcyclePlayerAnimator* mPlayerAnimator = nullptr;
+    void* kk2 = nullptr;
+    f32 floatA = 0.0f;
+    f32 floatB = 0.0f;
+    f32 floatC = 0.0f;
+    f32 floatJump = 0.0f;
+    f32* kk3 = nullptr;
+    ParkingParams* mParkingParams = nullptr;
+    BindKeepDemoInfo* mBindKeepDemoInfo = nullptr;
+    al::CollisionPartsConnector* mCollisionPartsConnector = nullptr;
+    al::CameraTargetBase* mCameraTargetBase = nullptr;
+    al::CameraSubTargetBase* mCameraSubTargetBase = nullptr;
+    CameraSubTargetTurnParam* mCameraSubTargetTurnParam = nullptr;
+    sead::Vector3f vectorA = {0.0f, 0.0f, 0.0f};
+    f32 floatD = 0.0f;
 
-    void* _190;
+    void* _190 = nullptr;
 
-    void* _198;
-    sead::Quatf quat;
-    sead::Vector3f vector;
-    sead::Quatf mStartQuat;
-    sead::Vector3f mStartTrans;
-    sead::Vector3f vector2;
-    sead::Vector3f vector5;
-    sead::Vector3f vector4;
+    void* _198 = nullptr;
+    sead::Quatf quat = sead::Quatf::unit;
+    sead::Vector3f vector = {0.0f, 0.0f, 0.0f};
+    sead::Quatf mStartQuat = sead::Quatf::unit;
+    sead::Vector3f mStartTrans = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f vector2 = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f vector5 = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f vector4 = {0.0f, 0.0f, 0.0f};
 
-    s32 _23css;
-    s32 _23cxs;
-    sead::Matrix34f mtx;
-    int _filler;
-    s32 valA;
-    s32 _23c;
-    s32 _240;
-    bool mIsOnLight;
-    bool _245;
-    bool mIsStickWorldPose;
-    bool _247;
-    bool _248;
-    bool _249;
+    s32 _23css = 0;
+    s32 _23cxs = 0;
+    sead::Matrix34f mtx = sead::Matrix34f::ident;
+    int _234 = 0;
+    s32 valA = -1;
+    s32 _23c = -1;
+    s32 _240 = 3;
+    bool mIsOnLight = false;
+    bool _245 = false;
+    bool mIsStickWorldPose = false;
+    bool _247 = false;
+    bool _248 = false;
+    bool _249 = false;
 };
 
 static_assert(sizeof(Motorcycle) == 0x250);
