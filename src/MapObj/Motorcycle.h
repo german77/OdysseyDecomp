@@ -53,6 +53,13 @@ struct ParkingParams {
 
 static_assert(sizeof(ParkingParams) == 0x50);
 
+struct Imagination{
+    bool isABool;
+    f32 andAFloat;
+};
+
+static_assert(sizeof(Imagination) == 0x8);
+
 class Motorcycle : public al::LiveActor, public IUsePlayerCollision {
 public:
     Motorcycle(const char* name);
@@ -116,12 +123,12 @@ private:
     PlayerCollider* mPlayerCollider = nullptr;
     MotorcycleParams* mParams = nullptr;
     MotorcyclePlayerAnimator* mPlayerAnimator = nullptr;
-    void* kk2 = nullptr;
+    Imagination* imagination = nullptr;//130
     f32 floatA = 0.0f;
     f32 floatB = 0.0f;
     f32 floatC = 0.0f;
     f32 floatJump = 0.0f;
-    f32* kk3 = nullptr;
+    f32* kk3 = nullptr;//148
     ParkingParams* mParkingParams = nullptr;
     BindKeepDemoInfo* mBindKeepDemoInfo = nullptr;
     al::CollisionPartsConnector* mCollisionPartsConnector = nullptr;
@@ -133,7 +140,8 @@ private:
 
     void* _190 = nullptr;
 
-    void* _198 = nullptr;
+    s32 _198 = 0;
+    s32 _19c = 0;
     sead::Quatf quat = sead::Quatf::unit;
     sead::Vector3f vector = {0.0f, 0.0f, 0.0f};
     sead::Quatf mStartQuat = sead::Quatf::unit;
