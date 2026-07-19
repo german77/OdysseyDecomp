@@ -116,6 +116,7 @@ public:
 
     IUsePlayerPuppet** getPuppy() { return &mPlayerPuppet; }
 
+    f32 getFloatA()const {return floatA;}
 private:
     bool isRideRun_();
 
@@ -142,7 +143,7 @@ private:
 
     s32 _198 = 0;
     s32 _19c = 0;
-    sead::Quatf quat = sead::Quatf::unit;
+    sead::Quatf mQuat = sead::Quatf::unit;
     sead::Vector3f vector = {0.0f, 0.0f, 0.0f};
     sead::Quatf mStartQuat = sead::Quatf::unit;
     sead::Vector3f mStartTrans = {0.0f, 0.0f, 0.0f};

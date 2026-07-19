@@ -5,6 +5,7 @@
 #include "Library/Camera/CameraUtil.h"
 #include "Library/Collision/CollisionParts.h"
 #include "Library/Collision/CollisionPartsKeeperUtil.h"
+#include "Library/Collision/PartsConnector.h"
 #include "Library/Collision/PartsConnectorUtil.h"
 #include "Library/Controller/PadRumbleFunction.h"
 #include "Library/Effect/EffectSystemInfo.h"
@@ -681,80 +682,63 @@ void funK(float valueA, float* valueB, Motorcycle* actor, IUsePlayerPuppet* play
     return;
 }
 
+static inline f32 getJointDistance(Motorcycle* actor, const char* jointNameA,
+                                   const char* jointNameB) {
+    sead::Vector3f frontTirePos = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f backTirePos = {0.0f, 0.0f, 0.0f};
+    al::calcJointPos(&frontTirePos, actor, jointNameA);
+    al::calcJointPos(&backTirePos, actor, jointNameB);
+    return (frontTirePos - backTirePos).length();
+}
+
 void funN(Motorcycle* actor) {
-    if (al::getVelocity(actor).y <= 0.0f) {
-        sead::Vector3f seomePose = {0.0f, 0.0f, 0.0f};
-        const sead::Vector3f& trans = al::getTrans(actor);
-        const sead::Vector3f& front2 = al::getFront(actor);
-        sead::Vector3f frontTirePos = {0.0f, 0.0f, 0.0f};
-        sead::Vector3f backTirePos = {0.0f, 0.0f, 0.0f};
-        al::calcJointPos(&frontTirePos, actor, "FrontTire");
-        al::calcJointPos(&backTirePos, actor, "BackTire");
-        f32 tireDistance = frontTirePos.cross(backTirePos).length();
-        /*fVar6 = *pfVar4;
-        fVar8 = pfVar4[1];
-        fVar9 = pfVar4[2];
-        fVar10 = pVVar3->x;
-        fVar11 = pVVar3->y;
-        fVar7 = pVVar3->z;
-        pVVar3 = al::getGravity(actor);
-        local_60.z = (fVar7 - fVar5 * fVar9) - pVVar3->z * 150.0f;
-        local_60.y = (fVar11 - fVar5 * fVar8) - pVVar3->y * 150.0f;
-        local_60.x = (fVar10 - fVar5 * fVar6) - pVVar3->x * 150.0f;
-        pIVar1 = (IUseCollision *)0x0;
-        if (actor != (LiveActor *)0x0) {
-          pIVar1 = (IUseCollision *)&actor->collisionDirector;
-        }
-        pVVar3 = al::getGravity(actor);
-        local_70.y = pVVar3->y * 150.0f;
-        local_70.x = pVVar3->x * 150.0f;
-        local_70.z = pVVar3->z * 150.0f;
-        bVar2 = alCollisionUtil::getFirstPolyOnArrow
-                          (pIVar1,&local_80,nullptr,&local_60,&local_70,
-                           nullptr,nullptr);
-        if (bVar2) {*/
-        // sead::Vector3f front = al::getTrans(actor)-local_80;
-        sead::Vector3f front;
-        al::normalize(&front);
-        al::setFront(actor, front);
-        sead::Vector3f* gravity = al::getGravityPtr(actor);
-        al::verticalizeVec(gravity, front, *gravity);
-        al::normalize(al::getGravityPtr(actor));
-        //}
+    if (al::getVelocity(actor).y > 0.0f)
+        return;
+
+    sead::Vector3f hitPos = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f poss = (al::getTrans(actor) -
+                           al::getFront(actor) * getJointDistance(actor, "FrontTire", "BackTire")) -
+                          al::getGravity(actor) * 150.0f;
+    if (!alCollisionUtil::getFirstPolyOnArrow(actor, &hitPos, nullptr, poss,
+                                              al::getGravity(actor) * 150.0f, nullptr, nullptr)) {
+        return;
     }
+
+    sead::Vector3f front = al::getTrans(actor) - hitPos;
+    al::normalize(&front);
+    al::setFront(actor, front);
+
+    sead::Vector3f* gravity = al::getGravityPtr(actor);
+    al::verticalizeVec(gravity, front, *gravity);
+    al::normalize(al::getGravityPtr(actor));
+}
+
+static inline void updateStick(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, f32* valA, f32 kA,
+                               f32 kB, f32 kC) {
+    sead::Vector2f stick = {0.0f, 0.0f};
+    funI(&stick, actor, playerPuppet);
+    f32 stickH = stick.x * kA;
+    f32 leftAngle = al::diffNearAngleDegree(0.0f, rs::getPuppetPoseRotZDegreeLeft(playerPuppet));
+    f32 rigthAngle = al::diffNearAngleDegree(0.0f, rs::getPuppetPoseRotZDegreeRight(playerPuppet));
+
+    f32 angle = al::normalizeAbs(
+        sead::Mathf::abs(leftAngle) < sead::Mathf::abs(rigthAngle) ? rigthAngle : leftAngle, 45.0f,
+        135.0f);
+
+    *valA = al::lerpValue(*valA, stickH + angle * kB, kC);
 }
 
 void funE(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, float* valueA, f32* valueB,
           bool valueC) {
+    updateStick(actor, playerPuppet, valueA, 12.5f, -7.5f, 0.1f);
     sead::Vector2f stick = {0.0f, 0.0f};
     funI(&stick, actor, playerPuppet);
-    f32 fVar12 = stick.x * 12.5f;
-    f32 fVar9 = (float)al::diffNearAngleDegree(0.0f, rs::getPuppetPoseRotZDegreeLeft(playerPuppet));
-    f32 fVar10 =
-        (float)al::diffNearAngleDegree(0.0f, rs::getPuppetPoseRotZDegreeRight(playerPuppet));
-    f32 fVar8 = fVar9;
-    if (fVar9 <= 0.0f)
-        fVar8 = -fVar9;
-    f32 fVar11 = fVar10;
-    if (fVar10 <= 0.0f)
-        fVar11 = -fVar10;
-    if (fVar11 <= fVar8)
-        fVar10 = fVar9;
-    fVar8 = al::lerpValue(*valueA, fVar12 + al::normalizeAbs(fVar10, 45.0f, 135.0f) * -7.5f, 0.1f);
-    /*valueA = fVar8;
-    local_68.x = 0.0f;
-    local_68.y = 0.0f;
-    funI(&local_68,actor,playerPuppet);
-    pVVar4 = (Vector3 *)al::getFrontPtr(actor);
-    al::rotateVectorDegreeY(pVVar4,local_68.x * -0.5);
-    pVVar4 = (Vector3 *)al::getFrontPtr(actor);
-    al::normalize(pVVar4);
-    pVVar4 = al::getVelocity(actor);
-    fVar8 = pVVar4->x;
-    pVVar4 = al::getVelocity(actor);
-    fVar10 = pVVar4->z;
-    pVVar4 = al::getVelocity(actor);
-    fVar9 = pVVar4->y;
+    al::rotateVectorDegreeY(al::getFrontPtr(actor), stick.x * -0.5f);
+    al::normalize(al::getFrontPtr(actor));
+
+    /*fVar8 = al::getVelocity(actor)->x;
+    fVar10 = al::getVelocity(actor)->z;
+    fVar9 = al::getVelocity(actor)->y;
     uVar5 = rs::isPuppetHoldActionButton(playerPuppet);
     if ((uVar5 & 1) == 0) {
       fVar10 = fVar10 * 0.95;
@@ -804,7 +788,7 @@ void Motorcycle::init(const al::ActorInitInfo& info) {
     al::startAction(this, "Wait");
     al::startMclAnim(this, mIsOnLight ? "FrontOnTailOff" : "FrontOffTailOff");
     al::offCollide(this);
-    al::calcQuat(&quat, this);
+    al::calcQuat(&mQuat, this);
     vector = al::getTrans(this);
 
     mPlayerAnimator = new MotorcyclePlayerAnimator();
@@ -950,548 +934,869 @@ void Motorcycle::attackSensor(al::HitSensor* self, al::HitSensor* other) {
 }
 
 bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
-                            al::HitSensor* self) {}
-
-void Motorcycle::movement() {
-    if (rs::isActiveBindKeepDemo(mBindKeepDemoInfo)) {
-        mPlayerAnimator->update(0.0f, 1.0f, 0.0f);
-        return;
+                            al::HitSensor* self) {
+    if (rs::isMsgTargetMarkerPosition(message)) {
+        local_60.x = 0.0;
+        local_60.y = 0.0;
+        local_60._8_8_ = local_60._8_8_ & 0xffffffff00000000;
+        al::calcTransLocalOffset((Vector3*)&local_60, this, (Vector3*)&DAT_71018bf34c);
+        rs::setMsgTargetMarkerPosition(message, (Vector3*)&local_60);
+        return true;
     }
 
-    imagination->isABool = false;
-    al::LiveActor::movement();
+    if (rs::isMsgIgnoredByRunawayNpc(message)) {
+        return true;
 
-    if (mPlayerPuppet) {
-        rs::syncPuppetVisibility(this, mPlayerPuppet);
-        rs::copyPuppetDitherAlpha(mPlayerPuppet, this);
-        al::AreaObj* areaObj =
-            al::tryFindAreaObj(this, "MotorcycleInCheckArea", al::getTrans(this));
-        if (areaObj) {
-            al::tryOnStageSwitch(areaObj, "SwitchAreaOn");
-            areaObj->invalidate();
-        }
-        if (59 < mParams->val_c58)
-            rs::requestUpToTargetCameraAngleBySpeed(this, 50.0f, 3.0f, 0);
-        rs::requestUpdateSafetyPoint(mPlayerPuppet, this, this);
-        if (rs::isCollidedGround(this))
-            rs::sendPlayerCollisionTouchMsg(this, al::getHitSensor(this, "PlayerBody"), this);
-        if (rs::isCollidedGround(this))
-            al::holdSe(this, "GroundNoiseLv");
-    }
+        if (al::isSensorPlayer(self)) {
+            if (rs::isMsgPushToMotorcycle(message)) {
+                rs::calcNpcPushVecBetweenSensors((rs*)&vector2, (Vector3*)other, self, selfself);
 
-    /*if (!al::isActiveCameraSubTarget(mCameraSubTargetBase))
-        goto LAB_71002c8d1c;
-    if (_198 < 1 || !al::isOnStageSwitch(this, "SwitchValidCoursePoint"), )) {
-            fVar25 = 0.0f;
-            fVar27 = al::lerpValue(floatD, 0.0f, 0.045f);
-            iVar21 = _19c;
-            fVar26 = fVar25;
-        LAB_71002c8ba4:
-            iVar17 = 0;
-            if (-1 < iVar21 + -1)
-                iVar17 = iVar21 + -1;
-        }
-    else {
-        if (*(int*)&field21_0x198 < 1) {
-            fVar25 = 0.0f;
-            fVar26 = fVar25;
-        LAB_71002c8b88:
-            fVar27 = al::lerpValue(floatD, 0.0f, 0.045f);
-            iVar21 = _19c;
-            goto LAB_71002c8ba4;
-        }
-        fVar27 = 180.0f;
-        fVar25 = 0.0f;
-        lVar20 = 0;
-        lVar22 = 0;
-        iVar21 = -1;
-        fVar26 = fVar25;
-        do {
-            pVVar9 = al::getTrans(this);
-            pfVar16 = (float*)(field20_0x190 + lVar20);
-            fVar28 = pVVar9->y - pfVar16[1];
-            fVar24 = pVVar9->x - *pfVar16;
-            fVar29 = pVVar9->z - pfVar16[2];
-            fVar24 = fVar24 * fVar24 + fVar28 * fVar28 + fVar29 * fVar29;
-            fVar28 = SQRT(fVar24);
-            if (NAN(fVar28))
-                fVar28 = sqrtf(fVar24);
-            if ((750.0f <= fVar28) && (fVar28 <= 3000.0f)) {
-                local_140 = (undefined1[8])0x0;
-                local_138 = (KCPrismData*)((ulong)local_138 & 0xffffffff00000000);
-                al::calcCameraLookDir(local_140, this, 0);
-                lVar23 = field20_0x190;
-                pVVar9 = al::getTrans(this);
-                pfVar16 = (float*)(lVar23 + lVar20);
-                local_b0.y = pfVar16[1] - pVVar9->y;
-                local_b0.x = *pfVar16 - pVVar9->x;
-                local_b0.z = pfVar16[2] - pVVar9->z;
-                fVar24 = (float)al::calcAngleDegree(local_140, &local_b0);
-                if ((fVar24 <= 120.0f) && ((iVar21 < 0 || (fVar24 < fVar27)))) {
-                    fVar25 = (float)al::normalize(fVar28, 750.0f, 3000.0f);
-                    fVar26 = (float)al::normalize(fVar24, 0.0f, 120.0f);
-                    iVar21 = (int)lVar22;
-                    fVar27 = fVar24;
+                return true;
+            }
+            if (al::isSensorNpc(other) &&
+                (al::isMsgPushAll(message) || rs::isMsgPushToPlayer(message))) {
+                local_60.x = 0.0;
+                local_60.y = 0.0;
+                local_60._8_8_ = local_60._8_8_ & 0xffffffff00000000;
+                al::calcSideDir((Vector3*)&local_60, this);
+                pVVar5 = al::getSensorPos(self);
+                pVVar6 = al::getSensorPos(other);
+                local_50.y = pVVar5->y - pVVar6->y;
+                local_50.x = pVVar5->x - pVVar6->x;
+                local_50.z = pVVar5->z - pVVar6->z;
+                al::parallelizeVec(&local_50, (Vector3*)&local_60, &local_50);
+                fVar11 = (float)al::getSensorRadius(other);
+                fVar12 = (float)al::getSensorRadius(self);
+                if (fVar11 <= fVar12)
+                    fVar11 = fVar12;
+                fVar14 =
+                    local_50.x * local_50.x + local_50.y * local_50.y + local_50.z * local_50.z;
+                fVar12 = SQRT(fVar14);
+                if (NAN(fVar12))
+                    fVar12 = sqrtf(fVar14);
+                fVar11 = fVar11 - fVar12;
+                if ((0.0 < fVar11) && (bVar2 = al::tryNormalizeOrZero(&local_50), bVar2)) {
+                    fVar12 = (float)NEON_fminnm(fVar11, 0x41200000);
+                    (vector2).x = fVar12 * local_50.x + (vector2).x;
+                    (vector2).y = fVar12 * local_50.y + (vector2).y;
+                    (vector2).z = fVar12 * local_50.z + (vector2).z;
+                    al::limitLength(&vector2, &vector2, fVar11);
+
+                    return true;
                 }
             }
-            lVar22 = lVar22 + 1;
-            lVar20 = lVar20 + 0xc;
-        } while (lVar22 < *(int*)&field21_0x198);
-        if (iVar21 < 0)
-            goto LAB_71002c8b88;
-        pVVar9 = al::getFront(this);
-        lVar22 = field20_0x190;
-        pVVar12 = al::getTrans(this);
-        pfVar16 = (float*)(lVar22 + (long)iVar21 * 0xc);
-        local_140._4_4_ = pfVar16[1] - pVVar12->y;
-        local_140._0_4_ = *pfVar16 - pVVar12->x;
-        local_138 = (KCPrismData*)CONCAT44(local_138._4_4_, pfVar16[2] - pVVar12->z);
-        pVVar12 = al::getGravity(this);
-        fVar24 = (float)al::calcAngleOnPlaneDegree(pVVar9, local_140, pVVar12);
-        fVar27 = -50.0f;
-        if ((-50.0f <= fVar24) && (fVar27 = fVar24, 50.0f < fVar24))
-            fVar27 = 50.0f;
-        fVar27 = al::lerpValue(floatD, fVar27, 0.3f);
-        fVar27 = al::lerpValue(floatD, fVar27, 0.15f);
-        iVar21 = _19c;
-        iVar17 = 30;
-        if (iVar21 + 1 < 0x1f)
-            iVar17 = iVar21 + 1;
+        }
+        if (rs::isMsgKillByShineGet(message) || rs::isMsgKillByHomeDemo(message)) {
+            if (mPlayerPuppet) {
+                rs::endBindAndPuppetNull(&mPlayerPuppet);
+                funH(this, mPlayerAnimator, mCameraTargetBase, mCameraSubTargetBase);
+            }
+            al::setVelocityZero(this);
+            al::invalidateHitSensors(this);
+            al::hideModelIfShow(this);
+            al::setNerve(this & NrvMotorcycle.Reset);
+            ppuVar9 = &exeResetNoReaction;
+            goto LAB_71002c7b64;
+        }
+        if (!mPlayerPuppet) {
+            if (rs::isMsgCheckCarObstacle(message))
+                return true;
+            if (rs::isMsgFireSwitchFire(message)) {
+                al::setVelocityZero(this);
+                al::invalidateHitSensors(this);
+                al::hideModelIfShow(this);
+                ppuVar9 = &::exeReset;
+                goto LAB_71002c7b64;
+            }
+            if (!al::isSensorRide(self)) {
+                if (!al::isSensorBindableAll(self)) {
+                LAB_71002c7e30:
+                    return false;
+                }
+                if (rs::isPlayer2D(this))
+                    return false;
+                if (al::isMsgBindStart(message) && (al::isNerve(this & NrvMotorcycle.Wait) ||
+                                                    al::isNerve(this & NrvMotorcycle.Creep) ||
+                                                    al::isNerve(this & NrvMotorcycle.Reaction))) {
+                    if (!rs::isPlayerOnGround(this)) {
+                        pVVar5 = al::getActorVelocity(other);
+                        if (-6.0 < pVVar5->y)
+                            return false;
+                        pVVar5 = al::getActorVelocity(other);
+                        local_60.z = pVVar5->z;
+                        local_60.x = pVVar5->x;
+                        local_60.y = pVVar5->y;
+                        if (!al::tryNormalizeOrZero((Vector3*)&local_60) || (0.0 < local_60.y)) {
+                            if (0 < field37_0x23c) {
+                                field37_0x23c = 5;
+                                return false;
+                            }
+                        } else if (field37_0x23c < 1) {
+                            pVVar5 = al::getActorTrans(other);
+                            pVVar6 = al::getTrans(this);
+                            local_50.y = pVVar5->y - pVVar6->y;
+                            local_50.x = pVVar5->x - pVVar6->x;
+                            local_50.z = pVVar5->z - pVVar6->z;
+                            pVVar5 = (Vector3*)al::getFront(this);
+                            al::parallelizeVec(&local_50, pVVar5, &local_50);
+                            pfVar8 = (float*)al::getFront(this);
+                            fVar15 = pfVar8[1] * local_50.y;
+                            fVar12 = *pfVar8 * local_50.x;
+                            fVar16 = pfVar8[2] * local_50.z;
+                            fVar14 = local_50.x * local_50.x + local_50.y * local_50.y +
+                                     local_50.z * local_50.z;
+                            fVar11 = SQRT(fVar14);
+                            if (NAN(fVar11))
+                                fVar11 = sqrtf(fVar14);
+                            if (fVar12 + fVar15 + fVar16 <= 0.0)
+                                fVar12 = 200.0;
+                            else
+                                fVar12 = 50.0;
+                            if (fVar11 <= fVar12) {
+                                pVVar5 = al::getGravity(this);
+                                fVar11 = (float)al::calcDistanceV(pVVar5, other, self);
+                                if (fVar11 <= 100.0)
+                                    return true;
+                                ;
+                            }
+                        }
+                        return false;
+                    }
+                    if (!rs::isPlayerInputTriggerRide(this))
+                        return false;
+
+                    return true;
+                    ;
+                }
+                if (!al::isMsgBindInit(message))
+                    goto LAB_71002c8150;
+                pIVar7 = (IUsePlayerPuppet*)rs::startPuppet(self, other);
+                mPlayerPuppet = pIVar7;
+                rs::validateRecoveryArea(pIVar7);
+                mPlayerAnimator->startBind(mPlayerPuppet);
+                rs::setPuppetVelocity(mPlayerPuppet, sead::Vector3f::zero);
+                uVar4 = rs::isCollidedPuppetGround(mPlayerPuppet);
+                al::validateDepthShadowMap(this);
+                al::offDepthShadowModel(this);
+                rs::hidePuppetShadow(mPlayerPuppet);
+                rs::invalidatePuppetCollider(mPlayerPuppet);
+                rs::invalidatePuppetReceivePush(mPlayerPuppet);
+                rs::invalidateWaterSurfaceShadow(mPlayerPuppet);
+                ppuVar9 = &(actor).cameraDirector;
+                al::setCameraTarget((IUseCamera*)ppuVar9, mCameraTargetBase);
+                al::onCameraRideObj(this);
+                if (mIsStickWorldPose == false) {
+                    al::setCameraSubTarget((IUseCamera*)ppuVar9, mCameraSubTargetBase);
+                    floatD = 0.0;
+                    *(undefined4*)&field_0x19c = 0;
+                }
+                al::invalidateHitSensors(this);
+                al::validateHitSensorPlayerAll(this);
+                al::validateHitSensorEnemyBodyAll(this);
+                al::invalidateClipping(this);
+                al::onCollide(this);
+                al::showSilhouetteModel(this);
+                al::invalidateOcclusionQuery(this);
+                pbVar10 = imagination;
+                *pbVar10 = false;
+                pbVar10[4] = false;
+                pbVar10[5] = false;
+                pbVar10[6] = false;
+                pbVar10[7] = false;
+                valA = 0x4b0;
+                rs::calcPuppetQuat(&quat2, mPlayerPuppet);
+                pVVar5 = rs::getPuppetTrans(mPlayerPuppet);
+                (vector3).z = pVVar5->z;
+                fVar11 = pVVar5->y;
+                (vector3).x = pVVar5->x;
+                (vector3).y = fVar11;
+                local_68 = "Motorcycle";
+                rs::tryAppearBindTutorial((IUseSceneObjHolder*)&(actor).SceneObjHolder,
+                                          (BindInfo*)&local_68);
+                rs::rideMotorcycle(this);
+                uVar13 = rs::getPuppetPoseRotZDegreeLeft(mPlayerPuppet);
+                *(undefined4*)&field33_0x1fc = uVar13;
+                uVar13 = rs::getPuppetPoseRotZDegreeRight(mPlayerPuppet);
+                *(undefined4*)((long)&field33_0x1fc + 4) = uVar13;
+                if ((uVar4 & 1) == 0) {
+                    ppuVar9 = &::exeRideStartOn;
+                } else {
+                    local_60.x = 0.0;
+                    local_60.y = 0.0;
+                    local_60._8_8_ = local_60._8_8_ & 0xffffffff00000000;
+                    if (al::calcDirBetweenSensorsH((Vector3*)&local_60, self, other)) {
+                        local_50.x = 0.0;
+                        local_50.y = 0.0;
+                        local_50.z = 0.0;
+                        al::calcSideDir(&local_50, this);
+                        if (0.0 < local_50.x * local_60.x + local_50.y * local_60.y +
+                                      local_50.z * local_60.z) {
+                            ppuVar9 = &exeRideStartLeft;
+                            goto LAB_71002c7b64;
+                        }
+                    }
+                    ppuVar9 = &exeRideStartRight;
+                }
+            } else {
+                if (rs::isMsgPlayerObjectWallHit(message))
+                    return false;
+                uVar4 = rs::isMsgNpcCapReactionAll(message);
+                if (!rs::isMsgNpcCapReactionAll(message) && !al::isMsgExplosion(message)) {
+                    if (!rs::isPlayerHack(this)) {
+                    LAB_71002c8150:
+                        return false;
+                    }
+                    if (!rs::checkMsgNpcTrampleReactionAll(message, other, self, false))
+                        return false;
+                }
+                rs::requestHitReactionToAttacker(message, self, other);
+                if (!al::isNerve(this & NrvMotorcycle.Wait) &&
+                    !al::isNerve(this & NrvMotorcycle.Creep) &&
+                    !al::isNerve(this & NrvMotorcycle.Reaction))
+                    return true;
+
+                if (al::isNerve(this & NrvMotorcycle.Reaction) && al::isLessStep(this 7))
+                    goto LAB_71002c7e30;
+                if (0 < field38_0x240) {
+                    local_50.z = -90.0;
+                    local_50.x = 0.0;
+                    local_50.y = 150.0;
+                    al::multVecPose(&local_50, this, &local_50);
+                    local_60.x = 0.0;
+                    local_60.y = 0.0;
+                    local_60._8_8_ = 0x3f80000000000000;
+                    al::calcQuat(&local_60, this);
+                    al::appearItem(this, &local_50, &local_60, nullptr);
+                    field38_0x240 = field38_0x240 + -1;
+                }
+                ppuVar9 = &::exeReaction;
+            }
+        LAB_71002c7b64:
+            al::setNerve(this, ppuVar9);
+        } else if (!rs::isActiveBindKeepDemo(mBindKeepDemoInfo)) {
+            if (rs::tryStartBindKeepDemo(mBindKeepDemoInfo, message, mPlayerPuppet)) {
+                mPlayerAnimator->startBindKeepDemo();
+                _249 = true;
+                return true;
+            }
+        LAB_71002c7cb4:
+            if (!al::isMsgPlayerDisregard(message)) {
+                if (rs::isMsgEnableMapCheckPointWarp(message) ||
+                    rs::isMsgBindCollidedGround(message)) {
+                    return = rs::isCollidedGround(this);
+                }
+                if (!al::isSensorName(self, "Pushed") && al::isSensorPlayer(self) &&
+                    (al::isMsgExplosion(message) || rs::isMsgEnemyAttackTRex(message) ||
+                     !isRideRun(this)) &&
+                    al::isMsgEnemyAttack(message)) {
+                    return rs::requestDamage(mPlayerPuppet);
+                }
+                if (!rs::tryReceiveBindCancelMsgAndPuppetNull(mPlayerPuppet, message)) {
+                    if (!al::isMsgBindEnd(message)) {
+                        if (rs::isMsgBindRecoveryLife(message))
+                            return al::isNerve(this & NrvMotorcycle.RideWait);
+                        goto LAB_71002c8150;
+                    }
+                    funD(this, mPlayerPuppet, &field37_0x23c,
+                         mPlayerAnimator,
+                         (mCameraTargetBase, mCameraSubTargetBase);
+                } else {
+                    funH(this, mPlayerAnimator, mCameraTargetBase, mCameraSubTargetBase);
+                }
+            }
+        } else if (!rs::isMsgBindKeepDemoExecute(message)) {
+            if (!rs::tryEndBindKeepDemo(mBindKeepDemoInfo, message, mPlayerPuppet))
+                goto LAB_71002c7cb4;
+            mPlayerAnimator->tryStartBindRideRunIfNotPlaying();
+            _249 = false;
+            if (al::isNerve(this, &exeRideStartLeft) || al::isNerve(this, &exeRideStartRight) ||
+                al::isNerve(this & NrvMotorcycle.RideStartOn)) {
+                ppuVar9 = &::exeRideWait;
+                goto LAB_71002c7b64;
+            }
+        } else {
+            mPlayerAnimator->tryStartBindRideRunIfNotPlaying();
+            mPlayerAnimator->update(0.0f, 1.0f, 0.0f);
+            if (mPlayerPuppet)
+                funC(mPlayerPuppet, this, &quat2, &vector3);
+            _249 = false;
+        }
+        return true;
     }
-    floatD = fVar27;
-    _19c = iVar17;
-    if (al::isNerve(this, &NrvMotorcycle.RideWait)) {
-        mCameraSubTargetTurnParam->mTurnSpeedRate1 =
-            mCameraSubTargetTurnParam->mTurnSpeedRate1 * 0.98f;
-        mCameraSubTargetTurnParam->mTurnSpeedRate2 =
-            mCameraSubTargetTurnParam->mTurnSpeedRate2 * 0.98f;
-    } else {
-        f32 fVar27 = al::normalize(al::calcSpeedH(this), 0.0f, al::calcSpeedMax(1.8f, 0.95f));
-        f32 fVar24 = (float)al::normalize(_19c, 0, 30);
-        fVar26 = fVar26 * fVar25 * fVar24;
-        fVar25 = al::lerpValue(0.3, 0.1, fVar27);
-        mCameraSubTargetTurnParam->mTurnSpeedRate1 = al::lerpValue(fVar25, 0.275, fVar26);
-        fVar25 = al::lerpValue(0.15, 0.075, fVar27);
-        mCameraSubTargetTurnParam->mTurnSpeedRate2 = al::lerpValue(fVar25, 0.1, fVar26);
-    }
-    puVar13 = (undefined8*)al::getFront(this);
-    local_138 = (KCPrismData*)CONCAT44(local_138._4_4_, *(undefined4*)(puVar13 + 1));
-    local_140 = (undefined1[8]) * puVar13;
-    pVVar9 = al::getGravity(this);
-    al::rotateVectorDegree(local_140, local_140, pVVar9, floatD);
-    pVVar9 = al::getTrans(this);
-    fVar25 = pVVar9->y;
-    fVar26 = pVVar9->z;
-    (VectorA).x = (float)local_140._0_4_ * 250.0f + pVVar9->x;
-    (VectorA).y = (float)local_140._4_4_ * 250.0f + fVar25;
-    (VectorA).z = local_138._0_4_ * 250.0f + fVar26;
-LAB_71002c8d1c:
-    params = mParams;
-    if (0 < (params->array2).size) {
-        lVar22 = 0;
-        puVar13 = (undefined8*)params->field14_0x28[0];
-        do {
-            puVar19 = (params->array2).array[lVar22];
-            *puVar19 = puVar13;
-            iVar21 = (params->array2).size;
-            lVar22 = lVar22 + 1;
-            params->field14_0x28[0] = puVar19;
-            puVar13 = puVar19;
-        } while (lVar22 < iVar21);
-    }
-    (params->array2).size = 0;
-    if (0 < (params->array).size) {
-        lVar22 = 0;
-        puVar13 = (undefined8*)params->field16_0x648[0];
-        do {
-            puVar19 = (params->array).array[lVar22];
-            *puVar19 = puVar13;
-            iVar21 = (params->array).size;
-            lVar22 = lVar22 + 1;
-            params->field16_0x648[0] = puVar19;
-            puVar13 = puVar19;
-        } while (lVar22 < iVar21);
-    }
-    (params->array).size = 0;
-    (params->vector_8).x = 0.0f;
-    (params->vector_8).y = 0.0f;
-    (params->vector_8).z = 0.0f;
-    ppIVar1 = &this;
-    if (!al::isNoCollide(this)) {
-        params->bool_2 = false;
-        params->bool_3 = false;
-        params->bool_4 = false;
-        params->bool_5 = false;
-        uVar8 = rs::isCollidedGround(this);
-        if ((uVar8 & 1) != 0) {
-            lVar22 = (*(code*)((actor).vtable)->field28_0xe0)(this);
-            this_01 = *(CollisionShapeKeeper**)(lVar22 + 0xf0);
-            iVar21 = this_01->mNumCollideResult;
-            if (0 < iVar21) {
+
+    void Motorcycle::movement() {
+        if (rs::isActiveBindKeepDemo(mBindKeepDemoInfo)) {
+            mPlayerAnimator->update(0.0f, 1.0f, 0.0f);
+            return;
+        }
+
+        imagination->isABool = false;
+        al::LiveActor::movement();
+
+        if (mPlayerPuppet) {
+            rs::syncPuppetVisibility(this, mPlayerPuppet);
+            rs::copyPuppetDitherAlpha(mPlayerPuppet, this);
+            al::AreaObj* areaObj =
+                al::tryFindAreaObj(this, "MotorcycleInCheckArea", al::getTrans(this));
+            if (areaObj) {
+                al::tryOnStageSwitch(areaObj, "SwitchAreaOn");
+                areaObj->invalidate();
+            }
+            if (59 < mParams->val_c58)
+                rs::requestUpToTargetCameraAngleBySpeed(this, 50.0f, 3.0f, 0);
+            rs::requestUpdateSafetyPoint(mPlayerPuppet, this, this);
+            if (rs::isCollidedGround(this))
+                rs::sendPlayerCollisionTouchMsg(this, al::getHitSensor(this, "PlayerBody"), this);
+            if (rs::isCollidedGround(this))
+                al::holdSe(this, "GroundNoiseLv");
+        }
+
+        /*if (!al::isActiveCameraSubTarget(mCameraSubTargetBase))
+            goto LAB_71002c8d1c;
+        if (_198 < 1 || !al::isOnStageSwitch(this, "SwitchValidCoursePoint"), )) {
+                fVar25 = 0.0f;
+                fVar27 = al::lerpValue(floatD, 0.0f, 0.045f);
+                iVar21 = _19c;
+                fVar26 = fVar25;
+            LAB_71002c8ba4:
                 iVar17 = 0;
-                do {
-                    this_00 = (CollidedShapeResult*)CollisionShapeKeeper::getCollidedShapeResult(
-                        this_01, iVar17);
-                    uVar8 = CollidedShapeResult::isArrow(this_00);
-                    if ((uVar8 & 1) == 0) {
-                        uVar8 = CollidedShapeResult::isSphere(this_00);
-                        if ((uVar8 & 1) != 0) {
-                            pTVar14 = (Triangle*)CollidedShapeResult::getSphereHitInfo(this_00);
-                            puVar13 = (undefined8*)al::Triangle::getNormal(pTVar14, 0);
-                            local_138 = (KCPrismData*)CONCAT44(local_138._4_4_,
-                                                               *(undefined4*)(puVar13 + 1));
-                            local_140 = (undefined1[8]) * puVar13;
-                            lVar22 = CollidedShapeResult::getShapeInfoSphere(this_00);
-                            bVar5 = al::isEqualString("FrontFace", *(char**)(lVar22 + 0x10));
-                            if (bVar5) {
-                                if ((params->array2).size < (params->array2).sizeMax) {
-                                    puVar13 = (undefined8*)params->field14_0x28[0];
-                                    if (puVar13 != (undefined8*)0x0)
-                                        params->field14_0x28[0] = *puVar13;
-                                    *(float*)(puVar13 + 1) = local_138._0_4_;
-                                    *puVar13 = local_140;
-                                    uVar18._0_4_ = (params->array2).size;
-                                    uVar18._4_4_ = (params->array2).sizeMax;
-                                    if ((int)(undefined4)uVar18 < (int)uVar18._4_4_) {
-                                        *(undefined8**)((long)(params->array2).array +
-                                                        (-(uVar18 >> 0x1f & 1) &
-                                                             0xfffffff800000000 |
-                                                         (uVar18 & 0xffffffff) << 3)) = puVar13;
-                                        (params->array2).size = (params->array2).size + 1;
-                                    }
-                                }
-                                uVar8 = al::isFloorPolygon(local_140, &verticalUp);
-                                if ((uVar8 & 1) != 0)
-                                    params->bool_4 = true;
-                            } else {
+                if (-1 < iVar21 + -1)
+                    iVar17 = iVar21 + -1;
+            }
+        else {
+            if (*(int*)&field21_0x198 < 1) {
+                fVar25 = 0.0f;
+                fVar26 = fVar25;
+            LAB_71002c8b88:
+                fVar27 = al::lerpValue(floatD, 0.0f, 0.045f);
+                iVar21 = _19c;
+                goto LAB_71002c8ba4;
+            }
+            fVar27 = 180.0f;
+            fVar25 = 0.0f;
+            lVar20 = 0;
+            lVar22 = 0;
+            iVar21 = -1;
+            fVar26 = fVar25;
+            do {
+                pVVar9 = al::getTrans(this);
+                pfVar16 = (float*)(field20_0x190 + lVar20);
+                fVar28 = pVVar9->y - pfVar16[1];
+                fVar24 = pVVar9->x - *pfVar16;
+                fVar29 = pVVar9->z - pfVar16[2];
+                fVar24 = fVar24 * fVar24 + fVar28 * fVar28 + fVar29 * fVar29;
+                fVar28 = SQRT(fVar24);
+                if (NAN(fVar28))
+                    fVar28 = sqrtf(fVar24);
+                if ((750.0f <= fVar28) && (fVar28 <= 3000.0f)) {
+                    local_140 = (undefined1[8])0x0;
+                    local_138 = (KCPrismData*)((ulong)local_138 & 0xffffffff00000000);
+                    al::calcCameraLookDir(local_140, this, 0);
+                    lVar23 = field20_0x190;
+                    pVVar9 = al::getTrans(this);
+                    pfVar16 = (float*)(lVar23 + lVar20);
+                    local_b0.y = pfVar16[1] - pVVar9->y;
+                    local_b0.x = *pfVar16 - pVVar9->x;
+                    local_b0.z = pfVar16[2] - pVVar9->z;
+                    fVar24 = (float)al::calcAngleDegree(local_140, &local_b0);
+                    if ((fVar24 <= 120.0f) && ((iVar21 < 0 || (fVar24 < fVar27)))) {
+                        fVar25 = (float)al::normalize(fVar28, 750.0f, 3000.0f);
+                        fVar26 = (float)al::normalize(fVar24, 0.0f, 120.0f);
+                        iVar21 = (int)lVar22;
+                        fVar27 = fVar24;
+                    }
+                }
+                lVar22 = lVar22 + 1;
+                lVar20 = lVar20 + 0xc;
+            } while (lVar22 < *(int*)&field21_0x198);
+            if (iVar21 < 0)
+                goto LAB_71002c8b88;
+            pVVar9 = al::getFront(this);
+            lVar22 = field20_0x190;
+            pVVar12 = al::getTrans(this);
+            pfVar16 = (float*)(lVar22 + (long)iVar21 * 0xc);
+            local_140._4_4_ = pfVar16[1] - pVVar12->y;
+            local_140._0_4_ = *pfVar16 - pVVar12->x;
+            local_138 = (KCPrismData*)CONCAT44(local_138._4_4_, pfVar16[2] - pVVar12->z);
+            pVVar12 = al::getGravity(this);
+            fVar24 = (float)al::calcAngleOnPlaneDegree(pVVar9, local_140, pVVar12);
+            fVar27 = -50.0f;
+            if ((-50.0f <= fVar24) && (fVar27 = fVar24, 50.0f < fVar24))
+                fVar27 = 50.0f;
+            fVar27 = al::lerpValue(floatD, fVar27, 0.3f);
+            fVar27 = al::lerpValue(floatD, fVar27, 0.15f);
+            iVar21 = _19c;
+            iVar17 = 30;
+            if (iVar21 + 1 < 0x1f)
+                iVar17 = iVar21 + 1;
+        }
+        floatD = fVar27;
+        _19c = iVar17;
+        if (al::isNerve(this, &NrvMotorcycle.RideWait)) {
+            mCameraSubTargetTurnParam->mTurnSpeedRate1 =
+                mCameraSubTargetTurnParam->mTurnSpeedRate1 * 0.98f;
+            mCameraSubTargetTurnParam->mTurnSpeedRate2 =
+                mCameraSubTargetTurnParam->mTurnSpeedRate2 * 0.98f;
+        } else {
+            f32 fVar27 = al::normalize(al::calcSpeedH(this), 0.0f, al::calcSpeedMax(1.8f, 0.95f));
+            f32 fVar24 = (float)al::normalize(_19c, 0, 30);
+            fVar26 = fVar26 * fVar25 * fVar24;
+            fVar25 = al::lerpValue(0.3, 0.1, fVar27);
+            mCameraSubTargetTurnParam->mTurnSpeedRate1 = al::lerpValue(fVar25, 0.275, fVar26);
+            fVar25 = al::lerpValue(0.15, 0.075, fVar27);
+            mCameraSubTargetTurnParam->mTurnSpeedRate2 = al::lerpValue(fVar25, 0.1, fVar26);
+        }
+        puVar13 = (undefined8*)al::getFront(this);
+        local_138 = (KCPrismData*)CONCAT44(local_138._4_4_, *(undefined4*)(puVar13 + 1));
+        local_140 = (undefined1[8]) * puVar13;
+        pVVar9 = al::getGravity(this);
+        al::rotateVectorDegree(local_140, local_140, pVVar9, floatD);
+        pVVar9 = al::getTrans(this);
+        fVar25 = pVVar9->y;
+        fVar26 = pVVar9->z;
+        (VectorA).x = (float)local_140._0_4_ * 250.0f + pVVar9->x;
+        (VectorA).y = (float)local_140._4_4_ * 250.0f + fVar25;
+        (VectorA).z = local_138._0_4_ * 250.0f + fVar26;
+    LAB_71002c8d1c:
+        params = mParams;
+        if (0 < (params->array2).size) {
+            lVar22 = 0;
+            puVar13 = (undefined8*)params->field14_0x28[0];
+            do {
+                puVar19 = (params->array2).array[lVar22];
+                *puVar19 = puVar13;
+                iVar21 = (params->array2).size;
+                lVar22 = lVar22 + 1;
+                params->field14_0x28[0] = puVar19;
+                puVar13 = puVar19;
+            } while (lVar22 < iVar21);
+        }
+        (params->array2).size = 0;
+        if (0 < (params->array).size) {
+            lVar22 = 0;
+            puVar13 = (undefined8*)params->field16_0x648[0];
+            do {
+                puVar19 = (params->array).array[lVar22];
+                *puVar19 = puVar13;
+                iVar21 = (params->array).size;
+                lVar22 = lVar22 + 1;
+                params->field16_0x648[0] = puVar19;
+                puVar13 = puVar19;
+            } while (lVar22 < iVar21);
+        }
+        (params->array).size = 0;
+        (params->vector_8).x = 0.0f;
+        (params->vector_8).y = 0.0f;
+        (params->vector_8).z = 0.0f;
+        mPlayerPuppet = &this;
+        if (!al::isNoCollide(this)) {
+            params->bool_2 = false;
+            params->bool_3 = false;
+            params->bool_4 = false;
+            params->bool_5 = false;
+            uVar8 = rs::isCollidedGround(this);
+            if ((uVar8 & 1) != 0) {
+                lVar22 = (*(code*)((actor).vtable)->field28_0xe0)(this);
+                this_01 = *(CollisionShapeKeeper**)(lVar22 + 0xf0);
+                iVar21 = this_01->mNumCollideResult;
+                if (0 < iVar21) {
+                    iVar17 = 0;
+                    do {
+                        this_00 =
+    (CollidedShapeResult*)CollisionShapeKeeper::getCollidedShapeResult( this_01, iVar17); uVar8 =
+    CollidedShapeResult::isArrow(this_00); if ((uVar8 & 1) == 0) { uVar8 =
+    CollidedShapeResult::isSphere(this_00); if ((uVar8 & 1) != 0) { pTVar14 =
+    (Triangle*)CollidedShapeResult::getSphereHitInfo(this_00); puVar13 =
+    (undefined8*)al::Triangle::getNormal(pTVar14, 0); local_138 =
+    (KCPrismData*)CONCAT44(local_138._4_4_,
+                                                                   *(undefined4*)(puVar13 + 1));
+                                local_140 = (undefined1[8]) * puVar13;
                                 lVar22 = CollidedShapeResult::getShapeInfoSphere(this_00);
-                                bVar5 = al::isEqualString("BackFace", *(char**)(lVar22 + 0x10));
+                                bVar5 = al::isEqualString("FrontFace", *(char**)(lVar22 + 0x10));
                                 if (bVar5) {
-                                    if ((params->array).size < (params->array).sizeMax) {
-                                        puVar13 = (undefined8*)params->field16_0x648[0];
+                                    if ((params->array2).size < (params->array2).sizeMax) {
+                                        puVar13 = (undefined8*)params->field14_0x28[0];
                                         if (puVar13 != (undefined8*)0x0)
-                                            params->field16_0x648[0] = *puVar13;
+                                            params->field14_0x28[0] = *puVar13;
                                         *(float*)(puVar13 + 1) = local_138._0_4_;
                                         *puVar13 = local_140;
-                                        uVar8._0_4_ = (params->array).size;
-                                        uVar8._4_4_ = (params->array).sizeMax;
-                                        if ((int)(undefined4)uVar8 < (int)uVar8._4_4_) {
-                                            *(undefined8**)((long)(params->array).array +
-                                                            (-(uVar8 >> 0x1f & 1) &
+                                        uVar18._0_4_ = (params->array2).size;
+                                        uVar18._4_4_ = (params->array2).sizeMax;
+                                        if ((int)(undefined4)uVar18 < (int)uVar18._4_4_) {
+                                            *(undefined8**)((long)(params->array2).array +
+                                                            (-(uVar18 >> 0x1f & 1) &
                                                                  0xfffffff800000000 |
-                                                             (uVar8 & 0xffffffff) << 3)) = puVar13;
-                                            (params->array).size = (params->array).size + 1;
+                                                             (uVar18 & 0xffffffff) << 3)) = puVar13;
+                                            (params->array2).size = (params->array2).size + 1;
                                         }
                                     }
                                     uVar8 = al::isFloorPolygon(local_140, &verticalUp);
                                     if ((uVar8 & 1) != 0)
-                                        params->bool_5 = true;
+                                        params->bool_4 = true;
+                                } else {
+                                    lVar22 = CollidedShapeResult::getShapeInfoSphere(this_00);
+                                    bVar5 = al::isEqualString("BackFace", *(char**)(lVar22 + 0x10));
+                                    if (bVar5) {
+                                        if ((params->array).size < (params->array).sizeMax) {
+                                            puVar13 = (undefined8*)params->field16_0x648[0];
+                                            if (puVar13 != (undefined8*)0x0)
+                                                params->field16_0x648[0] = *puVar13;
+                                            *(float*)(puVar13 + 1) = local_138._0_4_;
+                                            *puVar13 = local_140;
+                                            uVar8._0_4_ = (params->array).size;
+                                            uVar8._4_4_ = (params->array).sizeMax;
+                                            if ((int)(undefined4)uVar8 < (int)uVar8._4_4_) {
+                                                *(undefined8**)((long)(params->array).array +
+                                                                (-(uVar8 >> 0x1f & 1) &
+                                                                     0xfffffff800000000 |
+                                                                 (uVar8 & 0xffffffff) << 3)) =
+    puVar13; (params->array).size = (params->array).size + 1;
+                                            }
+                                        }
+                                        uVar8 = al::isFloorPolygon(local_140, &verticalUp);
+                                        if ((uVar8 & 1) != 0)
+                                            params->bool_5 = true;
+                                    }
+                                }
+                            }
+                        } else {
+                            pTVar14 = (Triangle*)CollidedShapeResult::getArrowHitInfo(this_00);
+                            pVVar9 = al::Triangle::getNormal(pTVar14, 0);
+                            uVar8 = al::isFloorPolygon(pVVar9, &verticalUp);
+                            if ((uVar8 & 1) != 0) {
+                                lVar22 = CollidedShapeResult::getShapeInfoArrow(this_00);
+                                if (*(int*)(lVar22 + 0x18) == 0) {
+                                    params->bool_2 = true;
+                                    pTVar14 =
+    (Triangle*)CollidedShapeResult::getArrowHitInfo(this_00); pfVar16 =
+    (float*)al::Triangle::getNormal(pTVar14, 0); (params->vector_8).x = (params->vector_8).x +
+    *pfVar16; (params->vector_8).y = (params->vector_8).y + pfVar16[1]; (params->vector_8).z =
+    (params->vector_8).z + pfVar16[2]; } else { params->bool_3 = true;
                                 }
                             }
                         }
-                    } else {
-                        pTVar14 = (Triangle*)CollidedShapeResult::getArrowHitInfo(this_00);
-                        pVVar9 = al::Triangle::getNormal(pTVar14, 0);
-                        uVar8 = al::isFloorPolygon(pVVar9, &verticalUp);
-                        if ((uVar8 & 1) != 0) {
-                            lVar22 = CollidedShapeResult::getShapeInfoArrow(this_00);
-                            if (*(int*)(lVar22 + 0x18) == 0) {
-                                params->bool_2 = true;
-                                pTVar14 = (Triangle*)CollidedShapeResult::getArrowHitInfo(this_00);
-                                pfVar16 = (float*)al::Triangle::getNormal(pTVar14, 0);
-                                (params->vector_8).x = (params->vector_8).x + *pfVar16;
-                                (params->vector_8).y = (params->vector_8).y + pfVar16[1];
-                                (params->vector_8).z = (params->vector_8).z + pfVar16[2];
-                            } else {
-                                params->bool_3 = true;
-                            }
+                        iVar17 = iVar17 + 1;
+                    } while (iVar21 != iVar17);
+                }
+            }
+            al::tryNormalizeOrZero(&params->vector_8);
+        }
+        uVar8 = rs::isCollidedGround(this);
+        if ((uVar8 & 1) != 0) {
+            params = mParams;
+            uVar8 = al::isNormalize(&params->vector_8, 0.001);
+            if ((((uVar8 & 1) != 0) && (params->bool_2 != false)) && (mParams->bool_3 == false)) {
+                local_b0.x = 0.0f;
+                local_b0.y = 0.0f;
+                local_b0.z = 0.0f;
+                pfVar16 = (float*)al::getFront(this);
+                fVar29 = pfVar16[2];
+                fVar27 = *pfVar16;
+                fVar28 = pfVar16[1];
+                al::Triangle::Triangle((Triangle*)local_140);
+                pVVar9 = al::getTrans(this);
+                fVar26 = pVVar9->x;
+                fVar24 = pVVar9->y;
+                fVar25 = pVVar9->z;
+                pVVar9 = al::getGravity(this);
+                local_c0.y = (fVar28 * -300.0f * 0.5 + fVar24) - pVVar9->y * 100.0f;
+                local_c0.x = (fVar27 * -300.0f * 0.5 + fVar26) - pVVar9->x * 100.0f;
+                local_c0.z = (fVar29 * -300.0f * 0.5 + fVar25) - pVVar9->z * 100.0f;
+                pVVar9 = al::getGravity(this);
+                fVar26 = pVVar9->x * 100.0f;
+                fVar25 = pVVar9->y * 100.0f;
+                local_d0.z = pVVar9->z * 100.0f;
+                local_d0.y = fVar25 + fVar25;
+                local_d0.x = fVar26 + fVar26;
+                local_d0.z = local_d0.z + local_d0.z;
+                bVar5 = alCollisionUtil::getFirstPolyOnArrow(
+                    (IUseCollision*)&(actor).collisionDirector, &local_b0, (Triangle*)local_140,
+                    &local_c0, &local_d0, (CollisionPartsFilterBase*)0x0, (TriangleFilterBase*)0x0);
+                if (bVar5) {
+                    pVVar9 = al::Triangle::getNormal((Triangle*)local_140, 0);
+                    uVar8 = al::isFloorPolygon(pVVar9, &verticalUp);
+                    if ((uVar8 & 1) != 0) {
+                        pVVar9 = al::getTrans(this);
+                        uVar8 = al::isNear(&local_b0, pVVar9, 0.001);
+                        if ((uVar8 & 1) == 0) {
+                            pVVar9 = al::getTrans(this);
+                            local_c0.y = local_b0.y - pVVar9->y;
+                            local_c0.x = local_b0.x - pVVar9->x;
+                            local_c0.z = local_b0.z - pVVar9->z;
+                            al::normalize(&local_c0);
+                            pVVar9 = al::getFrontPtr(this);
+                            local_d0.y = -local_c0.y;
+                            local_d0.x = -local_c0.x;
+                            local_d0.z = -local_c0.z;
+                            al::turnVecToVecRate(pVVar9, pVVar9, &local_d0, 0.3);
+                            pVVar9 = al::getFrontPtr(this);
+                            al::normalize(pVVar9);
+                            pVVar9 = al::getGravityPtr(this);
+                            pVVar12 = al::getFront(this);
+                            al::verticalizeVec(pVVar9, pVVar12, pVVar9);
+                            pVVar9 = al::getGravityPtr(this);
+                            al::normalize(pVVar9);
                         }
                     }
-                    iVar17 = iVar17 + 1;
-                } while (iVar21 != iVar17);
+                }
             }
         }
-        al::tryNormalizeOrZero(&params->vector_8);
-    }
-    uVar8 = rs::isCollidedGround(this);
-    if ((uVar8 & 1) != 0) {
-        params = mParams;
-        uVar8 = al::isNormalize(&params->vector_8, 0.001);
-        if ((((uVar8 & 1) != 0) && (params->bool_2 != false)) && (mParams->bool_3 == false)) {
+        fVar25 = 0.0f;
+        fVar26 = (float)al::normalizeAbs(floatA, 0.0f, 55.0f);
+        fVar26 = fVar26 * -32.5;
+        floatB = fVar26;
+        if (mPlayerPuppet == (IUsePlayerPuppet*)0x0) {
+            fVar24 = 1.0f;
+            fVar27 = fVar25;
+        } else {
+            fVar27 = 0.0f;
+            fVar24 = fVar27;
+            if (0.0f < fVar26) {
+                fVar24 = (float)al::normalize(fVar26, 0.0f, 32.5);
+                fVar26 = floatB;
+            }
+            if (fVar26 < 0.0f) {
+                fVar27 = (float)al::normalize(fVar26, -32.5, 0.0f);
+                fVar27 = 1.0f - fVar27;
+            }
+            fVar25 = 1.0f - (fVar24 + fVar27);
+        }
+        mPlayerAnimator->update( fVar24, fVar25, fVar27);
+        if (!rs::isCollidedGround(this))
+            pcVar15 = "NoCollide";
+        else
+            pcVar15 = (char*)rs::getMaterialCodeGround(this);
+        al::setMaterialCode(this, pcVar15);
+        al::makeMtxSRT(&mtx, this);
+        if (mPlayerPuppet || !al::isInWater(this)) {
+            al::updateMaterialCodePuddle(this, false);
+            al::updateMaterialCodeWater(this, false);
+        } else {
+            local_140 = (undefined1[8])0x0;
+            local_138 = (KCPrismData*)((ulong)local_138 & 0xffffffff00000000);
             local_b0.x = 0.0f;
             local_b0.y = 0.0f;
             local_b0.z = 0.0f;
-            pfVar16 = (float*)al::getFront(this);
-            fVar29 = pfVar16[2];
-            fVar27 = *pfVar16;
-            fVar28 = pfVar16[1];
-            al::Triangle::Triangle((Triangle*)local_140);
+            local_c0.x = 0.0f;
+            local_c0.y = 0.0f;
+            local_c0.z = 0.0f;
+            local_d0.x = 0.0f;
+            local_d0.y = 0.0f;
+            local_d0.z = 0.0f;
+            al::calcUpDir(&local_d0, this);
             pVVar9 = al::getTrans(this);
-            fVar26 = pVVar9->x;
-            fVar24 = pVVar9->y;
-            fVar25 = pVVar9->z;
-            pVVar9 = al::getGravity(this);
-            local_c0.y = (fVar28 * -300.0f * 0.5 + fVar24) - pVVar9->y * 100.0f;
-            local_c0.x = (fVar27 * -300.0f * 0.5 + fVar26) - pVVar9->x * 100.0f;
-            local_c0.z = (fVar29 * -300.0f * 0.5 + fVar25) - pVVar9->z * 100.0f;
-            pVVar9 = al::getGravity(this);
-            fVar26 = pVVar9->x * 100.0f;
-            fVar25 = pVVar9->y * 100.0f;
-            local_d0.z = pVVar9->z * 100.0f;
-            local_d0.y = fVar25 + fVar25;
-            local_d0.x = fVar26 + fVar26;
-            local_d0.z = local_d0.z + local_d0.z;
-            bVar5 = alCollisionUtil::getFirstPolyOnArrow(
-                (IUseCollision*)&(actor).collisionDirector, &local_b0, (Triangle*)local_140,
-                &local_c0, &local_d0, (CollisionPartsFilterBase*)0x0, (TriangleFilterBase*)0x0);
-            if (bVar5) {
-                pVVar9 = al::Triangle::getNormal((Triangle*)local_140, 0);
-                uVar8 = al::isFloorPolygon(pVVar9, &verticalUp);
-                if ((uVar8 & 1) != 0) {
-                    pVVar9 = al::getTrans(this);
-                    uVar8 = al::isNear(&local_b0, pVVar9, 0.001);
-                    if ((uVar8 & 1) == 0) {
-                        pVVar9 = al::getTrans(this);
-                        local_c0.y = local_b0.y - pVVar9->y;
-                        local_c0.x = local_b0.x - pVVar9->x;
-                        local_c0.z = local_b0.z - pVVar9->z;
-                        al::normalize(&local_c0);
-                        pVVar9 = al::getFrontPtr(this);
-                        local_d0.y = -local_c0.y;
-                        local_d0.x = -local_c0.x;
-                        local_d0.z = -local_c0.z;
-                        al::turnVecToVecRate(pVVar9, pVVar9, &local_d0, 0.3);
-                        pVVar9 = al::getFrontPtr(this);
-                        al::normalize(pVVar9);
-                        pVVar9 = al::getGravityPtr(this);
-                        pVVar12 = al::getFront(this);
-                        al::verticalizeVec(pVVar9, pVVar12, pVVar9);
-                        pVVar9 = al::getGravityPtr(this);
-                        al::normalize(pVVar9);
-                    }
-                }
-            }
-        }
-    }
-    fVar25 = 0.0f;
-    fVar26 = (float)al::normalizeAbs(floatA, 0.0f, 55.0f);
-    fVar26 = fVar26 * -32.5;
-    floatB = fVar26;
-    if (mPlayerPuppet == (IUsePlayerPuppet*)0x0) {
-        fVar24 = 1.0f;
-        fVar27 = fVar25;
-    } else {
-        fVar27 = 0.0f;
-        fVar24 = fVar27;
-        if (0.0f < fVar26) {
-            fVar24 = (float)al::normalize(fVar26, 0.0f, 32.5);
-            fVar26 = floatB;
-        }
-        if (fVar26 < 0.0f) {
-            fVar27 = (float)al::normalize(fVar26, -32.5, 0.0f);
-            fVar27 = 1.0f - fVar27;
-        }
-        fVar25 = 1.0f - (fVar24 + fVar27);
-    }
-    MotorcyclePlayerAnimator::update(mPlayerAnimator, fVar24, fVar25, fVar27);
-    if (!rs::isCollidedGround(this))
-        pcVar15 = "NoCollide";
-    else
-        pcVar15 = (char*)rs::getMaterialCodeGround(this);
-    al::setMaterialCode(this, pcVar15);
-    al::makeMtxSRT(&mtx, this);
-    if (mPlayerPuppet || !al::isInWater(this)) {
-        al::updateMaterialCodePuddle(this, false);
-        al::updateMaterialCodeWater(this, false);
-    } else {
-        local_140 = (undefined1[8])0x0;
-        local_138 = (KCPrismData*)((ulong)local_138 & 0xffffffff00000000);
-        local_b0.x = 0.0f;
-        local_b0.y = 0.0f;
-        local_b0.z = 0.0f;
-        local_c0.x = 0.0f;
-        local_c0.y = 0.0f;
-        local_c0.z = 0.0f;
-        local_d0.x = 0.0f;
-        local_d0.y = 0.0f;
-        local_d0.z = 0.0f;
-        al::calcUpDir(&local_d0, this);
-        pVVar9 = al::getTrans(this);
-        uVar6 =
-            al::calcFindWaterSurfaceFlat(local_140, 0x0, this, pVVar9, &sead::Vector3f::ey, 121.0f);
-        pVVar9 = al::getTrans(this);
-        uVar7 = al::calcFindWaterSurface(&local_b0, &local_c0, this, pVVar9, &sead::Vector3f::ey,
-                                         121.0f);
-        if (((uVar6 & 1) == 0) && ((uVar7 & 1) == 0)) {
-            fVar26 = 0.0f;
-            fVar25 = 0.0f;
-            fVar27 = 0.0f;
-            bVar5 = false;
-        } else {
-            if ((uVar6 & uVar7 & 1) == 0) {
-                if ((uVar6 & 1) == 0) {
-                    fVar26 = local_b0.z;
-                    fVar25 = local_b0.y;
-                    fVar27 = local_b0.x;
-                } else {
-                    fVar26 = local_138._0_4_;
-                    fVar25 = (float)local_140._4_4_;
-                    fVar27 = (float)local_140._0_4_;
-                }
+            uVar6 =
+                al::calcFindWaterSurfaceFlat(local_140, 0x0, this, pVVar9, &sead::Vector3f::ey,
+    121.0f); pVVar9 = al::getTrans(this); uVar7 = al::calcFindWaterSurface(&local_b0, &local_c0,
+    this, pVVar9, &sead::Vector3f::ey, 121.0f); if (((uVar6 & 1) == 0) && ((uVar7 & 1) == 0)) {
+                fVar26 = 0.0f;
+                fVar25 = 0.0f;
+                fVar27 = 0.0f;
+                bVar5 = false;
             } else {
-                pVVar9 = al::getTrans(this);
-                fVar26 = (float)local_140._0_4_ - pVVar9->x;
-                fVar25 = (float)local_140._4_4_ - pVVar9->y;
-                fVar27 = local_138._0_4_ - pVVar9->z;
-                fVar26 = fVar26 * fVar26 + fVar25 * fVar25 + fVar27 * fVar27;
-                fVar25 = SQRT(fVar26);
-                if (NAN(fVar25))
-                    fVar25 = sqrtf(fVar26);
-                pVVar9 = al::getTrans(this);
-                fVar26 = local_b0.x - pVVar9->x;
-                fVar27 = local_b0.y - pVVar9->y;
-                fVar24 = local_b0.z - pVVar9->z;
-                fVar27 = fVar26 * fVar26 + fVar27 * fVar27 + fVar24 * fVar24;
-                fVar26 = SQRT(fVar27);
-                if (NAN(fVar26))
-                    fVar26 = sqrtf(fVar27);
-                pVVar9 = &local_b0;
-                if (fVar26 <= fVar25)
-                    pVVar9 = local_140;
-                fVar26 = pVVar9->z;
-                fVar25 = pVVar9->y;
-                fVar27 = pVVar9->x;
+                if ((uVar6 & uVar7 & 1) == 0) {
+                    if ((uVar6 & 1) == 0) {
+                        fVar26 = local_b0.z;
+                        fVar25 = local_b0.y;
+                        fVar27 = local_b0.x;
+                    } else {
+                        fVar26 = local_138._0_4_;
+                        fVar25 = (float)local_140._4_4_;
+                        fVar27 = (float)local_140._0_4_;
+                    }
+                } else {
+                    pVVar9 = al::getTrans(this);
+                    fVar26 = (float)local_140._0_4_ - pVVar9->x;
+                    fVar25 = (float)local_140._4_4_ - pVVar9->y;
+                    fVar27 = local_138._0_4_ - pVVar9->z;
+                    fVar26 = fVar26 * fVar26 + fVar25 * fVar25 + fVar27 * fVar27;
+                    fVar25 = SQRT(fVar26);
+                    if (NAN(fVar25))
+                        fVar25 = sqrtf(fVar26);
+                    pVVar9 = al::getTrans(this);
+                    fVar26 = local_b0.x - pVVar9->x;
+                    fVar27 = local_b0.y - pVVar9->y;
+                    fVar24 = local_b0.z - pVVar9->z;
+                    fVar27 = fVar26 * fVar26 + fVar27 * fVar27 + fVar24 * fVar24;
+                    fVar26 = SQRT(fVar27);
+                    if (NAN(fVar26))
+                        fVar26 = sqrtf(fVar27);
+                    pVVar9 = &local_b0;
+                    if (fVar26 <= fVar25)
+                        pVVar9 = local_140;
+                    fVar26 = pVVar9->z;
+                    fVar25 = pVVar9->y;
+                    fVar27 = pVVar9->x;
+                }
+                bVar5 = true;
             }
-            bVar5 = true;
+            if (bVar5) {
+                al::updateMaterialCodePuddle(this, true);
+                al::updateMaterialCodeWater(this, false);
+                (mtx).matrix[0][3] = fVar27;
+                (mtx).matrix[1][3] = fVar25;
+                (mtx).matrix[2][3] = fVar26;
+            } else {
+                funD(this, &mPlayerPuppet, &field33_0x23c, (PlayerAnimator*)mPlayerAnimator,
+                     (CameraSubTargetBase*)mCameraTargetBase, mCameraSubTargetBase);
+                al::setVelocityZero(this);
+                al::invalidateHitSensors(this);
+                al::hideModelIfShow(this);
+                al::setNerve(this, &NrvMotorcycle.Reset);
+            }
         }
-        if (bVar5) {
-            al::updateMaterialCodePuddle(this, true);
-            al::updateMaterialCodeWater(this, false);
-            (mtx).matrix[0][3] = fVar27;
-            (mtx).matrix[1][3] = fVar25;
-            (mtx).matrix[2][3] = fVar26;
+        field33_0x23c = field33_0x23c + -1;
+        bVar5 = field36_0x245;
+        bVar4 = false;
+        if (mPlayerPuppet)
+            bVar4 = *(char*)field6_0x130 == '\0';
+        field36_0x245 = bVar4;
+        if (bVar5 != bVar4) {
+            pcVar15 = "FrontOnTailOn";
+            if (bVar4 == false)
+                pcVar15 = "FrontOnTailOff";
+            pcVar3 = "FrontOffTailOn";
+            if (bVar4 == false)
+                pcVar3 = "FrontOffTailOff";
+            if (mIsOnLight == false)
+                pcVar15 = pcVar3;
+            al::startMclAnim(this, pcVar15);
+        }*/
+    }
+
+    void Motorcycle::kill() {
+        al::LiveActor::kill();
+        al::onDepthShadowModel(this);
+        al::invalidateDepthShadowMap(this);
+    }
+
+    void Motorcycle::updateCollider() {
+        if (rs::isActiveBindKeepDemo(mBindKeepDemoInfo))
+            return;
+        MotorcycleParams* params = mParams;
+        if (al::isNoCollide(this)) {
+            params->bool_0 = false;
+            params->val_c58 = -1;
+            params->bool_1 = false;
         } else {
-            funD(this, &mPlayerPuppet, &field33_0x23c, (PlayerAnimator*)mPlayerAnimator,
-                 (CameraSubTargetBase*)mCameraTargetBase, mCameraSubTargetBase);
-            al::setVelocityZero(this);
-            al::invalidateHitSensors(this);
-            al::hideModelIfShow(this);
-            al::setNerve(this, (Nerve*)&::exeReset);
+            params->bool_0 = rs::isCollidedGround(this);
+            params->bool_1 = rs::isCollisionCodeJump(this);
+            if (params->bool_0) {
+                params->val_c58 = 0;
+                params->vector_5c.set(al::getTrans(this));
+                params->normal.set(rs::getCollidedGroundNormal(this));
+            } else
+                params->val_c58++;
         }
-    }
-    field33_0x23c = field33_0x23c + -1;
-    bVar5 = field36_0x245;
-    bVar4 = false;
-    if (mPlayerPuppet)
-        bVar4 = *(char*)field6_0x130 == '\0';
-    field36_0x245 = bVar4;
-    if (bVar5 != bVar4) {
-        pcVar15 = "FrontOnTailOn";
-        if (bVar4 == false)
-            pcVar15 = "FrontOnTailOff";
-        pcVar3 = "FrontOffTailOn";
-        if (bVar4 == false)
-            pcVar3 = "FrontOffTailOff";
-        if (mIsOnLight == false)
-            pcVar15 = pcVar3;
-        al::startMclAnim(this, pcVar15);
-    }*/
-}
 
-void Motorcycle::kill() {
-    al::LiveActor::kill();
-    al::onDepthShadowModel(this);
-    al::invalidateDepthShadowMap(this);
-}
+        _248 = al::isInWater(this);
+        vector4 = -al::getTrans(this);
 
-void Motorcycle::updateCollider() {}
-
-void Motorcycle::calcAnim() {
-    al::LiveActor::calcAnim();
-    if (mPlayerPuppet && !_249)
-        funC(mPlayerPuppet, this, mStartQuat, mStartTrans);
-}
-
-void Motorcycle::exeWait() {}
-
-void Motorcycle::exeCreep() {
-    if (al::isFirstStep(this))
-        al::tryStartActionIfNotPlaying(this, "Wait");
-
-    floatA = al::lerpValue(floatA, 0.0f, 0.2f);
-    floatB = al::lerpValue(floatB, 0.0f, 0.2f);
-    floatC = al::lerpValue(floatC, 0.0f, 0.2f);
-    floatJump = al::lerpValue(floatJump, 0.0f, 0.2f);
-    funB(floatA, this);
-
-    al::addVelocityToGravity(this, 2.0f);
-    al::scaleVelocity(this, 0.9f);
-    al::limitVelocityDir(this, al::getGravity(this), 360.0f);
-
-    if (!rs::isCollidedGround(this) && al::isGreaterEqualStep(this, 2)) {
-        al::setNerve(this, &NrvMotorcycle.Fall);
-        return;
+        rs::updateCollider(this, this, al::getVelocity(this) + vector2 + vector5);
+        vector2 = {0.0f, 0.0f, 0.0f};
+        vector5 = {0.0f, 0.0f, 0.0f};
+        vector4 += al::getTrans(this);
     }
 
-    if (!al::isInDeathArea(this) && !al::isGreaterEqualStep(this, 360)) {
-        if (al::isVelocitySlowH(this, 3.0f))
-            al::setNerve(this, &NrvMotorcycle.Wait);
-        return;
+    void Motorcycle::calcAnim() {
+        al::LiveActor::calcAnim();
+        if (mPlayerPuppet && !_249)
+            funC(mPlayerPuppet, this, mStartQuat, mStartTrans);
     }
 
-    al::setVelocityZero(this);
-    al::invalidateHitSensors(this);
-    al::hideModelIfShow(this);
-    al::setNerve(this, &NrvMotorcycle.Reset);
-}
+    void Motorcycle::exeWait() {
+        if (al::isFirstStep(this)) {
+            al::tryStartActionIfNotPlaying(this, "Wait");
+            al::setVelocityZero(this);
+        }
+        floatA = al::lerpValue(floatA, 0.0f, 0.2f);
+        floatB = al::lerpValue(floatB, 0.0f, 0.2f);
+        floatC = al::lerpValue(floatC, 0.0f, 0.2f);
+        floatJump = al::lerpValue(floatJump, 0.0f, 0.2f);
 
-void Motorcycle::exeFall() {
-    bool isInWater = al::isInWater(this);
-    f32 fVar3 = -2.0f;
-    if (!isInWater)
-        fVar3 = -1.0f;
-    al::addVelocityY(this, fVar3);
-    if (!isInWater)
-        al::scaleVelocityExceptDirection(this, verticalUp, 0.95f);
-    else
-        al::scaleVelocityParallelVertical(this, verticalUp, 0.8f, 0.925f);
-    if (0.0f < al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}))
-        al::limitVelocityDir(this, verticalUp, 35.0f);
-    if (!al::isInDeathArea(this)) {
-        if (!funA(this)) {
-            if (al::isGreaterEqualStep(this, 0x168))
-                goto LAB_71002ca074;
-
-            if (al::isInWater(this) && !_248) {
-                al::startHitReaction(this, "着水");
+        if (al::isNoCollide(this)) {
+            if (mCollisionPartsConnector) {
+                if (!al::isMtxConnectorConnecting(mCollisionPartsConnector)) {
+                    kill();
+                    return;
+                }
+                sead::Quatf quat = sead::Quatf::unit;
+                sead::Vector3f trans = {0.0f, 0.0f, 0.0};
+                al::calcConnectQT(&quat, &trans, mCollisionPartsConnector);
+                al::resetQuatPosition(this, quat, trans);
+            }
+        } else {
+            funB(floatA, this);
+            al::setVelocityToGravity(this, 2.0f);
+            if (!rs::isCollidedGround(this) && al::isGreaterEqualStep(this, 2)) {
+                al::setNerve(this, &NrvMotorcycle.Fall);
                 return;
             }
         }
-        return;
+        if (0 < valA && --valA == 0) {
+            al::setVelocityZero(this);
+            al::invalidateHitSensors(this);
+            al::hideModelIfShow(this);
+            al::setNerve(this, &NrvMotorcycle.Reset);
+        }
     }
-LAB_71002ca074:
-    al::setVelocityZero(this);
-    al::invalidateHitSensors(this);
-    al::hideModelIfShow(this);
-    al::setNerve(this, &NrvMotorcycle.Reset);
-    return;
-}
 
-void Motorcycle::exeJump() {
-    if (al::isFirstStep(this))
-        al::setVelocity(this, 0.0f, 50.0f, 0.0f);
+    void Motorcycle::exeCreep() {
+        if (al::isFirstStep(this))
+            al::tryStartActionIfNotPlaying(this, "Wait");
 
-    bool isInWater = al::isInWater(this);
-    al::addVelocityY(this, isInWater ? -2.0f : -1.0f);
-    if (!isInWater)
-        al::scaleVelocityExceptDirection(this, verticalUp, 0.95f);
-    else
-        al::scaleVelocityParallelVertical(this, verticalUp, 0.8f, 0.925f);
+        floatA = al::lerpValue(floatA, 0.0f, 0.2f);
+        floatB = al::lerpValue(floatB, 0.0f, 0.2f);
+        floatC = al::lerpValue(floatC, 0.0f, 0.2f);
+        floatJump = al::lerpValue(floatJump, 0.0f, 0.2f);
+        funB(floatA, this);
 
-    if (al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}) > 0.0f)
-        al::limitVelocityDir(this, verticalUp, 35.0f);
+        al::addVelocityToGravity(this, 2.0f);
+        al::scaleVelocity(this, 0.9f);
+        al::limitVelocityDir(this, al::getGravity(this), 360.0f);
 
-    if (al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}) > 0.0f || al::isInDeathArea(this)) {
+        if (!rs::isCollidedGround(this) && al::isGreaterEqualStep(this, 2)) {
+            al::setNerve(this, &NrvMotorcycle.Fall);
+            return;
+        }
+
+        if (!al::isInDeathArea(this) && !al::isGreaterEqualStep(this, 360)) {
+            if (al::isVelocitySlowH(this, 3.0f))
+                al::setNerve(this, &NrvMotorcycle.Wait);
+            return;
+        }
+
+        al::setVelocityZero(this);
+        al::invalidateHitSensors(this);
+        al::hideModelIfShow(this);
+        al::setNerve(this, &NrvMotorcycle.Reset);
+    }
+
+    void Motorcycle::exeFall() {
+        bool isInWater = al::isInWater(this);
+        f32 fVar3 = -2.0f;
+        if (!isInWater)
+            fVar3 = -1.0f;
+        al::addVelocityY(this, fVar3);
+        if (!isInWater)
+            al::scaleVelocityExceptDirection(this, verticalUp, 0.95f);
+        else
+            al::scaleVelocityParallelVertical(this, verticalUp, 0.8f, 0.925f);
+        if (0.0f < al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}))
+            al::limitVelocityDir(this, verticalUp, 35.0f);
+        if (!al::isInDeathArea(this)) {
+            if (!funA(this)) {
+                if (al::isGreaterEqualStep(this, 0x168))
+                    goto LAB_71002ca074;
+
+                if (al::isInWater(this) && !_248) {
+                    al::startHitReaction(this, "着水");
+                    return;
+                }
+            }
+            return;
+        }
+    LAB_71002ca074:
         al::setVelocityZero(this);
         al::invalidateHitSensors(this);
         al::hideModelIfShow(this);
@@ -1499,476 +1804,556 @@ void Motorcycle::exeJump() {
         return;
     }
 
-    if (!funA(this) && al::isInWater(this) && !_248)
-        al::startHitReaction(this, "着水");
-}
+    void Motorcycle::exeJump() {
+        if (al::isFirstStep(this))
+            al::setVelocity(this, 0.0f, 50.0f, 0.0f);
 
-void Motorcycle::endJump() {
-    mPlayerAnimator->tryStartBindRideLandIfJump();
-    floatJump = 0.0f;
-}
-
-void Motorcycle::exeReaction() {
-    if (al::isFirstStep(this))
-        al::startAction(this, "Reaction");
-
-    floatA = al::lerpValue(floatA, 0.0f, 0.2f);
-    floatB = al::lerpValue(floatB, 0.0f, 0.2f);
-    floatC = al::lerpValue(floatC, 0.0f, 0.2f);
-    floatJump = al::lerpValue(floatJump, 0.0f, 0.2f);
-    al::setNerveAtActionEnd(this, &NrvMotorcycle.Wait);
-}
-
-void Motorcycle::exeReset() {
-    if (al::isFirstStep(this)) {
-        al::tryKillEmitterAndParticleAll(this);
-        al::stopAction(this);
-        if (al::isNerve(this, &NrvMotorcycle.Reset))
-            al::startHitReaction(this, "リセット");
-        al::offCollide(this);
-        floatA = 0.0f;
-        floatB = 0.0f;
-        floatC = 0.0f;
-        floatJump = 0.0f;
-        valA = -1;
-    }
-
-    if (al::isStep(this, 1)) {
-        al::resetQuatPosition(this, mStartQuat, vector);
-        rs::resetCollision(this);
-    }
-
-    if (al::isGreaterEqualStep(this, 60)) {
-        al::validateClipping(this);
-        al::restartAction(this);
-        al::showModelIfHide(this);
-        al::invalidateHitSensors(this);
-        al::validateHitSensorBindableAll(this);
-        al::validateHitSensorRideAll(this);
-        al::startHitReaction(this, "出現");
-        al::setNerve(this, &NrvMotorcycle.Wait);
-    }
-}
-
-void Motorcycle::exeRideStart() {
-    if (al::isFirstStep(this)) {
-        al::tryStartActionIfNotPlaying(this, "Wait");
-        if (al::isNerve(this, &NrvMotorcycle.RideStartLeft))
-            mPlayerAnimator->startBindRideStartL();
+        bool isInWater = al::isInWater(this);
+        al::addVelocityY(this, isInWater ? -2.0f : -1.0f);
+        if (!isInWater)
+            al::scaleVelocityExceptDirection(this, verticalUp, 0.95f);
         else
-            mPlayerAnimator->startBindRideStartR();
-    }
+            al::scaleVelocityParallelVertical(this, verticalUp, 0.8f, 0.925f);
 
-    if (rs::isPuppetActionEnd(mPlayerPuppet))
-        al::setNerve(this, &NrvMotorcycle.RideStartOn);
-}
+        if (al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}) > 0.0f)
+            al::limitVelocityDir(this, verticalUp, 35.0f);
 
-void Motorcycle::exeRideStartOn() {
-    if (al::isFirstStep(this)) {
-        al::startAction(this, "RideOn");
-        mPlayerAnimator->startBindRideOn();
-        rs::requestResetCameraAngleV(this, 0);
-    }
-
-    if (rs::isPuppetActionEnd(mPlayerPuppet)) {
-        rs::validatePuppetLookAt(mPlayerPuppet);
-        al::setNerve(this, &NrvMotorcycle.RideWait);
-    }
-}
-
-static inline bool doTheImportanStuff(Motorcycle* actor, IUsePlayerPuppet** puppy,
-                                      MotorcyclePlayerAnimator* animator,
-                                      al::CameraTargetBase* camera,
-                                      al::CameraSubTargetBase* subCamera) {
-    if (!rs::isActiveBindKeepDemo(actor->getBindKeepDemoInfo()) && rs::isTriggerGetOff(*puppy)) {
-        if (!al::isInAreaObj(actor, "MotorcycleInvalidGetOffArea")) {
-            funD(actor, puppy, actor->get_23c(), animator, camera, subCamera);
-            return true;
+        if (al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}) > 0.0f || al::isInDeathArea(this)) {
+            al::setVelocityZero(this);
+            al::invalidateHitSensors(this);
+            al::hideModelIfShow(this);
+            al::setNerve(this, &NrvMotorcycle.Reset);
+            return;
         }
-        al::startHitReaction(actor, "降車キャンセル");
-    }
-    return false;
-}
 
-void Motorcycle::exeRideWait() {
-    if (al::isFirstStep(this)) {
-        al::tryStartActionIfNotPlaying(this, "Wait");
-        mPlayerAnimator->startBindWait();
-    }
-    if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
-                           mCameraSubTargetBase))
-        return;
-
-    floatA = al::lerpValue(floatA, 0.0f, 0.025f);
-    alPadRumbleFunction::startPadRumbleDirectValue(this, 160.0f, 168.0f, 0.035f, 0.035f, 0.7f, 0.7f,
-                                                   -1);
-    funB(floatA, this);
-    al::addVelocityToGravity(this, 2.0f);
-    al::scaleVelocity(this, 0.95f);
-
-    if (rs::isCollidedGround(this))
-        al::limitVelocityDirSign(this, al::getGravity(this), 3.0f);
-
-    if (rs::isPuppetHoldActionButton(mPlayerPuppet)) {
-        al::setNerve(this, &NrvMotorcycle.RideRunStart);
-        return;
+        if (!funA(this) && al::isInWater(this) && !_248)
+            al::startHitReaction(this, "着水");
     }
 
-    if (!funF(this, mPlayerPuppet))
-        funU(this, mPlayerPuppet, mParkingParams, &floatA);
-}
-
-void Motorcycle::exeRideWaitJump() {
-    if (al::isFirstStep(this)) {
-        mParams->normal = {0.0f, 1.0f, 0.0f};
-
-        _247 = mParams->bool_1;
-        al::setVelocity(this, 0.0f, !_247 ? 50.0f : 18.5f, 0.0f);
-        al::startHitReaction(this, "ジャンプ開始");
-        mPlayerAnimator->startBindRideJump();
+    void Motorcycle::endJump() {
+        mPlayerAnimator->tryStartBindRideLandIfJump();
+        floatJump = 0.0f;
     }
 
-    if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
-                           mCameraSubTargetBase))
-        return;
+    void Motorcycle::exeReaction() {
+        if (al::isFirstStep(this))
+            al::startAction(this, "Reaction");
 
-    funK(floatA, kk3, this, mPlayerPuppet, true);
-    funV(this);
-    funPY(this, mPlayerPuppet, imagination, &floatA);
-    sead::Vector2f stick = {0.0f, 0.0f};
-    funI(&stick, this, mPlayerPuppet);
-    f32 angle = stick.x * 2.5f;
-    if (angle * angle > 0.1f) {
-        sead::Vector3f front = al::getFront(this);
-        sead::Vector3f front2 = al::getFront(this);
-        al::rotateVectorDegree(&front2, front2, al::getGravity(this), angle);
-        al::normalize(&front2);
-
-        sead::Vector3f diff = front2 - front;
-        al::normalize(&diff);
-        al::setFront(this, diff);
-        sead::Vector3f rootPos = {0.0f, 0.0f, 0.0f};
-        sead::Vector3f jointPos = {0.0f, 0.0f, 0.0f};
-        al::calcJointPos(&rootPos, this, "AllRoot");
-        al::calcJointPos(&jointPos, this, "JointRoot");
-        f32 distance = (rootPos - jointPos).length();
-
-        f32 fVar10 =
-            distance * sead::Mathf::sin(sead::Mathf::deg2rad(sead::Mathf::abs(angle * 0.5f)));
-        vector5.x = diff.x * fVar10 * fVar10;
-        vector5.z = diff.z * fVar10 * fVar10;
+        floatA = al::lerpValue(floatA, 0.0f, 0.2f);
+        floatB = al::lerpValue(floatB, 0.0f, 0.2f);
+        floatC = al::lerpValue(floatC, 0.0f, 0.2f);
+        floatJump = al::lerpValue(floatJump, 0.0f, 0.2f);
+        al::setNerveAtActionEnd(this, &NrvMotorcycle.Wait);
     }
 
-    al::addVelocityToDirection(
-        this, al::getFront(this),
-        al::lerpValue(0.0, 1.8, al::easeIn(al::normalize(imagination->andAFloat, 0.0f, 5.0f))));
-    if (!_247 || !rs::isPuppetHoldJumpButton(mPlayerPuppet) || al::isGreaterStep(this, 6)) {
-        _247 = false;
-        al::addVelocityY(this, -2.0);
-    }
-
-    al::scaleVelocityExceptDirection(this, verticalUp, 0.95f);
-    if (al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}) > 0.0f)
-        al::limitVelocityDir(this, verticalUp, 35.0f);
-
-    if (rs::isOnGround(this, this)) {
-        al::startHitReaction(this, "着地");
-        if (!funF(this, mPlayerPuppet)) {
+    void Motorcycle::exeReset() {
+        if (al::isFirstStep(this)) {
+            al::tryKillEmitterAndParticleAll(this);
+            al::stopAction(this);
+            if (al::isNerve(this, &NrvMotorcycle.Reset))
+                al::startHitReaction(this, "リセット");
+            al::offCollide(this);
+            floatA = 0.0f;
+            floatB = 0.0f;
             floatC = 0.0f;
-            al::setNerve(this, &NrvMotorcycle.RideWaitLand);
-        } else {
-            al::startAction(this, "WaitLand");
+            floatJump = 0.0f;
+            valA = -1;
+        }
+
+        if (al::isStep(this, 1)) {
+            al::resetQuatPosition(this, mStartQuat, vector);
+            rs::resetCollision(this);
+        }
+
+        if (al::isGreaterEqualStep(this, 60)) {
+            al::validateClipping(this);
+            al::restartAction(this);
+            al::showModelIfHide(this);
+            al::invalidateHitSensors(this);
+            al::validateHitSensorBindableAll(this);
+            al::validateHitSensorRideAll(this);
+            al::startHitReaction(this, "出現");
+            al::setNerve(this, &NrvMotorcycle.Wait);
         }
     }
-}
 
-void Motorcycle::endRideWaitJump() {
-    mPlayerAnimator->tryStartBindRideLandIfJump();
-    floatJump = 0.0f;
-}
+    void Motorcycle::exeRideStart() {
+        if (al::isFirstStep(this)) {
+            al::tryStartActionIfNotPlaying(this, "Wait");
+            if (al::isNerve(this, &NrvMotorcycle.RideStartLeft))
+                mPlayerAnimator->startBindRideStartL();
+            else
+                mPlayerAnimator->startBindRideStartR();
+        }
 
-void Motorcycle::exeRideWaitLand() {}
+        if (rs::isPuppetActionEnd(mPlayerPuppet))
+            al::setNerve(this, &NrvMotorcycle.RideStartOn);
+    }
 
-void Motorcycle::exeRideRunStart() {}
+    void Motorcycle::exeRideStartOn() {
+        if (al::isFirstStep(this)) {
+            al::startAction(this, "RideOn");
+            mPlayerAnimator->startBindRideOn();
+            rs::requestResetCameraAngleV(this, 0);
+        }
 
-void Motorcycle::exeRideRun() {
-    funV(this);
-}
+        if (rs::isPuppetActionEnd(mPlayerPuppet)) {
+            rs::validatePuppetLookAt(mPlayerPuppet);
+            al::setNerve(this, &NrvMotorcycle.RideWait);
+        }
+    }
 
-void Motorcycle::exeRideRunCollide() {}
+    static inline bool doTheImportanStuff(
+        Motorcycle * actor, IUsePlayerPuppet * *puppy, MotorcyclePlayerAnimator * animator,
+        al::CameraTargetBase * camera, al::CameraSubTargetBase * subCamera) {
+        if (!rs::isActiveBindKeepDemo(actor->getBindKeepDemoInfo()) &&
+            rs::isTriggerGetOff(*puppy)) {
+            if (!al::isInAreaObj(actor, "MotorcycleInvalidGetOffArea")) {
+                funD(actor, puppy, actor->get_23c(), animator, camera, subCamera);
+                return true;
+            }
+            al::startHitReaction(actor, "降車キャンセル");
+        }
+        return false;
+    }
 
-void Motorcycle::exeRideRunFall() {
-    if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
-                           mCameraSubTargetBase))
-        return;
+    void Motorcycle::exeRideWait() {
+        if (al::isFirstStep(this)) {
+            al::tryStartActionIfNotPlaying(this, "Wait");
+            mPlayerAnimator->startBindWait();
+        }
+        if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
+                               mCameraSubTargetBase))
+            return;
 
-    mParams->normal = {0.0f, 1.0f, 0.0f};
-    sead::Vector2f stick = {0.0f, 0.0f};
-    funI(&stick, this, mPlayerPuppet);
-    f32 fVar13 = stick.x * 12.5f;
-    f32 fVar10 = al::diffNearAngleDegree(0.0f, rs::getPuppetPoseRotZDegreeLeft(mPlayerPuppet));
-    f32 fVar11 = al::diffNearAngleDegree(0.0f, rs::getPuppetPoseRotZDegreeRight(mPlayerPuppet));
-    fVar10 = sead::Mathf::abs(fVar10);
-    fVar11 = sead::Mathf::abs(fVar11);
+        floatA = al::lerpValue(floatA, 0.0f, 0.025f);
+        alPadRumbleFunction::startPadRumbleDirectValue(this, 160.0f, 168.0f, 0.035f, 0.035f, 0.7f,
+                                                       0.7f, -1);
+        funB(floatA, this);
+        al::addVelocityToGravity(this, 2.0f);
+        al::scaleVelocity(this, 0.95f);
 
-    floatA = al::lerpValue(floatA, fVar13 + al::normalizeAbs(fVar11, 45.0f, 135.0f) * -7.5f, 0.1f);
+        if (rs::isCollidedGround(this))
+            al::limitVelocityDirSign(this, al::getGravity(this), 3.0f);
 
-    funJ(al::isInWater(this) ? 1.0f : 2.0f, this, mPlayerPuppet);
-    funK(floatA, kk3, this, mPlayerPuppet, true);
-    if (!funL(this) && (!rs::isCollidedWallVelocity(this, this) || !funM(this))) {
-        funN(this);
-        if (!funO(this) && al::isInWater(this) && !_248) {
-            al::startHitReaction(this, "着水");
+        if (rs::isPuppetHoldActionButton(mPlayerPuppet)) {
+            al::setNerve(this, &NrvMotorcycle.RideRunStart);
             return;
         }
+
+        if (!funF(this, mPlayerPuppet))
+            funU(this, mPlayerPuppet, mParkingParams, &floatA);
     }
-    return;
-}
 
-void Motorcycle::exeRideRunWheelie() {
-    if (al::isFirstStep(this))
-        mPlayerAnimator->startBindRideJump();
+    void Motorcycle::exeRideWaitJump() {
+        if (al::isFirstStep(this)) {
+            mParams->normal = {0.0f, 1.0f, 0.0f};
 
-    if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
-                           mCameraSubTargetBase))
-        return;
-    mParams->normal = {0.0f, 1.0f, 0.0f};
-
-    sead::Vector2f stick = {0.0f, 0.0f};
-    funI(&stick, this, mPlayerPuppet);
-    f32 fVar17 = stick.x * 12.5f;
-    f32 fVar15 = al::diffNearAngleDegree(0.0f, rs::getPuppetPoseRotZDegreeLeft(mPlayerPuppet));
-    f32 fVar16 = al::diffNearAngleDegree(0.0f, rs::getPuppetPoseRotZDegreeRight(mPlayerPuppet));
-    f32 fVar14 = sead::Mathf::abs(fVar15);
-    f32 fVar5 = sead::Mathf::abs(fVar16);
-    if (fVar5 <= fVar14)
-        fVar16 = fVar15;
-    floatA = al::lerpValue(floatA, fVar17 + al::normalizeAbs(fVar16, 45.0f, 135.0f) * -7.0f, 0.1f);
-
-    funJ(al::calcNerveEaseInValue(this, 30, 0.0f, al::isInWater(this) ? 1.0f : 2.0f), this,
-         mPlayerPuppet);
-    funK(floatA, kk3, this, mPlayerPuppet, true);
-    if (!funL(this) && (!rs::isCollidedWallVelocity(this, this) || !funM(this))) {
-        funN(this);
-        if (!funO(this) && al::isInWater(this) && !_248) {
-            al::startHitReaction(this, "着水");
-            return;
+            _247 = mParams->bool_1;
+            al::setVelocity(this, 0.0f, !_247 ? 50.0f : 18.5f, 0.0f);
+            al::startHitReaction(this, "ジャンプ開始");
+            mPlayerAnimator->startBindRideJump();
         }
-    }
-}
 
-void Motorcycle::endRideRunWheelie() {
-    mPlayerAnimator->tryStartBindRideLandIfJump();
-    floatJump = 0.0f;
-}
+        if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
+                               mCameraSubTargetBase))
+            return;
 
-void Motorcycle::exeRideRunLand() {
-    if (al::isFirstStep(this))
-        al::startAction(this, "RunLand");
-
-    if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
-                           mCameraSubTargetBase))
-        return;
-
-    if (!funP(this, vector4)) {
+        funK(floatA, kk3, this, mPlayerPuppet, true);
+        funV(this);
+        funPY(this, mPlayerPuppet, imagination, &floatA);
         sead::Vector2f stick = {0.0f, 0.0f};
         funI(&stick, this, mPlayerPuppet);
-        f32 fVar17 = stick.x * 40.0;
-        f32 fVar15 = al::diffNearAngleDegree(0.0f, rs::getPuppetPoseRotZDegreeLeft(mPlayerPuppet));
-        f32 fVar16 = al::diffNearAngleDegree(0.0f, rs::getPuppetPoseRotZDegreeRight(mPlayerPuppet));
-        f32 fVar14 = sead::Mathf::abs(fVar15);
-        f32 fVar5 = sead::Mathf::abs(fVar16);
-        if (fVar5 <= fVar14)
-            fVar16 = fVar15;
-        floatA =
-            al::lerpValue(floatA, fVar17 + al::normalizeAbs(fVar16, 45.0f, 135.0f) * -15.0f, 0.3f);
+        f32 angle = stick.x * 2.5f;
+        if (angle * angle > 0.1f) {
+            sead::Vector3f front = al::getFront(this);
+            sead::Vector3f front2 = al::getFront(this);
+            al::rotateVectorDegree(&front2, front2, al::getGravity(this), angle);
+            al::normalize(&front2);
+
+            sead::Vector3f diff = front2 - front;
+            al::normalize(&diff);
+            al::setFront(this, diff);
+
+            f32 fVar10 = getJointDistance(this, "AllRoot", "JointRoot") *
+                         sead::Mathf::sin(sead::Mathf::deg2rad(sead::Mathf::abs(angle * 0.5f)));
+            vector5.x = diff.x * fVar10 * fVar10;
+            vector5.z = diff.z * fVar10 * fVar10;
+        }
+
+        al::addVelocityToDirection(
+            this, al::getFront(this),
+            al::lerpValue(0.0f, 1.8, al::easeIn(al::normalize(imagination->andAFloat, 0.0f, 5.0f))));
+        if (!_247 || !rs::isPuppetHoldJumpButton(mPlayerPuppet) || al::isGreaterStep(this, 6)) {
+            _247 = false;
+            al::addVelocityY(this, -2.0);
+        }
+
+        al::scaleVelocityExceptDirection(this, verticalUp, 0.95f);
+        if (al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}) > 0.0f)
+            al::limitVelocityDir(this, verticalUp, 35.0f);
+
+        if (rs::isOnGround(this, this)) {
+            al::startHitReaction(this, "着地");
+            if (!funF(this, mPlayerPuppet)) {
+                floatC = 0.0f;
+                al::setNerve(this, &NrvMotorcycle.RideWaitLand);
+            } else {
+                al::startAction(this, "WaitLand");
+            }
+        }
+    }
+
+    void Motorcycle::endRideWaitJump() {
+        mPlayerAnimator->tryStartBindRideLandIfJump();
+        floatJump = 0.0f;
+    }
+
+    void Motorcycle::exeRideWaitLand() {
+        if (al::isFirstStep(this))
+            al::startAction(this, "WaitLand");
+
+        if (funF(this, mPlayerPuppet))
+            return;
+
+        if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
+                               mCameraSubTargetBase))
+            return;
+
+        floatA = al::lerpValue(floatA, 0.0f, 0.025f);
+        alPadRumbleFunction::startPadRumbleDirectValue(this, 160.0f, 168.0f, 0.035f, 0.035f, 0.7f,
+                                                       0.7f, -1);
+        funB(floatA, this);
+        al::addVelocityToGravity(this, 2.0f);
+        al::scaleVelocity(this, 0.95f);
+
+        if (rs::isCollidedGround(this))
+            al::limitVelocityDirSign(this, al::getGravity(this), 3.0f);
+
+        if (rs::isPuppetHoldActionButton(mPlayerPuppet)) {
+            al::setNerve(this, &NrvMotorcycle.RideRunStart);
+            return;
+        }
+
+        al::setNerveAtActionEnd(this, &NrvMotorcycle.RideWait);
+    }
+
+    void Motorcycle::exeRideRunStart() {
+        if (al::isFirstStep(this)) {
+            al::startAction(this, "RunStart");
+            mPlayerAnimator->startBindRideRunStart();
+            *kk3 = 0;
+        }
+        if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
+                               mCameraSubTargetBase))
+            return;
+        if (funP(this, vector4))
+            return;
+
+        updateStick(this, mPlayerPuppet, &floatA, 40.0f, -15.0f, 0.3f);
         funB(floatA, this);
         funPY(this, mPlayerPuppet, imagination, &floatA);
         al::lerpValue(0.0f, 1.8f, al::easeIn(al::normalize(imagination->andAFloat, 0.0f, 5.0f)));
         funQ(this);
-        funK(floatA, kk3, this, mPlayerPuppet, al::isLessStep(this, 3));
-        if (!funR(this, mPlayerPuppet)) {
-            if (rs::isCollidedGround(this) || mParams->val_c58 < 6) {
-                al::setNerveAtActionEnd(this, &NrvMotorcycle.RideRun);
+        funK(floatA, kk3, this, mPlayerPuppet, 0);
+
+        if (funR(this, mPlayerPuppet))
+            return;
+
+        if (funS(this))
+            return;
+
+        MotorcycleParams* params = mParams;
+        if (rs::isCollidedGround(this) && !params->bool_0) {
+            if (150.0f < getDistance(this, params)) {
+                funT(this, verticalUp, -rs::getCollidedGroundNormal(this));
+                al::limitVelocityDirSign(this, -rs::getCollidedGroundNormal(this), 5.0f);
+                al::setNerve(this, &NrvMotorcycle.RideRunLand);
                 return;
             }
-            funT(this, -mParams->normal, verticalUp);
-            al::limitVelocityDirSign(this, verticalUp, 3.0);
-            al::setNerve(this, &NrvMotorcycle.RideRunFall);
         }
+        if (al::isActionEnd(this))
+            al::setNerve(this, &NrvMotorcycle.RideRun);
     }
-}
 
-void Motorcycle::exeRideRunJump() {
-    if (al::isFirstStep(this)) {
-        al::tryStartActionIfNotPlaying(this, "Run");
-        al::startHitReaction(this, "ジャンプ開始");
-        _247 = mParams->bool_1;
-        al::setVelocity(this, 0.0f, !_247 ? 55.0f : 21.5f, 0.0f);
-        mPlayerAnimator->startBindRideJump();
+    void Motorcycle::exeRideRun() {
+        funV(this);
     }
-    mParams->normal = {0.0f, 1.0f, 0.0f};
-    if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
-                           mCameraSubTargetBase))
-        return;
 
-    sead::Vector2f stick = {0.0f, 0.0f};
-    funI(&stick, this, mPlayerPuppet);
-    f32 fVar17 = stick.x * 40.0;
-    f32 fVar15 = al::diffNearAngleDegree(0.0f, rs::getPuppetPoseRotZDegreeLeft(mPlayerPuppet));
-    f32 fVar16 = al::diffNearAngleDegree(0.0f, rs::getPuppetPoseRotZDegreeRight(mPlayerPuppet));
-    f32 fVar14 = sead::Mathf::abs(fVar15);
-    f32 fVar5 = sead::Mathf::abs(fVar16);
-    if (fVar5 <= fVar14)
-        fVar16 = fVar15;
-    floatA = al::lerpValue(floatA, fVar17 + al::normalizeAbs(fVar16, 45.0f, 135.0f) * -15.0f, 0.3f);
-    funK(floatA, kk3, this, mPlayerPuppet, 1);
-    funB(floatA, this);
-    funV(this);
-    funPY(this, mPlayerPuppet, imagination, &floatA);
-    floatJump = al::lerpValue(0.0, -20.0, al::calcNerveRate(this, 4));
-    if (!_247 || !rs::isPuppetHoldJumpButton(mPlayerPuppet) || al::isGreaterEqualStep(this, 6)) {
-        _247 = 0;
-        sead::Vector3f front = al::getFront(this);
-        al::verticalizeVec(&front, verticalUp, front);
-        al::tryNormalizeOrZero(&front);
-        f32 fVar14 =
-            al::lerpValue(0.0, 1.8, al::easeIn(al::normalize(imagination->andAFloat, 0.0f, 5.0f)));
-        al::addVelocity(this, front * fVar14 + (al::isInWater(this) ? 1.0f : 2.0f) *
-                                                   sead::Vector3f(0.0f, -1.0f, 0.0f));
+    void Motorcycle::exeRideRunCollide() {
+        if (al::isFirstStep(this))
+            al::startAction(this, "RunCollide");
+        if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
+                               mCameraSubTargetBase))
+            return;
+        updateStick(this, mPlayerPuppet, &floatA, 40.0f, -15.0f, 0.3f);
+        funB(floatA, this);
+        funPY(this, mPlayerPuppet, imagination, &floatA);
+        al::lerpValue(0.0f, 1.8f, al::easeIn(al::normalize(imagination->andAFloat, 0.0f, 5.0f)));
+        funQ(this);
+        funK(floatA, kk3, this, mPlayerPuppet, 0);
+
+        if (funR(this, mPlayerPuppet))
+            return;
+
+        if (funS(this))
+            return;
+
+        MotorcycleParams* params = mParams;
+        if (rs::isCollidedGround(this) && !params->bool_0) {
+            if (150.0 < getDistance(this, params)) {
+                funT(this, verticalUp, -rs::getCollidedGroundNormal(this));
+                al::limitVelocityDirSign(this, -rs::getCollidedGroundNormal(this), 5.0f);
+                al::setNerve(this, &NrvMotorcycle.RideRunLand);
+                return;
+            }
+        }
+
+        if (rs::isCollidedWallVelocity(this, this))
+            return;
+        if (mParams->array2.size() > 0 && mParams->array.size() > 0)
+            return;
+        al::setNerve(this, &NrvMotorcycle.RideRun);
     }
-    al::scaleVelocityExceptDirection(this, verticalUp, 0.95f);
-    if (0.0f < al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}))
-        al::limitVelocityDir(this, verticalUp, 35.0f);
-    if (!funL(this)) {
-        if (!rs::isOnGround(this, this)) {
-            if (al::isInWater(this) && !_248)
+
+    void Motorcycle::exeRideRunFall() {
+        if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
+                               mCameraSubTargetBase))
+            return;
+
+        mParams->normal = {0.0f, 1.0f, 0.0f};
+        updateStick(this, mPlayerPuppet, &floatA, 12.5f, 7.5f, 0.1f);
+
+        funJ(al::isInWater(this) ? 1.0f : 2.0f, this, mPlayerPuppet);
+        funK(floatA, kk3, this, mPlayerPuppet, true);
+        if (!funL(this) && (!rs::isCollidedWallVelocity(this, this) || !funM(this))) {
+            funN(this);
+            if (!funO(this) && al::isInWater(this) && !_248) {
                 al::startHitReaction(this, "着水");
-        } else if (!al::isVelocitySlowH(this, 3.0f) || 0.01f <= imagination->andAFloat) {
-            if (funR(this, mPlayerPuppet)) {
-                al::startAction(this, "RunLand");
                 return;
             }
-            funT(this, verticalUp, -rs::getCollidedGroundNormal(this));
-            al::limitVelocityDirSign(this, -rs::getCollidedGroundNormal(this), 5.0f);
-            al::setNerve(this, &NrvMotorcycle.RideRunLand);
-        } else {
-            if (funF(this, mPlayerPuppet))
+        }
+        return;
+    }
+
+    void Motorcycle::exeRideRunWheelie() {
+        if (al::isFirstStep(this))
+            mPlayerAnimator->startBindRideJump();
+
+        if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
+                               mCameraSubTargetBase))
+            return;
+        mParams->normal = {0.0f, 1.0f, 0.0f};
+
+        updateStick(this, mPlayerPuppet, &floatA, 12.5f, -7.0f, 0.1f);
+
+        funJ(al::calcNerveEaseInValue(this, 30, 0.0f, al::isInWater(this) ? 1.0f : 2.0f), this,
+             mPlayerPuppet);
+        funK(floatA, kk3, this, mPlayerPuppet, true);
+        if (!funL(this) && (!rs::isCollidedWallVelocity(this, this) || !funM(this))) {
+            funN(this);
+            if (!funO(this) && al::isInWater(this) && !_248) {
+                al::startHitReaction(this, "着水");
                 return;
-            al::setNerve(this, &NrvMotorcycle.RideWaitLand);
+            }
         }
     }
-}
 
-void Motorcycle::endRideRunJump() {
-    mPlayerAnimator->tryStartBindRideLandIfJump();
-    floatJump = 0.0f;
-}
-
-void Motorcycle::exeRideRunBoundStart() {
-    if (al::isFirstStep(this))
-        al::startAction(this, "RunLand");
-
-    if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
-                           mCameraSubTargetBase))
-        return;
-
-    mParams->normal.set(0.0f, 1.0f, 0.0f);
-    funE(this, mPlayerPuppet, &floatA, kk3, _248);
-    al::setNerveAtActionEnd(this, &NrvMotorcycle.RideRunBound);
-}
-
-void Motorcycle::exeRideRunBound() {
-    if (al::isFirstStep(this))
-        al::startAction(this, "Run");
-
-    if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
-                           mCameraSubTargetBase))
-        return;
-    mParams->normal.set(0.0f, 1.0f, 0.0f);
-    funE(this, mPlayerPuppet, &floatA, kk3, _248);
-}
-
-void Motorcycle::exeRideRunClash() {
-    if (al::isFirstStep(this)) {
-        al::startAction(this, "Clash");
-        mPlayerAnimator->startBindRideClash();
+    void Motorcycle::endRideRunWheelie() {
+        mPlayerAnimator->tryStartBindRideLandIfJump();
+        floatJump = 0.0f;
     }
 
-    if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
-                           mCameraSubTargetBase))
-        return;
+    void Motorcycle::exeRideRunLand() {
+        if (al::isFirstStep(this))
+            al::startAction(this, "RunLand");
 
-    floatA = al::lerpValue(floatA, 0.0f, 0.025f);
-    funK(floatA, kk3, this, mPlayerPuppet, true);
-    al::addVelocityY(this, -2.0f);
-    al::scaleVelocityY(this, 0.95f);
-    if (al::isActionEnd(this) && rs::isOnGround(this, this))
-        al::setNerve(this, &NrvMotorcycle.RideWait);
-}
+        if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
+                               mCameraSubTargetBase))
+            return;
 
-void Motorcycle::exeRideParkingSnap() {
-    if (al::isFirstStep(this)) {
-        *reinterpret_cast<u64*>(kk3) = 0;
-        alPadRumbleFunction::stopPadRumbleDirectValue(this, -1);
+        if (!funP(this, vector4)) {
+            updateStick(this, mPlayerPuppet, &floatA, 40.0f, -15.0f, 0.3f);
+            funB(floatA, this);
+            funPY(this, mPlayerPuppet, imagination, &floatA);
+            al::lerpValue(0.0f, 1.8f,
+                          al::easeIn(al::normalize(imagination->andAFloat, 0.0f, 5.0f)));
+            funQ(this);
+            funK(floatA, kk3, this, mPlayerPuppet, al::isLessStep(this, 3));
+            if (!funR(this, mPlayerPuppet)) {
+                if (rs::isCollidedGround(this) || mParams->val_c58 < 6) {
+                    al::setNerveAtActionEnd(this, &NrvMotorcycle.RideRun);
+                    return;
+                }
+                funT(this, -mParams->normal, verticalUp);
+                al::limitVelocityDirSign(this, verticalUp, 3.0);
+                al::setNerve(this, &NrvMotorcycle.RideRunFall);
+            }
+        }
     }
 
-    f32 rate = al::calcNerveRate(this, 6);
-    ParkingParams* params = mParkingParams;
-    f32 invRate = 1.0f - rate;
-    floatA = invRate * params->floatA;
-    floatB = invRate * params->floatB;
-    floatC = invRate * params->floatC;
-    floatJump = invRate * params->floatJump;
+    void Motorcycle::exeRideRunJump() {
+        if (al::isFirstStep(this)) {
+            al::tryStartActionIfNotPlaying(this, "Run");
+            al::startHitReaction(this, "ジャンプ開始");
+            _247 = mParams->bool_1;
+            al::setVelocity(this, 0.0f, !_247 ? 55.0f : 21.5f, 0.0f);
+            mPlayerAnimator->startBindRideJump();
+        }
+        mParams->normal = {0.0f, 1.0f, 0.0f};
+        if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
+                               mCameraSubTargetBase))
+            return;
 
-    sead::Quatf quat = sead::Quatf::unit;
-    al::slerpQuat(&quat, params->quatA, params->quatB, rate);
-
-    sead::Vector3f pos = {0.0f, 0.0, 0.0f};
-    al::lerpVec(&pos, mParkingParams->vectorA, mParkingParams->vectorB, rate);
-    al::resetQuatPosition(this, quat, pos);
-    al::setNerveAtGreaterEqualStep(this, &RideParkingStart, 6);
-}
-
-void Motorcycle::exeRideParkingStart() {
-    if (al::isFirstStep(this))
-        al::startAction(this, "ParkingStart");
-    al::setNerveAtActionEnd(this, &RideParking);
-}
-
-void Motorcycle::exeRideParking() {
-    if (al::isFirstStep(this)) {
-        al::startAction(this, "Parking");
-        al::tryOnStageSwitch(mParkingParams->actor, "SwitchMotorcycleFloorTouchBothWheelOn");
-        al::onCollide(this);
+        updateStick(this, mPlayerPuppet, &floatA, 40.0f, -15.0f, 0.3f);
+        funK(floatA, kk3, this, mPlayerPuppet, 1);
+        funB(floatA, this);
+        funV(this);
+        funPY(this, mPlayerPuppet, imagination, &floatA);
+        floatJump = al::lerpValue(0.0f, -20.0f, al::calcNerveRate(this, 4));
+        if (!_247 || !rs::isPuppetHoldJumpButton(mPlayerPuppet) ||
+            al::isGreaterEqualStep(this, 6)) {
+            _247 = 0;
+            sead::Vector3f front = al::getFront(this);
+            al::verticalizeVec(&front, verticalUp, front);
+            al::tryNormalizeOrZero(&front);
+            f32 fVar14 = al::lerpValue(
+                0.0f, 1.8, al::easeIn(al::normalize(imagination->andAFloat, 0.0f, 5.0f)));
+            al::addVelocity(this, front * fVar14 + (al::isInWater(this) ? 1.0f : 2.0f) *
+                                                       sead::Vector3f(0.0f, -1.0f, 0.0f));
+        }
+        al::scaleVelocityExceptDirection(this, verticalUp, 0.95f);
+        if (0.0f < al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}))
+            al::limitVelocityDir(this, verticalUp, 35.0f);
+        if (!funL(this)) {
+            if (!rs::isOnGround(this, this)) {
+                if (al::isInWater(this) && !_248)
+                    al::startHitReaction(this, "着水");
+            } else if (!al::isVelocitySlowH(this, 3.0f) || 0.01f <= imagination->andAFloat) {
+                if (funR(this, mPlayerPuppet)) {
+                    al::startAction(this, "RunLand");
+                    return;
+                }
+                funT(this, verticalUp, -rs::getCollidedGroundNormal(this));
+                al::limitVelocityDirSign(this, -rs::getCollidedGroundNormal(this), 5.0f);
+                al::setNerve(this, &NrvMotorcycle.RideRunLand);
+            } else {
+                if (funF(this, mPlayerPuppet))
+                    return;
+                al::setNerve(this, &NrvMotorcycle.RideWaitLand);
+            }
+        }
     }
 
-    funB(floatA, this);
-    al::addVelocityToGravity(this, 2.0f);
-    al::scaleVelocity(this, 0.95f);
-
-    if (rs::isCollidedGround(this))
-        al::limitVelocityDirSign(this, al::getGravity(this), 3.0f);
-
-    al::setNerveAtGreaterEqualStep(this, &RideParkingAfter, 8);
-}
-
-void Motorcycle::exeRideParkingAfter() {
-    if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
-                           mCameraSubTargetBase))
-        return;
-
-    funB(floatA, this);
-    al::addVelocityToGravity(this, 2.0f);
-    al::scaleVelocity(this, 0.95f);
-
-    if (rs::isCollidedGround(this))
-        al::limitVelocityDirSign(this, al::getGravity(this), 3.0f);
-
-    if (rs::isPuppetHoldActionButton(mPlayerPuppet)) {
-        al::setNerve(this, &NrvMotorcycle.RideRunStart);
-        return;
+    void Motorcycle::endRideRunJump() {
+        mPlayerAnimator->tryStartBindRideLandIfJump();
+        floatJump = 0.0f;
     }
 
-    funF(this, mPlayerPuppet);
-}
+    void Motorcycle::exeRideRunBoundStart() {
+        if (al::isFirstStep(this))
+            al::startAction(this, "RunLand");
+
+        if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
+                               mCameraSubTargetBase))
+            return;
+
+        mParams->normal.set(0.0f, 1.0f, 0.0f);
+        funE(this, mPlayerPuppet, &floatA, kk3, _248);
+        al::setNerveAtActionEnd(this, &NrvMotorcycle.RideRunBound);
+    }
+
+    void Motorcycle::exeRideRunBound() {
+        if (al::isFirstStep(this))
+            al::startAction(this, "Run");
+
+        if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
+                               mCameraSubTargetBase))
+            return;
+        mParams->normal.set(0.0f, 1.0f, 0.0f);
+        funE(this, mPlayerPuppet, &floatA, kk3, _248);
+    }
+
+    void Motorcycle::exeRideRunClash() {
+        if (al::isFirstStep(this)) {
+            al::startAction(this, "Clash");
+            mPlayerAnimator->startBindRideClash();
+        }
+
+        if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
+                               mCameraSubTargetBase))
+            return;
+
+        floatA = al::lerpValue(floatA, 0.0f, 0.025f);
+        funK(floatA, kk3, this, mPlayerPuppet, true);
+        al::addVelocityY(this, -2.0f);
+        al::scaleVelocityY(this, 0.95f);
+        if (al::isActionEnd(this) && rs::isOnGround(this, this))
+            al::setNerve(this, &NrvMotorcycle.RideWait);
+    }
+
+    void Motorcycle::exeRideParkingSnap() {
+        if (al::isFirstStep(this)) {
+            *reinterpret_cast<u64*>(kk3) = 0;
+            alPadRumbleFunction::stopPadRumbleDirectValue(this, -1);
+        }
+
+        f32 rate = al::calcNerveRate(this, 6);
+        ParkingParams* params = mParkingParams;
+        f32 invRate = 1.0f - rate;
+        floatA = invRate * params->floatA;
+        floatB = invRate * params->floatB;
+        floatC = invRate * params->floatC;
+        floatJump = invRate * params->floatJump;
+
+        sead::Quatf quat = sead::Quatf::unit;
+        al::slerpQuat(&quat, params->quatA, params->quatB, rate);
+
+        sead::Vector3f pos = {0.0f, 0.0f, 0.0f};
+        al::lerpVec(&pos, mParkingParams->vectorA, mParkingParams->vectorB, rate);
+        al::resetQuatPosition(this, quat, pos);
+        al::setNerveAtGreaterEqualStep(this, &RideParkingStart, 6);
+    }
+
+    void Motorcycle::exeRideParkingStart() {
+        if (al::isFirstStep(this))
+            al::startAction(this, "ParkingStart");
+        al::setNerveAtActionEnd(this, &RideParking);
+    }
+
+    void Motorcycle::exeRideParking() {
+        if (al::isFirstStep(this)) {
+            al::startAction(this, "Parking");
+            al::tryOnStageSwitch(mParkingParams->actor, "SwitchMotorcycleFloorTouchBothWheelOn");
+            al::onCollide(this);
+        }
+
+        funB(floatA, this);
+        al::addVelocityToGravity(this, 2.0f);
+        al::scaleVelocity(this, 0.95f);
+
+        if (rs::isCollidedGround(this))
+            al::limitVelocityDirSign(this, al::getGravity(this), 3.0f);
+
+        al::setNerveAtGreaterEqualStep(this, &RideParkingAfter, 8);
+    }
+
+    void Motorcycle::exeRideParkingAfter() {
+        if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mCameraTargetBase,
+                               mCameraSubTargetBase))
+            return;
+
+        funB(floatA, this);
+        al::addVelocityToGravity(this, 2.0f);
+        al::scaleVelocity(this, 0.95f);
+
+        if (rs::isCollidedGround(this))
+            al::limitVelocityDirSign(this, al::getGravity(this), 3.0f);
+
+        if (rs::isPuppetHoldActionButton(mPlayerPuppet)) {
+            al::setNerve(this, &NrvMotorcycle.RideRunStart);
+            return;
+        }
+
+        funF(this, mPlayerPuppet);
+    }
