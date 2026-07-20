@@ -23,18 +23,18 @@ class BindKeepDemoInfo;
 class CameraSubTargetTurnParam;
 
 struct MotorcycleParams {
-    bool bool_0;
-    bool bool_1;
-    bool bool_2;
+    bool isOnGround;
+    bool isOnJump;
     bool bool_3;
     bool bool_4;
     bool bool_5;
-    sead::Vector3f vector_8;
-    sead::FixedPtrArray<sead::Vector3f, 194> array2;
-    sead::FixedPtrArray<sead::Vector3f, 194> array;
-    s32 val_c58;
-    sead::Vector3f vector_5c;
-    sead::Vector3f normal;
+    bool bool_6;
+    sead::Vector3f floorNormalAvg;                                // check
+    sead::FixedPtrArray<sead::Vector3f, 194> frontContactPoints;  // check
+    sead::FixedPtrArray<sead::Vector3f, 194> backContactPoints;   // check
+    s32 framesInAir;
+    sead::Vector3f lastGroundPos;
+    sead::Vector3f groundNormal;
 };
 
 static_assert(sizeof(MotorcycleParams) == 0xc78);
@@ -53,12 +53,12 @@ struct ParkingParams {
 
 static_assert(sizeof(ParkingParams) == 0x50);
 
-struct Imagination{
-    bool isABool;
-    f32 andAFloat;
+struct AccelerationState {
+    bool isAccelerating;
+    f32 accelRate;
 };
 
-static_assert(sizeof(Imagination) == 0x8);
+static_assert(sizeof(AccelerationState) == 0x8);
 
 class Motorcycle : public al::LiveActor, public IUsePlayerCollision {
 public:
@@ -116,7 +116,8 @@ public:
 
     IUsePlayerPuppet** getPuppy() { return &mPlayerPuppet; }
 
-    f32 getFloatA()const {return floatA;}
+    f32 getFloatA() const { return floatA; }
+
 private:
     bool isRideRun_();
 
@@ -124,12 +125,12 @@ private:
     PlayerCollider* mPlayerCollider = nullptr;
     MotorcycleParams* mParams = nullptr;
     MotorcyclePlayerAnimator* mPlayerAnimator = nullptr;
-    Imagination* imagination = nullptr;//130
+    AccelerationState* mAccelerationState = nullptr;  // 130
     f32 floatA = 0.0f;
     f32 floatB = 0.0f;
     f32 floatC = 0.0f;
     f32 floatJump = 0.0f;
-    f32* kk3 = nullptr;//148
+    f32* kk3 = nullptr;  // 148
     ParkingParams* mParkingParams = nullptr;
     BindKeepDemoInfo* mBindKeepDemoInfo = nullptr;
     al::CollisionPartsConnector* mCollisionPartsConnector = nullptr;
@@ -151,8 +152,8 @@ private:
     sead::Vector3f vector5 = {0.0f, 0.0f, 0.0f};
     sead::Vector3f vector4 = {0.0f, 0.0f, 0.0f};
 
-    s32 _23css = 0;
-    s32 _23cxs = 0;
+    f32 _23css = 0;
+    f32 _23cxs = 0;
     sead::Matrix34f mtx = sead::Matrix34f::ident;
     int _234 = 0;
     s32 valA = -1;

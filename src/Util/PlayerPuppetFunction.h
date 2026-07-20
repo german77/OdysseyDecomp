@@ -58,7 +58,7 @@ void invalidatePuppetCollider(IUsePlayerPuppet* playerPuppet);
 bool isCollidedPuppetGround(IUsePlayerPuppet* playerPuppet);
 const sead::Vector3f& getCollidedPuppetGroundNormal(IUsePlayerPuppet* playerPuppet);
 void validatePuppetCollider(IUsePlayerPuppet* playerPuppet);
-void requestDamage(IUsePlayerPuppet* playerPuppet);
+bool requestDamage(IUsePlayerPuppet* playerPuppet);
 void clearStainEffect(IUsePlayerPuppet* playerPuppet);
 void copyPuppetDitherAlpha(IUsePlayerPuppet* playerPuppet, const al::LiveActor* actor);
 void validatePuppetLookAt(IUsePlayerPuppet* playerPuppet);
