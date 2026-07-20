@@ -41,10 +41,10 @@ static_assert(sizeof(MotorcycleParams) == 0xc78);
 
 struct ParkingParams {
     al::LiveActor* actor;
-    f32 floatA;
-    f32 floatB;
-    f32 floatC;
-    f32 floatJump;
+    f32 steerAngle;
+    f32 handleAngle;
+    f32 mLeanAngle;
+    f32 mJumpAngle;
     sead::Quatf quatA;
     sead::Quatf quatB;
     sead::Vector3f vectorA;
@@ -116,7 +116,6 @@ public:
 
     IUsePlayerPuppet** getPuppy() { return &mPlayerPuppet; }
 
-    f32 getFloatA() const { return floatA; }
 
 private:
     bool isRideRun_();
@@ -126,10 +125,10 @@ private:
     MotorcycleParams* mParams = nullptr;
     MotorcyclePlayerAnimator* mPlayerAnimator = nullptr;
     AccelerationState* mAccelerationState = nullptr;  // 130
-    f32 floatA = 0.0f;
-    f32 floatB = 0.0f;
-    f32 floatC = 0.0f;
-    f32 floatJump = 0.0f;
+    f32 steerAngle = 0.0f;
+    f32 handleAngle = 0.0f;
+    f32 mLeanAngle = 0.0f;
+    f32 mJumpAngle = 0.0f;
     f32* kk3 = nullptr;  // 148
     ParkingParams* mParkingParams = nullptr;
     BindKeepDemoInfo* mBindKeepDemoInfo = nullptr;
@@ -145,7 +144,7 @@ private:
     s32 _198 = 0;
     s32 _19c = 0;
     sead::Quatf mQuat = sead::Quatf::unit;
-    sead::Vector3f vector = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f mTrans= {0.0f, 0.0f, 0.0f};
     sead::Quatf mStartQuat = sead::Quatf::unit;
     sead::Vector3f mStartTrans = {0.0f, 0.0f, 0.0f};
     sead::Vector3f vector2 = {0.0f, 0.0f, 0.0f};
@@ -154,7 +153,7 @@ private:
 
     f32 _23css = 0;
     f32 _23cxs = 0;
-    sead::Matrix34f mtx = sead::Matrix34f::ident;
+    sead::Matrix34f mWaterSurfaceMtx = sead::Matrix34f::ident;
     int _234 = 0;
     s32 valA = -1;
     s32 _23c = -1;
