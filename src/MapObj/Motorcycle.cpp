@@ -79,7 +79,8 @@ NERVES_MAKE_STRUCT(Motorcycle, Wait, Jump, RideWaitJump, RideRunFall, RideRunWhe
                    RideRunBoundStart, RideRunCollide, RideRunLand, Fall, ResetNoReaction,
                    RideStartLeft, RideStartRight, RideStartOn, RideWait, Creep, Reaction, Reset,
                    RideWaitLand, RideRunStart, RideRun, RideRunBound)
-NERVES_MAKE_NOSTRUCT(Motorcycle, RideRunClash, RideParking, RideParkingAfter, RideParkingStart)
+NERVES_MAKE_NOSTRUCT(Motorcycle, RideRunClash, RideParking, RideParkingAfter, RideParkingStart,
+                     RideParkingSnap)
 }  // namespace
 
 const sead::Vector3f forceField5 = {0.0f, 140.0f, -85.0f};
@@ -224,7 +225,7 @@ void updateOrientation(f32 bloat, Motorcycle* actor) {
     }
 
     MotorcycleParams* params = actor->getParams();
-    if (al::isNormalize(params->floorNormalAvg) && params->isOnJump && params->bool_3) {
+    if (al::isNormalize(params->groundNormalAvg) && params->isOnJump && params->bool_3) {
         sead::Vector3f front = al::getFront(actor);
         al::verticalizeVec(&front, verticalUp, front);
         if (al::tryNormalizeOrZero(&front)) {
@@ -244,7 +245,7 @@ void updateOrientation(f32 bloat, Motorcycle* actor) {
         }
     }
 
-    if (al::isNormalize(params->floorNormalAvg) && params->isOnJump && params->bool_3)
+    if (al::isNormalize(params->groundNormalAvg) && params->isOnJump && params->bool_3)
         rs::tryFollowRotateFrontAxisUpIfCollidedGround(actor, actor);
 }
 
@@ -551,110 +552,57 @@ bool tryParking(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, ParkingParams
 
     sead::Vector3f backDir = {0.0f, 0.0f, 0.0f};
     al::calcBackDir(&backDir, al::getSensorHost(groundSensor));
-    if (sead::Mathf::abs(backDir.dot(al::getFront(actor))) >=
-        sead::Mathf::cos(sead::Mathf::deg2rad(25.0f))) {
-        al::parallelizeVec(&backDir, backDir, al::getFront(actor));
-        al::normalize(&backDir);
-        sead::Quatf quat = sead::Quatf::unit;
-        sead::Vector3f up = {0.0f, 0.0f, 0.0f};
-        sead::Vector3f side = {0.0f, 0.0f, 0.0f};
 
-        al::calcUpDir(&up, al::getSensorHost(groundSensor));
-        al::makeQuatFrontUp(&quat, backDir, up);
-        al::calcQuatSide(&side, quat);
-        /*
-        fVar10 = (local_70.y * 75.0f - local_70.z * 30.0f) + local_70.w * 0.0f;
-        fVar16 = local_70.w * 30.0f + (local_70.z * 0.0f - local_70.x * 75.0f);
-        fVar18 = local_70.z * fVar16;
-        fVar17 = local_70.w * 75.0f + (local_70.x * 30.0f - local_70.y * 0.0f);
-        fVar11 = (-(local_70.x * 0.0f) - local_70.y * 30.0f) - local_70.z * 75.0f;
-        fVar12 = local_70.w * fVar10;
-        fVar14 = local_70.y * fVar17;
-        fVar19 = local_70.x * fVar11;
-        fVar13 = local_70.z * fVar10;
-        fVar20 = local_70.w * fVar16;
-        fVar15 = local_70.x * fVar17;
-        fVar21 = local_70.y * fVar11;
-        fVar10 = local_70.y * fVar10;
-        fVar16 = local_70.x * fVar16;
-        fVar17 = local_70.w * fVar17;
-        fVar11 = local_70.z * fVar11;
-        pVVar7 = al::getActorTrans(groundSensor);
-        fVar14 = pVVar7->x + ((fVar14 + (fVar12 - fVar18)) - fVar19);
-        fVar12 = pVVar7->y + (((fVar13 + fVar20) - fVar15) - fVar21);
-        fVar17 = pVVar7->z + ((fVar17 + (fVar16 - fVar10)) - fVar11);
-        local_a0.x = 0.0f;
-        local_a0.y = 0.0f;
-        local_a0.z = 0.0f;
-        pVVar7 = al::getTrans(actor);
-        local_b0.y = pVVar7->y - fVar12;
-        local_b0.x = pVVar7->x - fVar14;
-        local_b0.z = pVVar7->z - fVar17;
-        al::parallelizeVec(&local_a0, &local_90, &local_b0);
-        fVar11 = local_a0.x * local_a0.x + local_a0.y * local_a0.y + local_a0.z * local_a0.z;
-        fVar10 = SQRT(fVar11);
-        if (NAN(fVar10))
-            fVar10 = sqrtf(fVar11);
-        if (fVar10 <= 100.0f) {
-            local_c0.y = -backDir.y;
-            local_c0.x = -backDir.x;
-            local_c0.z = -backDir.z;
-            local_b0.x = 0.0f;
-            local_b0.y = 0.0f;
-            local_b0.z = 0.0f;
-            pVVar7 = al::getTrans(actor);
-            local_d0.x = pVVar7->x - fVar14;
-            local_d0.y = pVVar7->y - fVar12;
-            local_d0.z = pVVar7->z - fVar17;
-            al::parallelizeVec(&local_b0, &local_c0, &local_d0);
-            fVar11 = local_b0.x * local_b0.x + local_b0.y * local_b0.y + local_b0.z *
-        local_b0.z; fVar10 = SQRT(fVar11); if (NAN(fVar10)) fVar10 = sqrtf(fVar11); if (100.0f <
-        fVar10) { bVar9 = 0; goto LAB_71002cac64;
-            }
-            pHVar8 = (HitSensor*)al::getHitSensor(actor, "PlayerBody");
-            uVar3 = rs::sendMsgMotorcycleCollideParkingLot(groundSensor, pHVar8);
-            if ((uVar3 & 1) != 0) {
-                pLVar5 = al::getSensorHost(groundSensor);
-                params->actor = pLVar5;
-                fVar10 = value[3];
-                params->mLeanAngle = value[2];
-                params->mJumpAngle = fVar10;
-                fVar10 = value[1];
-                params->steerAngle = value[0];
-                params->handleAngle = fVar10;
-                al::calcQuat(&params->quatA, actor);
-                (params->quatB).z = local_70.z;
-                (params->quatB).w = local_70.w;
-                (params->quatB).x = local_70.x;
-                (params->quatB).y = local_70.y;
-                pVVar7 = al::getTrans(actor);
-                (params->field7_0x38).z = pVVar7->z;
-                fVar10 = pVVar7->x;
-                fVar11 = pVVar7->y;
-                (params->field8_0x44).x = fVar14;
-                (params->field8_0x44).y = fVar12;
-                (params->field8_0x44).z = fVar17;
-                (params->field7_0x38).x = fVar10;
-                (params->field7_0x38).y = fVar11;
-                al::offCollide(actor);
-                al::setVelocityZero(actor);
-                al::setNerve((IUseNerve*)actor, (Nerve*)&PTR_PTR_7101d16e28);
-                bVar9 = 1;
-                goto LAB_71002cac64;
-            }
-            bVar2 = false;
-            bVar9 = extraout_w8;
-        } else {
-            bVar9 = 0;
-        LAB_71002cac64:
-            bVar2 = true;
-        }
-        if (bVar2)
-            return (bool)(bVar9 & 1);
-        */
+    if (sead::Mathf::abs(al::getFront(actor).dot(backDir)) <
+        sead::Mathf::cos(sead::Mathf::deg2rad(25.0f)))
+        return false;
+
+    al::parallelizeVec(&backDir, backDir, al::getFront(actor));
+    al::normalize(&backDir);
+
+    sead::Quatf quat = sead::Quatf::unit;
+    sead::Vector3f up = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f side = {0.0f, 0.0f, 0.0f};
+    al::calcUpDir(&up, al::getSensorHost(groundSensor));
+    al::makeQuatFrontUp(&quat, backDir, up);
+    al::calcQuatSide(&side, quat);
+
+    sead::Vector3f rotated = {0.0f, 30.0f, 75.0f};
+    rotated.rotate(quat);
+    rotated += al::getActorTrans(groundSensor);
+
+    sead::Vector3f papalel = {0.0f, 0.0f, 0.0f};
+    al::parallelizeVec(&papalel, side, al::getTrans(actor) - rotated);
+
+    if (!(papalel.length() > 100.0f))
+        return false;
+
+    sead::Vector3f papanada = {0.0f, 0.0f, 0.0f};
+    al::parallelizeVec(&papanada, -backDir, al::getTrans(actor) - rotated);
+
+    if (!(papanada.length() > 100.0f))
+        return false;
+
+    if (!rs::sendMsgMotorcycleCollideParkingLot(groundSensor,
+                                                al::getHitSensor(actor, "PlayerBody"))) {
+        return false;
     }
 
-    return false;
+    params->actor = al::getSensorHost(groundSensor);
+    params->leanAngle = value[2];
+    params->jumpAngle = value[3];
+    params->steerAngle = value[0];
+    params->handleAngle = value[1];
+
+    al::calcQuat(&params->quatA, actor);
+    params->quatB.set(quat);
+    params->vectorA.set(al::getTrans(actor));
+    params->vectorB.set(rotated);
+
+    al::offCollide(actor);
+    al::setVelocityZero(actor);
+    al::setNerve(actor, &RideParkingSnap);
+    return true;
 }
 
 void updateSeRumble(f32 valueA, SeRumbleState* valueB, Motorcycle* actor,
@@ -850,10 +798,10 @@ void funQ(Motorcycle* actor, f32 value) {
     sead::Vector3f normal = {0.0f, 0.0f, 0.0f};
     if (rs::isCollidedGround(actor)) {
         MotorcycleParams* params = actor->getParams();
-        if (!al::isNormalize(params->floorNormalAvg) || !params->bool_3)
+        if (!al::isNormalize(params->groundNormalAvg) || !params->bool_3)
             normal.set(rs::getCollidedGroundNormal(actor));
         else
-            normal.set(actor->getParams()->floorNormalAvg);
+            normal.set(actor->getParams()->groundNormalAvg);
     } else {
         normal.set(-groundNormal);
         al::verticalizeVec(&normal, al::getFront(actor), normal);
@@ -1411,9 +1359,9 @@ LAB_71002c8d1c:
         } while (lVar22 < iVar21);
     }
     (params->frontContactPoints).size = 0;
-    (params->floorNormalAvg).x = 0.0f;
-    (params->floorNormalAvg).y = 0.0f;
-    (params->floorNormalAvg).z = 0.0f;
+    (params->groundNormalAvg).x = 0.0f;
+    (params->groundNormalAvg).y = 0.0f;
+    (params->groundNormalAvg).z = 0.0f;
     mPlayerPuppet = &this;
     if (!al::isNoCollide(this)) {
         params->isOnJump = false;
@@ -1498,10 +1446,10 @@ puVar13; (params->frontContactPoints).size = (params->frontContactPoints).size +
                                 params->isOnJump = true;
                                 pTVar14 =
 (Triangle*)CollidedShapeResult::getArrowHitInfo(this_00); pfVar16 =
-(float*)al::Triangle::getNormal(pTVar14, 0); (params->floorNormalAvg).x =
-(params->floorNormalAvg).x
-+ *pfVar16; (params->floorNormalAvg).y = (params->floorNormalAvg).y + pfVar16[1];
-(params->floorNormalAvg).z = (params->floorNormalAvg).z + pfVar16[2]; } else { params->bool_3 =
+(float*)al::Triangle::getNormal(pTVar14, 0); (params->groundNormalAvg).x =
+(params->groundNormalAvg).x
++ *pfVar16; (params->groundNormalAvg).y = (params->groundNormalAvg).y + pfVar16[1];
+(params->groundNormalAvg).z = (params->groundNormalAvg).z + pfVar16[2]; } else { params->bool_3 =
 true;
                             }
                         }
@@ -1510,12 +1458,12 @@ true;
                 } while (iVar21 != iVar17);
             }
         }
-        al::tryNormalizeOrZero(&params->floorNormalAvg);
+        al::tryNormalizeOrZero(&params->groundNormalAvg);
     }
     uVar8 = rs::isCollidedGround(this);
     if ((uVar8 & 1) != 0) {
         params = mParams;
-        uVar8 = al::isNormalize(&params->floorNormalAvg, 0.001);
+        uVar8 = al::isNormalize(&params->groundNormalAvg, 0.001);
         if ((((uVar8 & 1) != 0) && (params->isOnJump != false)) && (mParams->bool_3 == false)) {
             local_b0.x = 0.0f;
             local_b0.y = 0.0f;

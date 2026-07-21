@@ -47,7 +47,7 @@ struct MotorcycleParams {
     bool bool_4 = false;
     bool bool_5 = false;
     bool bool_6 = false;
-    sead::Vector3f floorNormalAvg = {0.0f, 0.0f, 0.0f};          // check
+    sead::Vector3f groundNormalAvg = {0.0f, 0.0f, 0.0f};          // check
     sead::FixedObjArray<sead::Vector3f, 64> frontContactPoints;  // check
     sead::FixedObjArray<sead::Vector3f, 64> backContactPoints;   // check
     s32 framesInAir = 0;
