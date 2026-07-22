@@ -96,12 +96,6 @@ struct SeRumbleState {
 
 static_assert(sizeof(SeRumbleState) == 0x8);
 
-// TODO: Find what kind of object has this structure
-struct UnknownStruct {
-    char filler[0x10];
-    al::LiveActor* actor;
-};
-
 class Motorcycle : public al::LiveActor, public IUsePlayerCollision {
 public:
     Motorcycle(const char* name);

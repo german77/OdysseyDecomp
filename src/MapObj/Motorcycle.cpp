@@ -224,7 +224,7 @@ inline f32 getAngle(const sead::Vector3f& a, const sead::Vector3f& b) {
     return sead::Mathf::atan2(y, x);
 }
 
-void updateOrientation(Motorcycle* actor, f32 pose) {
+void updateOrientation(Motorcycle* actor, f32 steerAngle) {
     sead::Vector3f normal;
     if (rs::isCollidedGround(actor))
         normal = -rs::getCollidedGroundNormal(actor);
@@ -239,7 +239,7 @@ void updateOrientation(Motorcycle* actor, f32 pose) {
                 al::normalize(sead::Mathf::rad2deg(sead::Mathf::sin(al::getFront(actor).y)), 11.0f,
                               15.0f));
         }
-        f32 steerAngle = al::lerpValue(startAngle, 1.0, al::normalize(pose, 10.0f, 40.0f));
+        steerAngle = al::lerpValue(startAngle, 1.0, al::normalize(steerAngle, 10.0f, 40.0f));
         sead::Vector3f ngravity = al::getGravity(actor).cross(normal);
         al::normalize(&ngravity);
 
@@ -383,7 +383,7 @@ bool checkDashCollision(Motorcycle* actor) {
     return false;
 }
 
-bool funP(Motorcycle* actor, const sead::Vector3f& vec) {
+bool checkCollision(Motorcycle* actor, const sead::Vector3f& transDelta) {
     if (!rs::isCollidedWallVelocity(actor, actor))
         return false;
 
@@ -396,17 +396,16 @@ bool funP(Motorcycle* actor, const sead::Vector3f& vec) {
     if (isCollision)
         return false;
 
-    if (al::calcSpeedMax(1.8f, 0.95f) * 0.9f >= al::calcSpeedH(actor))
-        return true;
-    if (checkDashCollision(actor))
+    if (al::calcSpeedMax(1.8f, 0.95f) * 0.9f < al::calcSpeedH(actor) && checkDashCollision(actor))
         return true;
 
-    sead::Vector3f sudovec = vec;
-    al::verticalizeVec(&sudovec, al::getGravity(actor), sudovec);
-    if (sudovec.length() >= 10.0f) {
+    sead::Vector3f delta = transDelta;
+    al::verticalizeVec(&delta, al::getGravity(actor), delta);
+    if (delta.length() >= 10.0f) {
         al::setNerve(actor, &NrvMotorcycle.RideRunCollide);
         return true;
     }
+
     return false;
 }
 
@@ -873,6 +872,7 @@ void funQ(Motorcycle* actor, f32 value) {
 
 Motorcycle::Motorcycle(const char* name) : al::LiveActor(name) {}
 
+// NON_MATCHING: Different stack offsets
 void Motorcycle::init(const al::ActorInitInfo& info) {
     al::tryGetArg(&mIsOnLight, info, "IsOnLight");
     al::initActorSuffix(this, info, mIsOnLight ? "Night" : nullptr);
@@ -999,6 +999,7 @@ void Motorcycle::attackSensor(al::HitSensor* self, al::HitSensor* other) {
     rs::sendMsgPushToMotorcycle(other, self);
 }
 
+// NON_MATCHING: Pretty bad shape
 bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
                             al::HitSensor* self) {
     if (rs::isMsgTargetMarkerPosition(message)) {
@@ -1668,7 +1669,7 @@ void Motorcycle::exeReset() {
     }
 
     if (al::isStep(this, 1)) {
-        al::resetQuatPosition(this, mPuppetQuat, mBaseTrans);
+        al::resetQuatPosition(this, mBaseQuat, mBaseTrans);
         rs::resetCollision(this);
     }
 
@@ -1855,7 +1856,7 @@ void Motorcycle::exeRideRunStart() {
     if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mColliderCameraTarget,
                            mTransCameraSubTarget))
         return;
-    if (funP(this, mPrevTransDelta))
+    if (checkCollision(this, mPrevTransDelta))
         return;
 
     updateStick(this, mPlayerPuppet, &mPose.steerAngle, 40.0f, -15.0f, 0.3f);
@@ -1894,7 +1895,7 @@ void Motorcycle::exeRideRun() {
     if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mColliderCameraTarget,
                            mTransCameraSubTarget))
         return;
-    if (funP(this, mPrevTransDelta))
+    if (checkCollision(this, mPrevTransDelta))
         return;
     updateStick(this, mPlayerPuppet, &mPose.steerAngle, 40.0f, -15.0f, 0.3f);
     updateOrientation(this, mPose.steerAngle);
@@ -1960,7 +1961,7 @@ void Motorcycle::exeRideRunCollide() {
 
     if (rs::isCollidedWallVelocity(this, this))
         return;
-    if (mParams->backContactPoints.size() > 0 && mParams->frontContactPoints.size() > 0)
+    if (mParams->frontContactPoints.size() > 0 && mParams->backContactPoints.size() > 0)
         return;
     al::setNerve(this, &NrvMotorcycle.RideRun);
 }
@@ -2021,7 +2022,7 @@ void Motorcycle::exeRideRunLand() {
                            mTransCameraSubTarget))
         return;
 
-    if (!funP(this, mPrevTransDelta)) {
+    if (!checkCollision(this, mPrevTransDelta)) {
         updateStick(this, mPlayerPuppet, &mPose.steerAngle, 40.0f, -15.0f, 0.3f);
         updateOrientation(this, mPose.steerAngle);
         funPY(this, mPlayerPuppet, mAccelerationState, &mPose.steerAngle);
