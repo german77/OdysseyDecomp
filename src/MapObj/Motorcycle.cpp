@@ -405,7 +405,6 @@ bool checkCollision(Motorcycle* actor, const sead::Vector3f& transDelta) {
         al::setNerve(actor, &NrvMotorcycle.RideRunCollide);
         return true;
     }
-
     return false;
 }
 
@@ -437,7 +436,7 @@ void funPY(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, AccelerationState*
             al::getAreaObjDirFront(&front, frontSnapArea);
             accelRate =
                 al::calcAngleOnPlaneDegree(front, al::getFront(actor), -al::getGravity(actor)) *
-                0.035f;
+                sead::Mathf::deg2rad(2.0f);
         } else {
             accelRate = 0.0f;
         }
@@ -632,82 +631,78 @@ bool tryParking(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, ParkingParams
     return true;
 }
 
+// NON_MATCHING: exact 0x2f4 size/frame/save set, but input-save and rumble-expression
+// scheduling still differs; next try explicit pad-value intermediates and SafeString lifetime shaping.
 void updateSeRumble(f32 valueA, SeRumbleState* valueB, Motorcycle* actor,
                     IUsePlayerPuppet* playerPuppet, bool isaval) {
-    int iVar5;
-    float fVar6;
-    float fVar7;
-    float fVar8;
-    float fVar9;
-    float fVar10;
-    float fVar11;
-    bool isHold = rs::isPuppetHoldActionButton(playerPuppet);
-
-    int iVar2 = valueB->rumble;
-    if (!isHold) {
-        fVar11 = 0.6f;
-        iVar5 = 0;
-        if (-1 < iVar2 - 15)
-            iVar5 = iVar2 - 15;
+    const bool isHold = rs::isPuppetHoldActionButton(playerPuppet);
+    s32 rumble = valueB->rumble;
+    f32 holdScale;
+    if (isHold) {
+        rumble += 1;
+        if (rumble > 240)
+            rumble = 240;
+        holdScale = 1.0f;
     } else {
-        iVar5 = 240;
-        if (iVar2 + 1 <= 240)
-            iVar5 = iVar2 + 1;
-        fVar11 = 1.0f;
+        holdScale = 0.6f;
+        rumble -= 15;
+        if (rumble < 0)
+            rumble = 0;
     }
-    valueB->rumble = iVar5;
-    fVar6 = al::calcSpeedH(actor);
-    fVar10 = valueB->rumble;
-    fVar8 = fVar10 / -240.0f + 1.0f;
-    fVar7 = sead::Mathf::clampMax(fVar8, 1.0f);
-    fVar9 = 0.25f;
-    if (0.25f <= fVar8)
-        fVar9 = fVar7;
-    valueB->volume = fVar6;
-    fVar7 = 0.0f;
-    if (valueB->rumble < 0x28) {
-        fVar8 = (fVar10 / 40.0f + -1.0f) * sead::Mathf::pi();
-        fVar7 = sinf(fVar8);
-        fVar6 = valueB->volume;
-        fVar7 = (fVar8 * fVar7) / 1.8f;
-    }
-    fVar10 = fVar6 + -5.0f;
-    bool bVar3 = (isaval & 1) == 0;
-    fVar8 = 272.0f;
-    if (bVar3)
-        fVar8 = 160.0f;
-    if (fVar10 <= 0.0f)
-        fVar10 = 0.0f;
-    fVar9 = fVar11 * fVar9 * 0.35f * (fVar7 * 1.45f + 1.0f);
-    fVar11 = fVar9 * 0.6f;
-    if (bVar3)
-        fVar11 = fVar9;
-    fVar10 = (fVar7 * 0.08f + 1.0f) * (fVar10 / 70.0f + 1.0f) * 168.0f;
-    fVar7 = fVar10 * 1.7f;
-    if (bVar3)
-        fVar7 = fVar10;
+    valueB->rumble = rumble;
 
-    al::holdSeWithParam(actor, "CurveLv", fVar6 * valueA, "回転角(Degree)");
+    f32 speed = al::calcSpeedH(actor);
+    const f32 rumbleFloat = valueB->rumble;
+    const f32 fade = rumbleFloat / -240.0f + 1.0f;
+    const f32 fadeMax = sead::Mathf::clampMax(fade, 1.0f);
+    const f32 fadeFloor = fade < 0.25f ? 0.25f : fadeMax;
+    const f32 baseRumble = holdScale * fadeFloor * 0.35f;
 
-    fVar10 = 0.01f;
-    fVar6 = 0.0f;
-    if (valueA <= 0.0f) {
-        fVar10 = 0.0f;
-        fVar6 = 0.01f;
+    f32 wave = 0.0f;
+    valueB->volume = speed;
+    if (valueB->rumble < 40) {
+        const f32 phase = (rumbleFloat / 40.0f - 1.0f) * sead::Mathf::pi();
+        wave = (phase * sinf(phase)) / 1.8f;
+        speed = valueB->volume;
     }
 
-    alPadRumbleFunction::startPadRumbleDirectValue(actor, fVar8, fVar7, fVar11, fVar11,
-                                                   (0.7f - fVar6 * valueA) * 0.7f,
-                                                   (fVar10 * valueA + 0.7f) * 0.7f, -1);
+    f32 speedOffset = sead::Mathf::clampMin(speed - 5.0f, 0.0f);
+    const bool useLowFrequency = !isaval;
+    f32 frequency = 272.0f;
+    if (useLowFrequency)
+        frequency = 160.0f;
 
-    f32 isHold2 = rs::isPuppetHoldActionButton(playerPuppet) ? 9.0f : 0.0f;
+    const f32 rumbleScale = baseRumble * (wave * 1.45f + 1.0f);
+    f32 lowRumble = rumbleScale * 0.6f;
+    if (useLowFrequency)
+        lowRumble = rumbleScale;
 
-    al::holdSeWithParam(actor,
-                        rs::isPuppetHoldActionButton(playerPuppet) ? "MoveStartLv" : "MoveEndLv",
-                        isHold2 + valueB->volume, "");
-    al::holdSeWithParam(actor, "MoveLv", isHold2 + valueB->volume, "");
-    al::holdSeWithParam(actor, "IdleLv", isHold2 + valueB->volume, "");
-    return;
+    const f32 baseFrequency = (wave * 0.08f + 1.0f) * (speedOffset / 70.0f + 1.0f) * 168.0f;
+    f32 highRumble = baseFrequency * 1.7f;
+    if (useLowFrequency)
+        highRumble = baseFrequency;
+
+    const al::IUseAudioKeeper* audioKeeper = actor;
+    {
+        const sead::SafeString curveName("CurveLv");
+        al::holdSeWithParam(audioKeeper, curveName, speed * valueA, "回転角(Degree)");
+    }
+
+    const f32 negativeScale = valueA > 0.0f ? 0.0f : 0.01f;
+    const f32 positiveScale = valueA > 0.0f ? 0.01f : 0.0f;
+
+    alPadRumbleFunction::startPadRumbleDirectValue(
+        actor, frequency, highRumble, lowRumble, lowRumble,
+        (0.7f - negativeScale * valueA) * 0.7f,
+        (positiveScale * valueA + 0.7f) * 0.7f, -1);
+
+    const f32 moveVolume = rs::isPuppetHoldActionButton(playerPuppet) ? 9.0f : 0.0f;
+    if (rs::isPuppetHoldActionButton(playerPuppet))
+        al::holdSeWithParam(audioKeeper, "MoveStartLv", moveVolume + valueB->volume, "");
+    else
+        al::holdSeWithParam(audioKeeper, "MoveEndLv", moveVolume + valueB->volume, "");
+    al::holdSeWithParam(audioKeeper, "MoveLv", moveVolume + valueB->volume, "");
+    al::holdSeWithParam(audioKeeper, "IdleLv", moveVolume + valueB->volume, "");
 }
 
 static inline f32 getJointDistance(Motorcycle* actor, const char* jointNameA,
@@ -741,7 +736,7 @@ void updateAirOrientation(Motorcycle* actor) {
     al::normalize(al::getGravityPtr(actor));
 }
 
-static inline void updateStick(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, f32* valA, f32 kA,
+static inline void updateStick(Motorcycle* actor, f32* valA, IUsePlayerPuppet* playerPuppet, f32 kA,
                                f32 kB, f32 kC) {
     sead::Vector2f stick = {0.0f, 0.0f};
     calcInputStick(&stick, actor, playerPuppet);
@@ -753,41 +748,18 @@ static inline void updateStick(Motorcycle* actor, IUsePlayerPuppet* playerPuppet
         sead::Mathf::abs(leftAngle) < sead::Mathf::abs(rigthAngle) ? rigthAngle : leftAngle, 45.0f,
         135.0f);
 
-    *valA = al::lerpValue(*valA, stickH + angle * kB, kC);
+    f32 target = stickH + angle * kB;
+    *valA = al::lerpValue(*valA, target, kC);
 }
 
 void funE(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, float* valueA,
           SeRumbleState* seRumbleState, bool valueC) {
-    updateStick(actor, playerPuppet, valueA, 12.5f, -7.5f, 0.1f);
+    updateStick(actor, valueA, playerPuppet, 12.5f, -7.5f, 0.1f);
     sead::Vector2f stick = {0.0f, 0.0f};
     calcInputStick(&stick, actor, playerPuppet);
     al::rotateVectorDegreeY(al::getFrontPtr(actor), stick.x * -0.5f);
     al::normalize(al::getFrontPtr(actor));
 
-    /*fVar8 = al::getVelocity(actor)->x;
-    fVar10 = al::getVelocity(actor)->z;
-    fVar9 = al::getVelocity(actor)->y;
-    uVar5 = rs::isPuppetHoldActionButton(playerPuppet);
-    if ((uVar5 & 1) == 0) {
-      fVar10 = fVar10 * 0.95f;
-      fVar8 = fVar8 * 0.95f;
-    }
-    puVar6 = (uint *)al::getFront(actor);
-    uVar3 = *puVar6;
-    lVar7 = al::getFront(actor);
-    local_78.z = *(float *)(lVar7 + 8);
-    local_78.y = 0.0f;
-    local_78.x = uVar3;
-    al::tryNormalizeOrZero(&local_78);
-    fVar10 = fVar10 * fVar10 + fVar8 * fVar8 + 0.0f;
-    fVar8 = SQRT(fVar10);
-    if (NAN(fVar8)) {
-      fVar8 = sqrtf(fVar10);
-    }
-    local_88.y = fVar9 + fVar8 * local_78.y;
-    local_88.z = fVar8 * local_78.z + 0.0f;
-    local_88.x = fVar8 * local_78.x + 0.0f;
-    al::setVelocity(actor,&local_88);*/
     al::addVelocityY(actor, -2.0f);
     updateSeRumble(*valueA, seRumbleState, actor, playerPuppet, true);
     if (!funL(actor)) {
@@ -872,7 +844,6 @@ void funQ(Motorcycle* actor, f32 value) {
 
 Motorcycle::Motorcycle(const char* name) : al::LiveActor(name) {}
 
-// NON_MATCHING: Different stack offsets
 void Motorcycle::init(const al::ActorInitInfo& info) {
     al::tryGetArg(&mIsOnLight, info, "IsOnLight");
     al::initActorSuffix(this, info, mIsOnLight ? "Night" : nullptr);
@@ -999,7 +970,6 @@ void Motorcycle::attackSensor(al::HitSensor* self, al::HitSensor* other) {
     rs::sendMsgPushToMotorcycle(other, self);
 }
 
-// NON_MATCHING: Pretty bad shape
 bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
                             al::HitSensor* self) {
     if (rs::isMsgTargetMarkerPosition(message)) {
@@ -1735,7 +1705,8 @@ void Motorcycle::exeRideWait() {
         return;
 
     mPose.steerAngle = al::lerpValue(mPose.steerAngle, 0.0f, 0.025f);
-    alPadRumbleFunction::startPadRumbleDirectValue(this, 160.0f, 168.0f, 0.035f, 0.035f, 0.7f, 0.7f,
+    alPadRumbleFunction::startPadRumbleDirectValue(this, 160.0f, 168.0f, sead::Mathf::deg2rad(2.0f), sead::Mathf::deg2rad(2.0f),
+                                                   0.7f, 0.7f,
                                                    -1);
     updateOrientation(this, mPose.steerAngle);
     al::addVelocityToGravity(this, 2.0f);
@@ -1830,7 +1801,8 @@ void Motorcycle::exeRideWaitLand() {
         return;
 
     mPose.steerAngle = al::lerpValue(mPose.steerAngle, 0.0f, 0.025f);
-    alPadRumbleFunction::startPadRumbleDirectValue(this, 160.0f, 168.0f, 0.035f, 0.035f, 0.7f, 0.7f,
+    alPadRumbleFunction::startPadRumbleDirectValue(this, 160.0f, 168.0f, sead::Mathf::deg2rad(2.0f), sead::Mathf::deg2rad(2.0f),
+                                                   0.7f, 0.7f,
                                                    -1);
     updateOrientation(this, mPose.steerAngle);
     al::addVelocityToGravity(this, 2.0f);
@@ -1859,7 +1831,7 @@ void Motorcycle::exeRideRunStart() {
     if (checkCollision(this, mPrevTransDelta))
         return;
 
-    updateStick(this, mPlayerPuppet, &mPose.steerAngle, 40.0f, -15.0f, 0.3f);
+    updateStick(this, &mPose.steerAngle, mPlayerPuppet, 40.0f, -15.0f, 0.3f);
     updateOrientation(this, mPose.steerAngle);
     funPY(this, mPlayerPuppet, mAccelerationState, &mPose.steerAngle);
 
@@ -1897,7 +1869,7 @@ void Motorcycle::exeRideRun() {
         return;
     if (checkCollision(this, mPrevTransDelta))
         return;
-    updateStick(this, mPlayerPuppet, &mPose.steerAngle, 40.0f, -15.0f, 0.3f);
+    updateStick(this, &mPose.steerAngle, mPlayerPuppet, 40.0f, -15.0f, 0.3f);
     updateOrientation(this, mPose.steerAngle);
     funPY(this, mPlayerPuppet, mAccelerationState, &mPose.steerAngle);
 
@@ -1935,7 +1907,7 @@ void Motorcycle::exeRideRunCollide() {
     if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mColliderCameraTarget,
                            mTransCameraSubTarget))
         return;
-    updateStick(this, mPlayerPuppet, &mPose.steerAngle, 40.0f, -15.0f, 0.3f);
+    updateStick(this, &mPose.steerAngle, mPlayerPuppet, 40.0f, -15.0f, 0.3f);
     updateOrientation(this, mPose.steerAngle);
     funPY(this, mPlayerPuppet, mAccelerationState, &mPose.steerAngle);
 
@@ -1972,7 +1944,7 @@ void Motorcycle::exeRideRunFall() {
         return;
 
     mParams->groundNormal = {0.0f, 1.0f, 0.0f};
-    updateStick(this, mPlayerPuppet, &mPose.steerAngle, 12.5f, 7.5f, 0.1f);
+    updateStick(this, &mPose.steerAngle, mPlayerPuppet, 12.5f, 7.5f, 0.1f);
 
     applyAirPhysics(al::isInWater(this) ? 1.0f : 2.0f, this, mPlayerPuppet);
     updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, true);
@@ -1995,7 +1967,7 @@ void Motorcycle::exeRideRunWheelie() {
         return;
     mParams->groundNormal = {0.0f, 1.0f, 0.0f};
 
-    updateStick(this, mPlayerPuppet, &mPose.steerAngle, 12.5f, -7.0f, 0.1f);
+    updateStick(this, &mPose.steerAngle, mPlayerPuppet, 12.5f, -7.0f, 0.1f);
 
     applyAirPhysics(al::calcNerveEaseInValue(this, 30, 0.0f, al::isInWater(this) ? 1.0f : 2.0f),
                     this, mPlayerPuppet);
@@ -2023,7 +1995,7 @@ void Motorcycle::exeRideRunLand() {
         return;
 
     if (!checkCollision(this, mPrevTransDelta)) {
-        updateStick(this, mPlayerPuppet, &mPose.steerAngle, 40.0f, -15.0f, 0.3f);
+        updateStick(this, &mPose.steerAngle, mPlayerPuppet, 40.0f, -15.0f, 0.3f);
         updateOrientation(this, mPose.steerAngle);
         funPY(this, mPlayerPuppet, mAccelerationState, &mPose.steerAngle);
 
@@ -2057,7 +2029,7 @@ void Motorcycle::exeRideRunJump() {
                            mTransCameraSubTarget))
         return;
 
-    updateStick(this, mPlayerPuppet, &mPose.steerAngle, 40.0f, -15.0f, 0.3f);
+    updateStick(this, &mPose.steerAngle, mPlayerPuppet, 40.0f, -15.0f, 0.3f);
     updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, 1);
     updateOrientation(this, mPose.steerAngle);
     funV(this);

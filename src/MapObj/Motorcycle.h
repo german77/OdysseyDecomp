@@ -28,9 +28,12 @@ class MotorcycleColliderCameraTarget;
 
 struct MotorcycleParams {
     bool isInBack(const sead::Vector3f pos) {
-        for (s32 i = 0; i < backContactPoints.size(); i++)
-            if (pos.dot(-*backContactPoints[i]) < 0.0f)
+        for (s32 i = 0; i < backContactPoints.size(); i++) {
+            const sead::Vector3f& contact = *backContactPoints[i];
+            const f32 value = -pos.y * contact.y - pos.x * contact.x - pos.z * contact.z;
+            if (value < 0.0f)
                 return true;
+        }
         return false;
     }
 
