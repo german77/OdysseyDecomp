@@ -160,8 +160,8 @@ private:
     MotorcycleParams* mParams = nullptr;
     MotorcyclePlayerAnimator* mPlayerAnimator = nullptr;
     AccelerationState* mAccelerationState = nullptr;  // 130
-    f32 steerAngle = 0.0f;
-    f32 handleAngle = 0.0f;
+    f32 mSteerAngle = 0.0f;
+    f32 mHandleAngle = 0.0f;
     f32 mLeanAngle = 0.0f;
     f32 mJumpAngle = 0.0f;
     SeRumbleState* mSeRumbleState = nullptr;  // 148
@@ -194,7 +194,7 @@ private:
     s32 _23c = -1;
     s32 _240 = 3;
     bool mIsOnLight = false;
-    bool _245 = false;
+    bool mIsAccelerating = false;
     bool mIsStickWorldPose = false;
     bool _247 = false;
     bool _248 = false;
