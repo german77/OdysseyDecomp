@@ -47,7 +47,7 @@ struct MotorcycleParams {
     bool bool_4 = false;
     bool bool_5 = false;
     bool bool_6 = false;
-    sead::Vector3f groundNormalAvg = {0.0f, 0.0f, 0.0f};          // check
+    sead::Vector3f groundNormalAvg = {0.0f, 0.0f, 0.0f};         // check
     sead::FixedObjArray<sead::Vector3f, 64> frontContactPoints;  // check
     sead::FixedObjArray<sead::Vector3f, 64> backContactPoints;   // check
     s32 framesInAir = 0;
@@ -57,19 +57,21 @@ struct MotorcycleParams {
 
 static_assert(sizeof(MotorcycleParams) == 0xc78);
 
-struct MotorcycleAngles{
+struct MotorcyclePose {
     f32 steerAngle = 0.0f;
     f32 handleAngle = 0.0f;
     f32 leanAngle = 0.0f;
     f32 jumpAngle = 0.0f;
 };
 
+static_assert(sizeof(MotorcyclePose) == 0x10);
+
 struct ParkingParams {
     al::LiveActor* actor = nullptr;
-    MotorcycleAngles angles;
+    MotorcyclePose pose;
     sead::Quatf quatA = sead::Quatf::unit;
     sead::Quatf quatB = sead::Quatf::unit;
-    sead::Vector3f vectorA = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f mCameraSubTargetPos = {0.0f, 0.0f, 0.0f};
     sead::Vector3f vectorB = {0.0f, 0.0f, 0.0f};
 };
 
@@ -157,54 +159,57 @@ public:
     IUsePlayerPuppet** getPuppy() { return &mPlayerPuppet; }
 
 private:
-    bool isRideRun_();
+    bool isAnyRideRun_();
 
     IUsePlayerPuppet* mPlayerPuppet = nullptr;
     PlayerCollider* mPlayerCollider = nullptr;
     MotorcycleParams* mParams = nullptr;
     MotorcyclePlayerAnimator* mPlayerAnimator = nullptr;
-    AccelerationState* mAccelerationState = nullptr;  // 130
-    MotorcycleAngles mAngles;
-    SeRumbleState* mSeRumbleState = nullptr;  // 148
+    AccelerationState* mAccelerationState = nullptr;
+    MotorcyclePose mPose;
+    SeRumbleState* mSeRumbleState = nullptr;
     ParkingParams* mParkingParams = nullptr;
     BindKeepDemoInfo* mBindKeepDemoInfo = nullptr;
     al::CollisionPartsConnector* mCollisionPartsConnector = nullptr;
     MotorcycleColliderCameraTarget* mColliderCameraTarget = nullptr;
+
     al::TransCameraSubTarget* mTransCameraSubTarget = nullptr;
     al::CameraSubTargetTurnParam* mCameraSubTargetTurnParam = nullptr;
-    sead::Vector3f vectorA = {0.0f, 0.0f, 0.0f};
-    f32 floatD = 0.0f;
+    sead::Vector3f mCameraSubTargetPos = {0.0f, 0.0f, 0.0f};
+    f32 mCameraSubTargetAngle = 0.0f;
 
     sead::Vector3f* mCoursePoints = nullptr;
-
     s32 mCoursePointSize = 0;
-    s32 _19c = 0;
-    sead::Quatf mQuat = sead::Quatf::unit;
-    sead::Vector3f mTrans = {0.0f, 0.0f, 0.0f};
-    sead::Quatf mStartQuat = sead::Quatf::unit;
-    sead::Vector3f mStartTrans = {0.0f, 0.0f, 0.0f};
-    sead::Vector3f vector2 = {0.0f, 0.0f, 0.0f};
-    sead::Vector3f vector5 = {0.0f, 0.0f, 0.0f};
-    sead::Vector3f vector4 = {0.0f, 0.0f, 0.0f};
+    s32 mCoursePointFollowTimer = 0;
 
-    f32 _23css = 0;
-    f32 _23cxs = 0;
+    sead::Quatf mBaseQuat = sead::Quatf::unit;
+    sead::Vector3f mBaseTrans = {0.0f, 0.0f, 0.0f};
+    sead::Quatf mPuppetQuat = sead::Quatf::unit;
+    sead::Vector3f mPuppetTrans = {0.0f, 0.0f, 0.0f};
+
+    sead::Vector3f mExternalPushVelocity = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f mSteerShiftVelocity = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f mPrevTransDelta = {0.0f, 0.0f, 0.0f};
+
+    f32 mPuppetRotZLeft = 0;
+    f32 mPuppetRotZRight = 0;
     sead::Matrix34f mWaterSurfaceMtx = sead::Matrix34f::ident;
-    int _234 = 0;
+    int mHighSpeedCameraTimer = 0;
     s32 valA = -1;
     s32 _23c = -1;
-    s32 _240 = 3;
+    s32 mItemSpawnCount = 3;
+
     bool mIsOnLight = false;
     bool mIsAccelerating = false;
     bool mIsStickWorldPose = false;
-    bool _247 = false;
-    bool _248 = false;
-    bool _249 = false;
+    bool mIsOnJump = false;
+    bool mIsInWater = false;
+    bool mIsExecutingBindDemo = false;
 };
 
 static_assert(sizeof(Motorcycle) == 0x250);
 
-const sead::Vector3f colliderTrans = {0.0f, 0.0f, -85.0f};
+const sead::Vector3f sColliderTrans = {0.0f, 0.0f, -85.0f};
 
 class MotorcycleColliderCameraTarget : public PlayerColliderCameraTarget {
 public:
@@ -212,6 +217,6 @@ public:
         : PlayerColliderCameraTarget(actor, actor) {}
 
     void calcTrans(sead::Vector3f* offset) const override {
-        al::calcTransLocalOffset(offset, getActor(), colliderTrans);
+        al::calcTransLocalOffset(offset, getActor(), sColliderTrans);
     }
 };
