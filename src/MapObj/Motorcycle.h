@@ -57,12 +57,16 @@ struct MotorcycleParams {
 
 static_assert(sizeof(MotorcycleParams) == 0xc78);
 
-struct ParkingParams {
-    al::LiveActor* actor = nullptr;
+struct MotorcycleAngles{
     f32 steerAngle = 0.0f;
     f32 handleAngle = 0.0f;
     f32 leanAngle = 0.0f;
     f32 jumpAngle = 0.0f;
+};
+
+struct ParkingParams {
+    al::LiveActor* actor = nullptr;
+    MotorcycleAngles angles;
     sead::Quatf quatA = sead::Quatf::unit;
     sead::Quatf quatB = sead::Quatf::unit;
     sead::Vector3f vectorA = {0.0f, 0.0f, 0.0f};
@@ -160,10 +164,7 @@ private:
     MotorcycleParams* mParams = nullptr;
     MotorcyclePlayerAnimator* mPlayerAnimator = nullptr;
     AccelerationState* mAccelerationState = nullptr;  // 130
-    f32 mSteerAngle = 0.0f;
-    f32 mHandleAngle = 0.0f;
-    f32 mLeanAngle = 0.0f;
-    f32 mJumpAngle = 0.0f;
+    MotorcycleAngles mAngles;
     SeRumbleState* mSeRumbleState = nullptr;  // 148
     ParkingParams* mParkingParams = nullptr;
     BindKeepDemoInfo* mBindKeepDemoInfo = nullptr;
