@@ -45,7 +45,7 @@ struct MotorcycleParams {
     }
 
     bool isOnGround = false;
-    bool isOnJump = false;
+    char isOnJump = false;
     bool bool_3 = false;
     bool bool_4 = false;
     bool bool_5 = false;

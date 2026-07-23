@@ -327,7 +327,7 @@ void calcInputStick(sead::Vector2f* outStick, Motorcycle* actor, IUsePlayerPuppe
     }
 }
 
-void applyAirPhysics(f32 a, Motorcycle* actor, IUsePlayerPuppet* playerPuppet) {
+void applyAirPhysics(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, f32 a) {
     sead::Vector2f stick = {0.0f, 0.0f};
     calcInputStick(&stick, actor, playerPuppet);
 
@@ -612,27 +612,28 @@ bool tryParking(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, ParkingParams
     if (!(papanada.length() > 100.0f))
         return false;
 
-    if (!rs::sendMsgMotorcycleCollideParkingLot(groundSensor,
-                                                al::getHitSensor(actor, "PlayerBody"))) {
-        return false;
+    if (rs::sendMsgMotorcycleCollideParkingLot(groundSensor,
+                                               al::getHitSensor(actor, "PlayerBody"))) {
+        params->actor = al::getSensorHost(groundSensor);
+        params->pose = *pose;
+
+        al::calcQuat(&params->quatA, actor);
+        params->quatB.set(quat);
+        params->mCameraSubTargetPos.set(al::getTrans(actor));
+        params->vectorB.set(rotated);
+
+        al::offCollide(actor);
+        al::setVelocityZero(actor);
+        al::setNerve(actor, &RideParkingSnap);
+        return true;
     }
 
-    params->actor = al::getSensorHost(groundSensor);
-    params->pose = *pose;
-
-    al::calcQuat(&params->quatA, actor);
-    params->quatB.set(quat);
-    params->mCameraSubTargetPos.set(al::getTrans(actor));
-    params->vectorB.set(rotated);
-
-    al::offCollide(actor);
-    al::setVelocityZero(actor);
-    al::setNerve(actor, &RideParkingSnap);
-    return true;
+    return false;
 }
 
 // NON_MATCHING: exact 0x2f4 size/frame/save set, but input-save and rumble-expression
-// scheduling still differs; next try explicit pad-value intermediates and SafeString lifetime shaping.
+// scheduling still differs; next try explicit pad-value intermediates and SafeString lifetime
+// shaping.
 void updateSeRumble(f32 valueA, SeRumbleState* valueB, Motorcycle* actor,
                     IUsePlayerPuppet* playerPuppet, bool isaval) {
     const bool isHold = rs::isPuppetHoldActionButton(playerPuppet);
@@ -692,8 +693,7 @@ void updateSeRumble(f32 valueA, SeRumbleState* valueB, Motorcycle* actor,
     const f32 positiveScale = valueA > 0.0f ? 0.01f : 0.0f;
 
     alPadRumbleFunction::startPadRumbleDirectValue(
-        actor, frequency, highRumble, lowRumble, lowRumble,
-        (0.7f - negativeScale * valueA) * 0.7f,
+        actor, frequency, highRumble, lowRumble, lowRumble, (0.7f - negativeScale * valueA) * 0.7f,
         (positiveScale * valueA + 0.7f) * 0.7f, -1);
 
     const f32 moveVolume = rs::isPuppetHoldActionButton(playerPuppet) ? 9.0f : 0.0f;
@@ -970,6 +970,13 @@ void Motorcycle::attackSensor(al::HitSensor* self, al::HitSensor* other) {
     rs::sendMsgPushToMotorcycle(other, self);
 }
 
+static inline void reset(Motorcycle* actor) {
+    al::setVelocityZero(actor);
+    al::invalidateHitSensors(actor);
+    al::hideModelIfShow(actor);
+    al::setNerve(actor, &NrvMotorcycle.Reset);
+}
+
 bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
                             al::HitSensor* self) {
     if (rs::isMsgTargetMarkerPosition(message)) {
@@ -1010,10 +1017,7 @@ bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
             rs::endBindAndPuppetNull(&mPlayerPuppet);
             resetState(this, mPlayerAnimator, mColliderCameraTarget, mTransCameraSubTarget);
         }
-        al::setVelocityZero(this);
-        al::invalidateHitSensors(this);
-        al::hideModelIfShow(this);
-        al::setNerve(this, &NrvMotorcycle.Reset);
+        reset(this);
         al::setNerve(this, &NrvMotorcycle.ResetNoReaction);
         return true;
     }
@@ -1075,10 +1079,7 @@ bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
         return true;
 
     if (rs::isMsgFireSwitchFire(message)) {
-        al::setVelocityZero(this);
-        al::invalidateHitSensors(this);
-        al::hideModelIfShow(this);
-        al::setNerve(this, &NrvMotorcycle.Reset);
+        reset(this);
         return true;
     }
 
@@ -1404,10 +1405,7 @@ void Motorcycle::movement() {
                                                    al::getTrans(this), sead::Vector3f::ey, 121.0f);
 
         if (!foundFlat && !foundWater) {
-            al::setVelocityZero(this);
-            al::invalidateHitSensors(this);
-            al::hideModelIfShow(this);
-            al::setNerve(this, &NrvMotorcycle.Reset);
+            reset(this);
         } else {
             al::updateMaterialCodePuddle(this, true);
             al::updateMaterialCodeWater(this, false);
@@ -1509,12 +1507,12 @@ void Motorcycle::exeWait() {
             return;
         }
     }
-    if (0 < valA && --valA == 0) {
-        al::setVelocityZero(this);
-        al::invalidateHitSensors(this);
-        al::hideModelIfShow(this);
-        al::setNerve(this, &NrvMotorcycle.Reset);
-    }
+    if (valA > 0 && valA-- == 1)
+        reset(this);
+}
+
+static inline bool isCollidedGround(Motorcycle* actor) {
+    return rs::isCollidedGround(actor);
 }
 
 void Motorcycle::exeCreep() {
@@ -1531,16 +1529,13 @@ void Motorcycle::exeCreep() {
     al::scaleVelocity(this, 0.9f);
     al::limitVelocityDir(this, al::getGravity(this), 360.0f);
 
-    if (!rs::isCollidedGround(this) && al::isGreaterEqualStep(this, 2)) {
+    if (!isCollidedGround(this) && al::isGreaterEqualStep(this, 2)) {
         al::setNerve(this, &NrvMotorcycle.Fall);
         return;
     }
 
     if (al::isInDeathArea(this) || al::isGreaterEqualStep(this, 360)) {
-        al::setVelocityZero(this);
-        al::invalidateHitSensors(this);
-        al::hideModelIfShow(this);
-        al::setNerve(this, &NrvMotorcycle.Reset);
+        reset(this);
         return;
     }
 
@@ -1560,10 +1555,7 @@ void Motorcycle::exeFall() {
         al::limitVelocityDir(this, verticalUp, 35.0f);
 
     if (al::isInDeathArea(this)) {
-        al::setVelocityZero(this);
-        al::invalidateHitSensors(this);
-        al::hideModelIfShow(this);
-        al::setNerve(this, &NrvMotorcycle.Reset);
+        reset(this);
         return;
     }
 
@@ -1571,10 +1563,7 @@ void Motorcycle::exeFall() {
         return;
 
     if (al::isGreaterEqualStep(this, 360)) {
-        al::setVelocityZero(this);
-        al::invalidateHitSensors(this);
-        al::hideModelIfShow(this);
-        al::setNerve(this, &NrvMotorcycle.Reset);
+        reset(this);
         return;
     }
 
@@ -1597,10 +1586,7 @@ void Motorcycle::exeJump() {
         al::limitVelocityDir(this, verticalUp, 35.0f);
 
     if (al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}) > 0.0f || al::isInDeathArea(this)) {
-        al::setVelocityZero(this);
-        al::invalidateHitSensors(this);
-        al::hideModelIfShow(this);
-        al::setNerve(this, &NrvMotorcycle.Reset);
+        reset(this);
         return;
     }
 
@@ -1705,9 +1691,8 @@ void Motorcycle::exeRideWait() {
         return;
 
     mPose.steerAngle = al::lerpValue(mPose.steerAngle, 0.0f, 0.025f);
-    alPadRumbleFunction::startPadRumbleDirectValue(this, 160.0f, 168.0f, sead::Mathf::deg2rad(2.0f), sead::Mathf::deg2rad(2.0f),
-                                                   0.7f, 0.7f,
-                                                   -1);
+    alPadRumbleFunction::startPadRumbleDirectValue(this, 160.0f, 168.0f, sead::Mathf::deg2rad(2.0f),
+                                                   sead::Mathf::deg2rad(2.0f), 0.7f, 0.7f, -1);
     updateOrientation(this, mPose.steerAngle);
     al::addVelocityToGravity(this, 2.0f);
     al::scaleVelocity(this, 0.95f);
@@ -1728,8 +1713,12 @@ void Motorcycle::exeRideWaitJump() {
     if (al::isFirstStep(this)) {
         mParams->groundNormal = {0.0f, 1.0f, 0.0f};
 
-        mIsOnJump = mParams->isOnJump;
-        al::setVelocity(this, 0.0f, !mIsOnJump ? 50.0f : 18.5f, 0.0f);
+        // TODO: Check mParams->isOnJump
+        bool isOnJump = mParams->isOnJump == 0;
+        f32 velocity = isOnJump ? 18.5f : 50.0f;
+        mIsOnJump = isOnJump;
+
+        al::setVelocity(this, 0.0f, velocity, 0.0f);
         al::startHitReaction(this, "ジャンプ開始");
         mPlayerAnimator->startBindRideJump();
     }
@@ -1752,12 +1741,14 @@ void Motorcycle::exeRideWaitJump() {
 
         sead::Vector3f diff = front2 - front;
         al::normalize(&diff);
-        al::setFront(this, diff);
+        al::setFront(this, front2);
 
         f32 fVar10 = getJointDistance(this, "AllRoot", "JointRoot") *
-                     sead::Mathf::sin(sead::Mathf::deg2rad(sead::Mathf::abs(angle * 0.5f)));
-        mSteerShiftVelocity.x = diff.x * fVar10 * fVar10;
-        mSteerShiftVelocity.z = diff.z * fVar10 * fVar10;
+                     sead::Mathf::sin(sead::Mathf::deg2rad(sead::Mathf::abs(angle * 0.5f))) * 2;
+        f32 x = diff.x * fVar10;
+        f32 z = diff.z * fVar10;
+        mSteerShiftVelocity.x = x;
+        mSteerShiftVelocity.z = z;
     }
 
     al::addVelocityToDirection(
@@ -1801,9 +1792,8 @@ void Motorcycle::exeRideWaitLand() {
         return;
 
     mPose.steerAngle = al::lerpValue(mPose.steerAngle, 0.0f, 0.025f);
-    alPadRumbleFunction::startPadRumbleDirectValue(this, 160.0f, 168.0f, sead::Mathf::deg2rad(2.0f), sead::Mathf::deg2rad(2.0f),
-                                                   0.7f, 0.7f,
-                                                   -1);
+    alPadRumbleFunction::startPadRumbleDirectValue(this, 160.0f, 168.0f, sead::Mathf::deg2rad(2.0f),
+                                                   sead::Mathf::deg2rad(2.0f), 0.7f, 0.7f, -1);
     updateOrientation(this, mPose.steerAngle);
     al::addVelocityToGravity(this, 2.0f);
     al::scaleVelocity(this, 0.95f);
@@ -1944,9 +1934,9 @@ void Motorcycle::exeRideRunFall() {
         return;
 
     mParams->groundNormal = {0.0f, 1.0f, 0.0f};
-    updateStick(this, &mPose.steerAngle, mPlayerPuppet, 12.5f, 7.5f, 0.1f);
+    updateStick(this, &mPose.steerAngle, mPlayerPuppet, 12.5f, -7.5f, 0.1f);
 
-    applyAirPhysics(al::isInWater(this) ? 1.0f : 2.0f, this, mPlayerPuppet);
+    applyAirPhysics(this, mPlayerPuppet, al::isInWater(this) ? 1.0f : 2.0f);
     updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, true);
     if (!funL(this) && (!rs::isCollidedWallVelocity(this, this) || !checkDashCollision(this))) {
         updateAirOrientation(this);
@@ -1967,10 +1957,10 @@ void Motorcycle::exeRideRunWheelie() {
         return;
     mParams->groundNormal = {0.0f, 1.0f, 0.0f};
 
-    updateStick(this, &mPose.steerAngle, mPlayerPuppet, 12.5f, -7.0f, 0.1f);
+    updateStick(this, &mPose.steerAngle, mPlayerPuppet, 12.5f, -7.5f, 0.1f);
 
-    applyAirPhysics(al::calcNerveEaseInValue(this, 30, 0.0f, al::isInWater(this) ? 1.0f : 2.0f),
-                    this, mPlayerPuppet);
+    applyAirPhysics(this, mPlayerPuppet,
+                    al::calcNerveEaseInValue(this, 30, 0.0f, al::isInWater(this) ? 1.0f : 2.0f));
     updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, true);
     if (!funL(this) && (!rs::isCollidedWallVelocity(this, this) || !checkDashCollision(this))) {
         updateAirOrientation(this);
@@ -2020,8 +2010,18 @@ void Motorcycle::exeRideRunJump() {
     if (al::isFirstStep(this)) {
         al::tryStartActionIfNotPlaying(this, "Run");
         al::startHitReaction(this, "ジャンプ開始");
-        mIsOnJump = mParams->isOnJump;
-        al::setVelocity(this, 0.0f, !mIsOnJump ? 55.0f : 21.5f, 0.0f);
+
+        // TODO: Check mParams->isOnJump
+        f32 velocity = 55.0f;
+        if (!mParams->isOnJump) {
+            velocity = 21.5f;
+            mIsOnJump = true;
+        } else {
+            al::requestStopCameraVerticalAbsorb(this);
+            mIsOnJump = false;
+        }
+
+        al::setVelocityY(this, velocity);
         mPlayerAnimator->startBindRideJump();
     }
     mParams->groundNormal = {0.0f, 1.0f, 0.0f};
@@ -2035,38 +2035,48 @@ void Motorcycle::exeRideRunJump() {
     funV(this);
     funPY(this, mPlayerPuppet, mAccelerationState, &mPose.steerAngle);
     mPose.jumpAngle = al::lerpValue(0.0f, -20.0f, al::calcNerveRate(this, 4));
+
     if (!mIsOnJump || !rs::isPuppetHoldJumpButton(mPlayerPuppet) ||
         al::isGreaterEqualStep(this, 6)) {
         mIsOnJump = 0;
         sead::Vector3f front = al::getFront(this);
         al::verticalizeVec(&front, verticalUp, front);
         al::tryNormalizeOrZero(&front);
-        f32 fVar14 = al::lerpValue(
-            0.0f, 1.8, al::easeIn(al::normalize(mAccelerationState->accelRate, 0.0f, 5.0f)));
-        al::addVelocity(this, front * fVar14 + (al::isInWater(this) ? 1.0f : 2.0f) *
-                                                   sead::Vector3f(0.0f, -1.0f, 0.0f));
+        al::addVelocity(
+            this, front * al::lerpValue(0.0f, 1.8f,
+                                        al::easeIn(al::normalize(mAccelerationState->accelRate,
+                                                                 0.0f, 5.0f))) +
+                      (al::isInWater(this) ? 1.0f : 2.0f) * sead::Vector3f(0.0f, -1.0f, 0.0f));
     }
+
     al::scaleVelocityExceptDirection(this, verticalUp, 0.95f);
     if (0.0f < al::getVelocity(this).dot({0.0f, -1.0f, 0.0f}))
         al::limitVelocityDir(this, verticalUp, 35.0f);
-    if (!funL(this)) {
-        if (!rs::isOnGround(this, this)) {
-            if (al::isInWater(this) && !mIsInWater)
-                al::startHitReaction(this, "着水");
-        } else if (!al::isVelocitySlowH(this, 3.0f) || 0.01f <= mAccelerationState->accelRate) {
-            if (funR(this, mPlayerPuppet)) {
-                al::startAction(this, "RunLand");
-                return;
-            }
-            funT(this, verticalUp, -rs::getCollidedGroundNormal(this));
-            al::limitVelocityDirSign(this, -rs::getCollidedGroundNormal(this), 5.0f);
-            al::setNerve(this, &NrvMotorcycle.RideRunLand);
-        } else {
-            if (funF(this, mPlayerPuppet))
-                return;
-            al::setNerve(this, &NrvMotorcycle.RideWaitLand);
-        }
+
+    if (funL(this))
+        return;
+
+    if (!rs::isOnGround(this, this)) {
+        if (al::isInWater(this) && !mIsInWater)
+            al::startHitReaction(this, "着水");
+        return;
     }
+
+    if (al::isVelocitySlowH(this, 3.0f) && 0.01f > mAccelerationState->accelRate) {
+        if (!funF(this, mPlayerPuppet))
+            al::setNerve(this, &NrvMotorcycle.RideWaitLand);
+        return;
+    }
+
+    if (funR(this, mPlayerPuppet)) {
+        al::startAction(this, "RunLand");
+        return;
+    }
+
+    funT(this, verticalUp, -rs::getCollidedGroundNormal(this));
+    al::limitVelocityDirSign(this, -rs::getCollidedGroundNormal(this), 5.0f);
+    al::setNerve(this, &NrvMotorcycle.RideRunLand);
+    return;
 }
 
 void Motorcycle::endRideRunJump() {
