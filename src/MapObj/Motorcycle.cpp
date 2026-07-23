@@ -95,6 +95,7 @@ const sead::Vector3f forceField2 = {-25.0f, 50.0f, -150.0f};
 const sead::Vector3f forceField3 = {25.0f, 50.0f, -150.0f};
 const sead::Vector3f forceField4 = {0.0f, 50.0f, -80.0f};
 const sead::Vector3f verticalUp = {0.0f, -1.0f, 0.0f};
+const sead::Vector3f itemSpawnOffset = {0.0f, 150.0f, -90.0f};
 
 bool checkGroundStatus(Motorcycle* actor) {
     if (!rs::isOnGround(actor, actor))
@@ -539,29 +540,32 @@ void startGetOff(Motorcycle* actor, IUsePlayerPuppet** playerPuppet, s32* valueA
     rs::showPuppetShadow(*playerPuppet);
     rs::validatePuppetReceivePush(*playerPuppet);
 
+    bool actorIsNull = actor == nullptr;  // Hack early load for getViewMtxPtr
     MotorcycleParams* params = actor->getParams();
-    if (params->backContactPoints.size() > 0 && params->frontContactPoints.size() > 0) {
+    if (params->frontContactPoints.size() > 0 && params->backContactPoints.size() > 0) {
         sead::Vector3f offset = {0.0f, 0.0f, 0.0f};
         al::calcTransLocalOffset(&offset, actor, forceField4);
         rs::resetPuppetPosition(*playerPuppet, offset);
     }
 
-    sead::Vector2f stick = rs::getPuppetMoveStick(*playerPuppet);
-    rs::getPuppetMoveStick(*playerPuppet);
-    stick.y = -stick.y;
+    sead::Vector2f stick = {rs::getPuppetMoveStick(*playerPuppet).x,
+                            -rs::getPuppetMoveStick(*playerPuppet).y};
 
-    sead::Vector3f keko = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f front = {0.0f, 0.0f, 0.0f};
+    sead::Vector3f jumpDir;
     if (al::isNearZero(stick, 0.2f) ||
-        !al::calcDirViewInput(&keko, stick, verticalUp, al::getViewMtxPtr(actor, 0))) {
-        al::verticalizeVec(&keko, -supip, al::getFront(actor));
-        al::normalize(&keko);
-        keko = -keko;
+        !al::calcDirViewInput(&front, stick, verticalUp, al::getViewMtxPtr(actor, 0))) {
+        al::verticalizeVec(&front, -supip, al::getFront(actor));
+        al::normalize(&front);
+        jumpDir.set(-front);
+    } else {
+        jumpDir.set(front);
     }
 
-    rs::setPuppetFront(*playerPuppet, keko);
+    rs::setPuppetFront(*playerPuppet, front);
     rs::setPuppetUp(*playerPuppet, -supip);
 
-    rs::endBindJumpAndPuppetNull(playerPuppet, sead::Vector3f::ey * 20.0f + keko * 9.0f, 3);
+    rs::endBindJumpAndPuppetNull(playerPuppet, sead::Vector3f::ey * 20.0f + jumpDir * 9.0f, 3);
 
     *valueA = 5;
     resetState(actor, valueB, valueC, param_6);
@@ -569,10 +573,8 @@ void startGetOff(Motorcycle* actor, IUsePlayerPuppet** playerPuppet, s32* valueA
 
 bool tryParking(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, ParkingParams* params,
                 MotorcyclePose* pose) {
-    if (rs::isPuppetHoldActionButton(playerPuppet) || al::calcSpeedH(actor) > 8.0f)
-        return false;
-
-    if (!rs::isCollidedGround(actor))
+    if (rs::isPuppetHoldActionButton(playerPuppet) || al::calcSpeedH(actor) > 8.0f ||
+        !rs::isCollidedGround(actor))
         return false;
 
     al::HitSensor* groundSensor = rs::tryGetCollidedGroundSensor(actor);
@@ -581,51 +583,49 @@ bool tryParking(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, ParkingParams
 
     sead::Vector3f backDir = {0.0f, 0.0f, 0.0f};
     al::calcBackDir(&backDir, al::getSensorHost(groundSensor));
+    if (!(sead::Mathf::abs(al::getFront(actor).dot(backDir)) <
+          sead::Mathf::cos(sead::Mathf::deg2rad(25.0f)))) {
+        al::parallelizeVec(&backDir, backDir, al::getFront(actor));
+        al::normalize(&backDir);
 
-    if (sead::Mathf::abs(al::getFront(actor).dot(backDir)) <
-        sead::Mathf::cos(sead::Mathf::deg2rad(25.0f)))
-        return false;
+        sead::Quatf quat = sead::Quatf::unit;
+        sead::Vector3f up = {0.0f, 0.0f, 0.0f};
+        sead::Vector3f side = {0.0f, 0.0f, 0.0f};
+        al::calcUpDir(&up, al::getSensorHost(groundSensor));
+        al::makeQuatFrontUp(&quat, backDir, up);
+        al::calcQuatSide(&side, quat);
 
-    al::parallelizeVec(&backDir, backDir, al::getFront(actor));
-    al::normalize(&backDir);
+        sead::Vector3f rotated = {0.0f, 30.0f, 75.0f};
+        rotated.rotate(quat);
+        rotated += al::getActorTrans(groundSensor);
 
-    sead::Quatf quat = sead::Quatf::unit;
-    sead::Vector3f up = {0.0f, 0.0f, 0.0f};
-    sead::Vector3f side = {0.0f, 0.0f, 0.0f};
-    al::calcUpDir(&up, al::getSensorHost(groundSensor));
-    al::makeQuatFrontUp(&quat, backDir, up);
-    al::calcQuatSide(&side, quat);
+        sead::Vector3f papalel = {0.0f, 0.0f, 0.0f};
+        al::parallelizeVec(&papalel, side, al::getTrans(actor) - rotated);
 
-    sead::Vector3f rotated = {0.0f, 30.0f, 75.0f};
-    rotated.rotate(quat);
-    rotated += al::getActorTrans(groundSensor);
+        if (papalel.length() > 100.0f)
+            return false;
 
-    sead::Vector3f papalel = {0.0f, 0.0f, 0.0f};
-    al::parallelizeVec(&papalel, side, al::getTrans(actor) - rotated);
+        sead::Vector3f papanada = {0.0f, 0.0f, 0.0f};
+        al::parallelizeVec(&papanada, -backDir, al::getTrans(actor) - rotated);
 
-    if (!(papalel.length() > 100.0f))
-        return false;
+        if (papanada.length() > 100.0f)
+            return false;
 
-    sead::Vector3f papanada = {0.0f, 0.0f, 0.0f};
-    al::parallelizeVec(&papanada, -backDir, al::getTrans(actor) - rotated);
+        if (rs::sendMsgMotorcycleCollideParkingLot(groundSensor,
+                                                   al::getHitSensor(actor, "PlayerBody"))) {
+            params->actor = al::getSensorHost(groundSensor);
+            params->pose = *pose;
 
-    if (!(papanada.length() > 100.0f))
-        return false;
+            al::calcQuat(&params->quatA, actor);
+            params->quatB.set(quat);
+            params->mCameraSubTargetPos.set(al::getTrans(actor));
+            params->vectorB.set(rotated);
 
-    if (rs::sendMsgMotorcycleCollideParkingLot(groundSensor,
-                                               al::getHitSensor(actor, "PlayerBody"))) {
-        params->actor = al::getSensorHost(groundSensor);
-        params->pose = *pose;
-
-        al::calcQuat(&params->quatA, actor);
-        params->quatB.set(quat);
-        params->mCameraSubTargetPos.set(al::getTrans(actor));
-        params->vectorB.set(rotated);
-
-        al::offCollide(actor);
-        al::setVelocityZero(actor);
-        al::setNerve(actor, &RideParkingSnap);
-        return true;
+            al::offCollide(actor);
+            al::setVelocityZero(actor);
+            al::setNerve(actor, &RideParkingSnap);
+            return true;
+        }
     }
 
     return false;
@@ -1009,7 +1009,8 @@ bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
             f32 radius = sead::Mathf::max(al::getSensorRadius(other), al::getSensorRadius(self)) -
                          sensorDistance.length();
             if (radius > 0.0f && al::tryNormalizeOrZero(&sensorDistance)) {
-                mExternalPushVelocity += sead::Mathf::min(radius, 10.0f) * sensorDistance;
+                f32 pushRate = sead::Mathf::min(radius, 10.0f);
+                mExternalPushVelocity += pushRate * sensorDistance;
                 al::limitLength(&mExternalPushVelocity, mExternalPushVelocity, radius);
 
                 return true;
@@ -1102,7 +1103,7 @@ bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
                     return false;
 
                 if (mItemSpawnCount > 0) {
-                    sead::Vector3f itemPos = {0.0f, 150.0f, -90.0f};
+                    sead::Vector3f itemPos = itemSpawnOffset;
                     al::multVecPose(&itemPos, this, itemPos);
                     sead::Quatf itemQuat = sead::Quatf::unit;
                     al::calcQuat(&itemQuat, this);
@@ -1123,30 +1124,37 @@ bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
     if (al::isMsgBindStart(message) &&
         (al::isNerve(this, &NrvMotorcycle.Wait) || al::isNerve(this, &NrvMotorcycle.Creep) ||
          al::isNerve(this, &NrvMotorcycle.Reaction))) {
-        if (!rs::isPlayerOnGround(this)) {
-            if (al::getActorVelocity(other).y <= -6.0f) {
-                sead::Vector3f velocity = al::getActorVelocity(other);
-                if (!al::tryNormalizeOrZero(&velocity) || velocity.y > 0.0f) {
-                    if (_23c > 0)
-                        _23c = 5;
-                } else if (_23c < 1) {
-                    sead::Vector3f dits = al::getActorTrans(other) - al::getTrans(this);
-                    al::parallelizeVec(&dits, al::getFront(this), dits);
-                    if (al::getFront(this).dot(dits) > 0.0f) {
-                        if (!(dits.length() > 50.0f ||
-                              al::calcDistanceV(al::getGravity(this), other, self) > 100.0f))
-                            return true;
-                    } else {
-                        if (!(dits.length() > 200.0f ||
-                              al::calcDistanceV(al::getGravity(this), other, self) > 100.0f))
-                            return true;
-                    }
-                }
-            }
-            return false;
-        }
+        if (rs::isPlayerOnGround(this)) {
+            if (!rs::isPlayerInputTriggerRide(this))
+                return false;
+        } else {
+            if (al::getActorVelocity(other).y > -6.0f)
+                return false;
 
-        return rs::isPlayerInputTriggerRide(this);
+            sead::Vector3f velocity = al::getActorVelocity(other);
+            if (!al::tryNormalizeOrZero(&velocity) || velocity.y > 0.0f) {
+                if (_23c > 0)
+                    _23c = 5;
+                return false;
+            }
+
+            if (_23c > 0)
+                return false;
+
+            sead::Vector3f dits = al::getActorTrans(other) - al::getTrans(this);
+            al::parallelizeVec(&dits, al::getFront(this), dits);
+            f32 frontDot = al::getFront(this).dot(dits);
+            f32 distance = dits.length();
+            if (frontDot > 0.0f) {
+                if (distance > 50.0f)
+                    return false;
+            } else if (distance > 200.0f) {
+                return false;
+            }
+            if (al::calcDistanceV(al::getGravity(this), other, self) > 100.0f)
+                return false;
+        }
+        return true;
     }
 
     if (al::isMsgBindInit(message)) {
@@ -1176,11 +1184,11 @@ bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
         al::showSilhouetteModel(this);
         al::invalidateOcclusionQuery(this);
         mAccelerationState->reset();
-
         valA = 1200;
         rs::calcPuppetQuat(&mPuppetQuat, mPlayerPuppet);
         mPuppetTrans.set(rs::getPuppetTrans(mPlayerPuppet));
-        BindInfo bindInfo{"Motorcycle"};
+        BindInfo bindInfo;
+        bindInfo.name = "Motorcycle";
         rs::tryAppearBindTutorial(this, bindInfo);
         rs::rideMotorcycle(this);
         mPuppetRotZLeft = rs::getPuppetPoseRotZDegreeLeft(mPlayerPuppet);
@@ -1189,6 +1197,7 @@ bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
             al::setNerve(this, &NrvMotorcycle.RideStartOn);
             return true;
         }
+
         sead::Vector3f dirH = {0.0f, 0.0f, 0.0f};
         if (al::calcDirBetweenSensorsH(&dirH, self, other)) {
             sead::Vector3f sideDir = {0.0f, 0.0f, 0.0f};
