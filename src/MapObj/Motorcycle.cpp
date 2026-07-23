@@ -760,16 +760,29 @@ void funE(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, float* valueA,
     al::rotateVectorDegreeY(al::getFrontPtr(actor), stick.x * -0.5f);
     al::normalize(al::getFrontPtr(actor));
 
+    sead::Vector3f velocity = {al::getVelocity(actor).x, 0.0f, al::getVelocity(actor).z};
+    f32 velocityY = al::getVelocity(actor).y;
+    if (!rs::isPuppetHoldActionButton(playerPuppet))
+        velocity *= 0.95f;
+
+    sead::Vector3f front = {al::getFront(actor).x, 0.0f, al::getFront(actor).z};
+    al::tryNormalizeOrZero(&front);
+    al::setVelocity(actor, velocity.length() * front + sead::Vector3f{0.0f, velocityY, 0.0f});
     al::addVelocityY(actor, -2.0f);
     updateSeRumble(*valueA, seRumbleState, actor, playerPuppet, true);
-    if (!funL(actor)) {
-        if (!rs::isCollidedWallVelocity(actor, actor) || !checkDashCollision(actor)) {
-            updateAirOrientation(actor);
-            if (!funO(actor) && !al::isInWater(actor) && valueC)
-                al::startHitReaction(actor, "着水");
-        }
-    }
-    return;
+
+    if (funL(actor))
+        return;
+
+    if (rs::isCollidedWallVelocity(actor, actor) && checkDashCollision(actor))
+        return;
+
+    updateAirOrientation(actor);
+    if (funO(actor))
+        return;
+
+    if (al::isInWater(actor) && !valueC)
+        al::startHitReaction(actor, "着水");
 }
 
 // TODO: might be moved into `sead`
@@ -1058,8 +1071,7 @@ bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
 
         if (!al::isSensorName(self, "Pushed") && al::isSensorPlayer(self) &&
             (al::isMsgExplosion(message) || rs::isMsgEnemyAttackTRex(message) ||
-             !isAnyRideRun_()) &&
-            al::isMsgEnemyAttack(message)) {
+             (!isAnyRideRun_() && al::isMsgEnemyAttack(message)))) {
             return rs::requestDamage(mPlayerPuppet);
         }
 
@@ -1083,44 +1095,74 @@ bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
         return true;
     }
 
-    if (!al::isSensorRide(self)) {
-        if (!al::isSensorBindableAll(self))
+    if (al::isSensorRide(self)) {
+        if (rs::isMsgPlayerObjectWallHit(message))
             return false;
-        if (rs::isPlayer2D(this))
-            return false;
-        if (al::isMsgBindStart(message) &&
-            (al::isNerve(this, &NrvMotorcycle.Wait) || al::isNerve(this, &NrvMotorcycle.Creep) ||
-             al::isNerve(this, &NrvMotorcycle.Reaction))) {
-            if (!rs::isPlayerOnGround(this)) {
-                if (al::getActorVelocity(other).y >= -6.0f) {
-                    sead::Vector3f velocity = al::getActorVelocity(other);
-                    if (!al::tryNormalizeOrZero(&velocity) || velocity.y > 0.0f) {
-                        if (_23c > 0) {
-                            _23c = 5;
-                            return false;
-                        }
-                    } else if (_23c < 1) {
-                        sead::Vector3f dits = al::getActorTrans(other) - al::getTrans(this);
-                        al::parallelizeVec(&dits, al::getFront(this), dits);
-                        f32 distLimit = (al::getFront(this).dot(dits) <= 0.0f ? 200.0f : 50.0f);
-                        if (dits.length() <= distLimit) {
-                            if (al::calcDistanceV(al::getGravity(this), other, self) <= 100.0f)
-                                return true;
-                        }
+
+        if (rs::isMsgNpcCapReactionAll(message) || al::isMsgExplosion(message) ||
+            (rs::isPlayerHack(this) &&
+             rs::checkMsgNpcTrampleReactionAll(message, other, self, false))) {
+            rs::requestHitReactionToAttacker(message, self, other);
+
+            if (al::isNerve(this, &NrvMotorcycle.Wait) || al::isNerve(this, &NrvMotorcycle.Creep) ||
+                al::isNerve(this, &NrvMotorcycle.Reaction)) {
+                if (al::isNerve(this, &NrvMotorcycle.Reaction) && al::isLessStep(this, 7))
+                    return false;
+
+                if (mItemSpawnCount > 0) {
+                    sead::Vector3f itemPos = {0.0f, 150.0f, -90.0f};
+                    al::multVecPose(&itemPos, this, itemPos);
+                    sead::Quatf itemQuat = sead::Quatf::unit;
+                    al::calcQuat(&itemQuat, this);
+                    al::appearItem(this, itemPos, itemQuat, nullptr);
+                    mItemSpawnCount--;
+                }
+                al::setNerve(this, &NrvMotorcycle.Reaction);
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    if (!al::isSensorBindableAll(self) || rs::isPlayer2D(this))
+        return false;
+
+    if (al::isMsgBindStart(message) &&
+        (al::isNerve(this, &NrvMotorcycle.Wait) || al::isNerve(this, &NrvMotorcycle.Creep) ||
+         al::isNerve(this, &NrvMotorcycle.Reaction))) {
+        if (!rs::isPlayerOnGround(this)) {
+            if (al::getActorVelocity(other).y <= -6.0f) {
+                sead::Vector3f velocity = al::getActorVelocity(other);
+                if (!al::tryNormalizeOrZero(&velocity) || velocity.y > 0.0f) {
+                    if (_23c > 0)
+                        _23c = 5;
+                } else if (_23c < 1) {
+                    sead::Vector3f dits = al::getActorTrans(other) - al::getTrans(this);
+                    al::parallelizeVec(&dits, al::getFront(this), dits);
+                    if (al::getFront(this).dot(dits) > 0.0f) {
+                        if (!(dits.length() > 50.0f ||
+                              al::calcDistanceV(al::getGravity(this), other, self) > 100.0f))
+                            return true;
+                    } else {
+                        if (!(dits.length() > 200.0f ||
+                              al::calcDistanceV(al::getGravity(this), other, self) > 100.0f))
+                            return true;
                     }
                 }
-                return false;
             }
-
-            return rs::isPlayerInputTriggerRide(this);
-        }
-        if (!al::isMsgBindInit(message))
             return false;
+        }
+
+        return rs::isPlayerInputTriggerRide(this);
+    }
+
+    if (al::isMsgBindInit(message)) {
         mPlayerPuppet = rs::startPuppet(self, other);
         rs::validateRecoveryArea(mPlayerPuppet);
         mPlayerAnimator->startBind(mPlayerPuppet);
         rs::setPuppetVelocity(mPlayerPuppet, sead::Vector3f::zero);
-        bool uVar4 = rs::isCollidedPuppetGround(mPlayerPuppet);
+        bool isCollidedPuppetGround = rs::isCollidedPuppetGround(mPlayerPuppet);
         al::validateDepthShadowMap(this);
         al::offDepthShadowModel(this);
         rs::hidePuppetShadow(mPlayerPuppet);
@@ -1141,16 +1183,17 @@ bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
         al::onCollide(this);
         al::showSilhouetteModel(this);
         al::invalidateOcclusionQuery(this);
-        mAccelerationState->isAccelerating = false;
-        mAccelerationState->accelRate = 0.0f;
+        mAccelerationState->reset();
+
         valA = 1200;
         rs::calcPuppetQuat(&mPuppetQuat, mPlayerPuppet);
         mPuppetTrans.set(rs::getPuppetTrans(mPlayerPuppet));
-        rs::tryAppearBindTutorial(this, {"Motorcycle"});
+        BindInfo bindInfo{"Motorcycle"};
+        rs::tryAppearBindTutorial(this, bindInfo);
         rs::rideMotorcycle(this);
         mPuppetRotZLeft = rs::getPuppetPoseRotZDegreeLeft(mPlayerPuppet);
         mPuppetRotZRight = rs::getPuppetPoseRotZDegreeRight(mPlayerPuppet);
-        if (!uVar4) {
+        if (!isCollidedPuppetGround) {
             al::setNerve(this, &NrvMotorcycle.RideStartOn);
             return true;
         }
@@ -1167,34 +1210,7 @@ bool Motorcycle::receiveMsg(const al::SensorMsg* message, al::HitSensor* other,
         return true;
     }
 
-    if (rs::isMsgPlayerObjectWallHit(message))
-        return false;
-
-    if (!rs::isMsgNpcCapReactionAll(message) && !al::isMsgExplosion(message)) {
-        if (!rs::isPlayerHack(this))
-            return false;
-        if (!rs::checkMsgNpcTrampleReactionAll(message, other, self, false))
-            return false;
-    }
-
-    rs::requestHitReactionToAttacker(message, self, other);
-
-    if (al::isNerve(this, &NrvMotorcycle.Wait) || al::isNerve(this, &NrvMotorcycle.Creep) ||
-        al::isNerve(this, &NrvMotorcycle.Reaction)) {
-        if (al::isNerve(this, &NrvMotorcycle.Reaction) && al::isLessStep(this, 7))
-            return false;
-
-        if (mItemSpawnCount > 0) {
-            sead::Vector3f itemPos = {0.0f, 150.0f, -90.0f};
-            al::multVecPose(&itemPos, this, itemPos);
-            sead::Quatf itemQuat = sead::Quatf::unit;
-            al::calcQuat(&itemQuat, this);
-            al::appearItem(this, itemPos, itemQuat, nullptr);
-            mItemSpawnCount--;
-        }
-        al::setNerve(this, &NrvMotorcycle.Reaction);
-    }
-    return true;
+    return false;
 }
 
 void Motorcycle::movement() {
@@ -1981,29 +1997,28 @@ void Motorcycle::exeRideRunLand() {
         al::startAction(this, "RunLand");
 
     if (doTheImportanStuff(this, &mPlayerPuppet, mPlayerAnimator, mColliderCameraTarget,
-                           mTransCameraSubTarget))
+                           mTransCameraSubTarget) ||
+        checkCollision(this, mPrevTransDelta))
         return;
 
-    if (!checkCollision(this, mPrevTransDelta)) {
-        updateStick(this, &mPose.steerAngle, mPlayerPuppet, 40.0f, -15.0f, 0.3f);
-        updateOrientation(this, mPose.steerAngle);
-        funPY(this, mPlayerPuppet, mAccelerationState, &mPose.steerAngle);
+    updateStick(this, &mPose.steerAngle, mPlayerPuppet, 40.0f, -15.0f, 0.3f);
+    updateOrientation(this, mPose.steerAngle);
+    funPY(this, mPlayerPuppet, mAccelerationState, &mPose.steerAngle);
 
-        funQ(this,
-             al::lerpValue(0.0f, 1.8f,
-                           al::easeIn(al::normalize(mAccelerationState->accelRate, 0.0f, 5.0f))));
-        updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet,
-                       al::isLessStep(this, 3));
-        if (!funR(this, mPlayerPuppet)) {
-            if (rs::isCollidedGround(this) || mParams->framesInAir < 6) {
-                al::setNerveAtActionEnd(this, &NrvMotorcycle.RideRun);
-                return;
-            }
-            funT(this, -mParams->groundNormal, verticalUp);
-            al::limitVelocityDirSign(this, verticalUp, 3.0f);
-            al::setNerve(this, &NrvMotorcycle.RideRunFall);
-        }
+    funQ(this, al::lerpValue(0.0f, 1.8f,
+                             al::easeIn(al::normalize(mAccelerationState->accelRate, 0.0f, 5.0f))));
+    updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, al::isLessStep(this, 3));
+    if (funR(this, mPlayerPuppet))
+        return;
+
+    if (!rs::isCollidedGround(this) && mParams->framesInAir >= 6) {
+        funT(this, -mParams->groundNormal, verticalUp);
+        al::limitVelocityDirSign(this, verticalUp, 3.0f);
+        al::setNerve(this, &NrvMotorcycle.RideRunFall);
+        return;
     }
+
+    al::setNerveAtActionEnd(this, &NrvMotorcycle.RideRun);
 }
 
 void Motorcycle::exeRideRunJump() {

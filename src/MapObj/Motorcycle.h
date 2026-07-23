@@ -81,6 +81,11 @@ struct ParkingParams {
 static_assert(sizeof(ParkingParams) == 0x50);
 
 struct AccelerationState {
+    void reset() {
+        isAccelerating = false;
+        accelRate = 0.0f;
+    }
+
     bool isAccelerating = false;
     f32 accelRate = 0.0f;
 };
