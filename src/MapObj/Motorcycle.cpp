@@ -631,26 +631,17 @@ bool tryParking(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, ParkingParams
     return false;
 }
 
-// NON_MATCHING: exact 0x2f4 size/frame/save set, but input-save and rumble-expression
-// scheduling still differs; next try explicit pad-value intermediates and SafeString lifetime
-// shaping.
+// NON_MATCHING:
 void updateSeRumble(f32 valueA, SeRumbleState* valueB, Motorcycle* actor,
                     IUsePlayerPuppet* playerPuppet, bool isaval) {
-    const bool isHold = rs::isPuppetHoldActionButton(playerPuppet);
-    s32 rumble = valueB->rumble;
     f32 holdScale;
-    if (isHold) {
-        rumble += 1;
-        if (rumble > 240)
-            rumble = 240;
+    if (rs::isPuppetHoldActionButton(playerPuppet)) {
         holdScale = 1.0f;
+        valueB->rumble = sead::Mathi::clampMax(valueB->rumble + 1, 240);
     } else {
         holdScale = 0.6f;
-        rumble -= 15;
-        if (rumble < 0)
-            rumble = 0;
+        valueB->rumble = sead::Mathi::clampMin(valueB->rumble - 15, 0);
     }
-    valueB->rumble = rumble;
 
     f32 speed = al::calcSpeedH(actor);
     const f32 rumbleFloat = valueB->rumble;
@@ -659,8 +650,9 @@ void updateSeRumble(f32 valueA, SeRumbleState* valueB, Motorcycle* actor,
     const f32 fadeFloor = fade < 0.25f ? 0.25f : fadeMax;
     const f32 baseRumble = holdScale * fadeFloor * 0.35f;
 
-    f32 wave = 0.0f;
     valueB->volume = speed;
+
+    f32 wave = 0.0f;
     if (valueB->rumble < 40) {
         const f32 phase = (rumbleFloat / 40.0f - 1.0f) * sead::Mathf::pi();
         wave = (phase * sinf(phase)) / 1.8f;
