@@ -632,8 +632,8 @@ bool tryParking(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, ParkingParams
 }
 
 // NON_MATCHING:
-void updateSeRumble(f32 valueA, SeRumbleState* valueB, Motorcycle* actor,
-                    IUsePlayerPuppet* playerPuppet, bool isaval) {
+void updateSeRumble(SeRumbleState* valueB, Motorcycle* actor, IUsePlayerPuppet* playerPuppet,
+                    f32 valueA, bool isaval) {
     f32 holdScale;
     if (rs::isPuppetHoldActionButton(playerPuppet)) {
         holdScale = 1.0f;
@@ -643,43 +643,34 @@ void updateSeRumble(f32 valueA, SeRumbleState* valueB, Motorcycle* actor,
         valueB->rumble = sead::Mathi::clampMin(valueB->rumble - 15, 0);
     }
 
-    f32 speed = al::calcSpeedH(actor);
+    valueB->volume = al::calcSpeedH(actor);
     const f32 rumbleFloat = valueB->rumble;
     const f32 fade = rumbleFloat / -240.0f + 1.0f;
     const f32 fadeMax = sead::Mathf::clampMax(fade, 1.0f);
     const f32 fadeFloor = fade < 0.25f ? 0.25f : fadeMax;
     const f32 baseRumble = holdScale * fadeFloor * 0.35f;
 
-    valueB->volume = speed;
-
     f32 wave = 0.0f;
     if (valueB->rumble < 40) {
         const f32 phase = (rumbleFloat / 40.0f - 1.0f) * sead::Mathf::pi();
         wave = (phase * sinf(phase)) / 1.8f;
-        speed = valueB->volume;
     }
 
-    f32 speedOffset = sead::Mathf::clampMin(speed - 5.0f, 0.0f);
-    const bool useLowFrequency = !isaval;
-    f32 frequency = 272.0f;
-    if (useLowFrequency)
-        frequency = 160.0f;
-
-    const f32 rumbleScale = baseRumble * (wave * 1.45f + 1.0f);
-    f32 lowRumble = rumbleScale * 0.6f;
-    if (useLowFrequency)
-        lowRumble = rumbleScale;
-
-    const f32 baseFrequency = (wave * 0.08f + 1.0f) * (speedOffset / 70.0f + 1.0f) * 168.0f;
-    f32 highRumble = baseFrequency * 1.7f;
-    if (useLowFrequency)
-        highRumble = baseFrequency;
-
-    const al::IUseAudioKeeper* audioKeeper = actor;
-    {
-        const sead::SafeString curveName("CurveLv");
-        al::holdSeWithParam(audioKeeper, curveName, speed * valueA, "回転角(Degree)");
+    const f32 waveScale = wave * 1.45f;
+    const f32 waveFrequency = wave * 0.08f;
+    const f32 speedOffset = sead::Mathf::clampMin(valueB->volume - 5.0f, 0.0f);
+    const f32 rumbleScale = baseRumble * (waveScale + 1.0f);
+    const f32 baseFrequency = (waveFrequency + 1.0f) * ((speedOffset / 70.0f + 1.0f) * 168.0f);
+    f32 highRumble = baseFrequency;
+    f32 frequency = 160.0f;
+    f32 lowRumble = rumbleScale;
+    if (isaval) {
+        lowRumble = rumbleScale * 0.6f;
+        highRumble = baseFrequency * 1.7f;
+        frequency = 272.0f;
     }
+
+    al::holdSeWithParam(actor, "CurveLv", valueB->volume * valueA, "回転角(Degree)");
 
     const f32 negativeScale = valueA > 0.0f ? 0.0f : 0.01f;
     const f32 positiveScale = valueA > 0.0f ? 0.01f : 0.0f;
@@ -690,11 +681,11 @@ void updateSeRumble(f32 valueA, SeRumbleState* valueB, Motorcycle* actor,
 
     const f32 moveVolume = rs::isPuppetHoldActionButton(playerPuppet) ? 9.0f : 0.0f;
     if (rs::isPuppetHoldActionButton(playerPuppet))
-        al::holdSeWithParam(audioKeeper, "MoveStartLv", moveVolume + valueB->volume, "");
+        al::holdSeWithParam(actor, "MoveStartLv", moveVolume + valueB->volume, "");
     else
-        al::holdSeWithParam(audioKeeper, "MoveEndLv", moveVolume + valueB->volume, "");
-    al::holdSeWithParam(audioKeeper, "MoveLv", moveVolume + valueB->volume, "");
-    al::holdSeWithParam(audioKeeper, "IdleLv", moveVolume + valueB->volume, "");
+        al::holdSeWithParam(actor, "MoveEndLv", moveVolume + valueB->volume, "");
+    al::holdSeWithParam(actor, "MoveLv", moveVolume + valueB->volume, "");
+    al::holdSeWithParam(actor, "IdleLv", moveVolume + valueB->volume, "");
 }
 
 static inline f32 getJointDistance(Motorcycle* actor, const char* jointNameA,
@@ -761,7 +752,7 @@ void funE(Motorcycle* actor, IUsePlayerPuppet* playerPuppet, float* valueA,
     al::tryNormalizeOrZero(&front);
     al::setVelocity(actor, velocity.length() * front + sead::Vector3f{0.0f, velocityY, 0.0f});
     al::addVelocityY(actor, -2.0f);
-    updateSeRumble(*valueA, seRumbleState, actor, playerPuppet, true);
+    updateSeRumble(seRumbleState, actor, playerPuppet, *valueA, true);
 
     if (funL(actor))
         return;
@@ -1294,7 +1285,8 @@ void Motorcycle::movement() {
         } else {
             f32 normSpeed =
                 al::normalize(al::calcSpeedH(this), 0.0f, al::calcSpeedMax(1.8f, 0.95f));
-            f32 combinedRate = angleRate * distRate * al::normalize(mCoursePointFollowTimer, 0, 30);
+            f32 combinedRate =
+                angleRate * (distRate * al::normalize(mCoursePointFollowTimer, 0, 30));
             mCameraSubTargetTurnParam->setTurnRate1(
                 al::lerpValue(al::lerpValue(0.3f, 0.1f, normSpeed), 0.275f, combinedRate));
             mCameraSubTargetTurnParam->setTurnRate2(
@@ -1304,81 +1296,93 @@ void Motorcycle::movement() {
         sead::Vector3f subTargetFront = al::getFront(this);
         al::rotateVectorDegree(&subTargetFront, subTargetFront, al::getGravity(this),
                                mCameraSubTargetAngle);
-        mCameraSubTargetPos = subTargetFront * 250.0f + al::getTrans(this);
+        sead::Policies<f32>::Vec3Base cameraPos;
+        sead::Vector3CalcCommon<f32>::multScalarAdd(cameraPos, 250.0f, subTargetFront,
+                                                    al::getTrans(this));
+        static_cast<sead::Policies<f32>::Vec3Base&>(mCameraSubTargetPos) = cameraPos;
     }
 
     // --- Collision Shape Results ---
-    mParams->frontContactPoints.clear();
-    mParams->backContactPoints.clear();
-    mParams->groundNormalAvg = {0.0f, 0.0f, 0.0f};
+    MotorcycleParams* params = mParams;
+    params->frontContactPoints.clear();
+    params->backContactPoints.clear();
+    params->groundNormalAvg = {0.0f, 0.0f, 0.0f};
 
     if (!al::isNoCollide(this)) {
-        mParams->bool_3 = false;
-        mParams->bool_4 = false;
-        mParams->bool_5 = false;
-        mParams->bool_6 = false;
+        params->bool_3 = false;
+        params->bool_4 = false;
+        params->bool_5 = false;
+        params->bool_6 = false;
 
         if (rs::isCollidedGround(this)) {
             CollisionShapeKeeper* shapeKeeper = getPlayerCollider()->getCollisionShapeKeeper();
-            for (s32 i = 0; i < shapeKeeper->getNumCollideResult(); i++) {
+            const s32 numResults = shapeKeeper->getNumCollideResult();
+            for (s32 i = 0; i < numResults; i++) {
                 const CollidedShapeResult* result = shapeKeeper->getCollidedShapeResult(i);
-                if (!result->isArrow()) {
-                    if (result->isSphere()) {
-                        const al::SphereHitInfo& sphereHitInfo = result->getSphereHitInfo();
-                        sead::Vector3f normal = sphereHitInfo.hitInfo->triangle.getNormal(0);
-                        if (al::isEqualString("FrontFace",
-                                              result->getShapeInfoSphere()->getName())) {
-                            mParams->frontContactPoints.pushBack(normal);
-                            if (al::isFloorPolygon(normal, verticalUp))
-                                mParams->bool_4 = true;
-                        } else if (al::isEqualString("BackFace",
-                                                     result->getShapeInfoSphere()->getName())) {
-                            mParams->backContactPoints.pushBack(normal);
-                            if (al::isFloorPolygon(normal, verticalUp))
-                                mParams->bool_5 = true;
-                        }
-                    }
-                } else {
+                if (result->isArrow()) {
                     const al::ArrowHitInfo& arrowHitInfo = result->getArrowHitInfo();
-                    sead::Vector3f normal = arrowHitInfo.hitInfo->triangle.getNormal(0);
+                    const sead::Vector3f& normal = arrowHitInfo.hitInfo->triangle.getNormal(0);
                     if (al::isFloorPolygon(normal, verticalUp)) {
-                        if (result->getShapeInfoArrow()->getIndex() == 0) {
-                            mParams->bool_3 = true;
-                            mParams->groundNormalAvg +=
+                        if (result->getShapeInfoArrow()->get_18() == 0) {
+                            params->bool_3 = true;
+                            params->groundNormalAvg +=
                                 result->getArrowHitInfo().hitInfo->triangle.getNormal(0);
                         } else {
-                            mParams->bool_4 = true;
+                            params->bool_4 = true;
                         }
+                    }
+                } else if (result->isSphere()) {
+                    const al::SphereHitInfo& sphereHitInfo = result->getSphereHitInfo();
+                    sead::Vector3f normal = sphereHitInfo.hitInfo->triangle.getNormal(0);
+                    if (al::isEqualString("FrontFace", result->getShapeInfoSphere()->getName())) {
+                        params->frontContactPoints.emplaceBack(normal);
+                        if (al::isFloorPolygon(normal, verticalUp))
+                            params->bool_5 = true;
+                    } else if (al::isEqualString("BackFace",
+                                                 result->getShapeInfoSphere()->getName())) {
+                        params->backContactPoints.emplaceBack(normal);
+                        if (al::isFloorPolygon(normal, verticalUp))
+                            params->bool_6 = true;
                     }
                 }
             }
         }
-        al::tryNormalizeOrZero(&mParams->groundNormalAvg);
+        al::tryNormalizeOrZero(&params->groundNormalAvg);
     }
 
     // --- Ground Alignment Logic ---
     if (rs::isCollidedGround(this)) {
-        if (al::isNormalize(mParams->groundNormalAvg, 0.001f) && mParams->bool_3 &&
-            !mParams->bool_4) {
-            sead::Vector3f pos = sead::Vector3f::zero;
-            sead::Vector3f front = al::getFront(this);
-            al::Triangle triangle;
-            sead::Vector3f trans = al::getTrans(this);
-            sead::Vector3f gravity = al::getGravity(this);
-            sead::Vector3f arrowPos = (front * -300.0f * 0.5f + trans) - (gravity * 100.0f);
+        MotorcycleParams* groundParams = mParams;
+        if (al::isNormalize(groundParams->groundNormalAvg, 0.001f)) {
+            if (groundParams->bool_3) {
+                if (!mParams->bool_4) {
+                    sead::Vector3f pos = {0.0f, 0.0f, 0.0f};
+                    const sead::Vector3f& front = al::getFront(this);
+                    sead::Vector3f frontOffset = front * -300.0f * 0.5f;
+                    sead::Vector3f arrowPos;
+                    sead::Vector3f arrowDir;
+                    al::Triangle triangle;
+                    const al::IUseCollision* collision = this;
+                    arrowPos = frontOffset + al::getTrans(this) - al::getGravity(this) * 100.0f;
+                    const sead::Vector3f& gravity = al::getGravity(this);
+                    arrowDir = gravity * 100.0f + gravity * 100.0f;
+                    bool foundFloor =
+                        alCollisionUtil::getFirstPolyOnArrow(collision, &pos, &triangle, arrowPos,
+                                                             arrowDir, nullptr, nullptr) &&
+                        al::isFloorPolygon(triangle.getNormal(0), verticalUp);
 
-            if (alCollisionUtil::getFirstPolyOnArrow(this, &pos, &triangle, arrowPos,
-                                                     gravity * 200.0f, nullptr, nullptr)) {
-                if (al::isFloorPolygon(triangle.getNormal(0), verticalUp)) {
-                    if (!al::isNear(pos, al::getTrans(this), 0.001f)) {
-                        sead::Vector3f diff = pos - al::getTrans(this);
-                        al::normalize(&diff);
-                        sead::Vector3f* frontPtr = al::getFrontPtr(this);
-                        al::turnVecToVecRate(frontPtr, *frontPtr, -diff, 0.3f);
-                        al::normalize(al::getFrontPtr(this));
-                        sead::Vector3f* gravityPtr = al::getGravityPtr(this);
-                        al::verticalizeVec(gravityPtr, al::getFront(this), *gravityPtr);
-                        al::normalize(al::getGravityPtr(this));
+                    if (foundFloor) {
+                        if (!al::isNear(pos, al::getTrans(this), 0.001f)) {
+                            arrowPos = pos - al::getTrans(this);
+                            al::normalize(&arrowPos);
+                            sead::Vector3f* frontPtr = al::getFrontPtr(this);
+                            arrowDir = -arrowPos;
+                            al::turnVecToVecRate(frontPtr, *frontPtr, arrowDir, 0.3f);
+                            al::normalize(al::getFrontPtr(this));
+                            sead::Vector3f* gravityPtr = al::getGravityPtr(this);
+                            al::verticalizeVec(gravityPtr, al::getFront(this), *gravityPtr);
+                            al::normalize(al::getGravityPtr(this));
+                        }
                     }
                 }
             }
@@ -1386,20 +1390,22 @@ void Motorcycle::movement() {
     }
 
     // --- Animator Update ---
+    f32 weightC = 0.0f;
     mPose.handleAngle = al::normalizeAbs(mPose.steerAngle, 0.0f, 55.0f) * -32.5f;
-    f32 weightL, weightC, weightR;
+    f32 weightL;
+    f32 weightR;
     if (mPlayerPuppet) {
-        weightL = 0.0f;
-        weightC = 1.0f;
-        weightR = 0.0f;
-    } else {
-        weightL = 0.0f;
         weightR = 0.0f;
         if (mPose.handleAngle > 0.0f)
             weightL = al::normalize(mPose.handleAngle, 0.0f, 32.5f);
-        else if (mPose.handleAngle < 0.0f)
+        else
+            weightL = 0.0f;
+        if (mPose.handleAngle < 0.0f)
             weightR = 1.0f - al::normalize(mPose.handleAngle, -32.5f, 0.0f);
         weightC = 1.0f - (weightL + weightR);
+    } else {
+        weightL = 1.0f;
+        weightR = weightC;
     }
     mPlayerAnimator->update(weightL, weightC, weightR);
 
@@ -1412,44 +1418,57 @@ void Motorcycle::movement() {
         al::updateMaterialCodePuddle(this, false);
         al::updateMaterialCodeWater(this, false);
     } else {
-        sead::Vector3f flatSurface;
-        sead::Vector3f upDirSurface;
-        sead::Vector3f actorUp;
+        sead::Vector3f flatSurface = {0.0f, 0.0f, 0.0f};
+        sead::Vector3f waterSurface = {0.0f, 0.0f, 0.0f};
+        sead::Vector3f waterSurfaceNormal = {0.0f, 0.0f, 0.0f};
+        sead::Vector3f actorUp = {0.0f, 0.0f, 0.0f};
         al::calcUpDir(&actorUp, this);
         bool foundFlat = al::calcFindWaterSurfaceFlat(
             &flatSurface, nullptr, this, al::getTrans(this), sead::Vector3f::ey, 121.0f);
-        bool foundWater = al::calcFindWaterSurface(&upDirSurface, &actorUp, this,
+        bool foundWater = al::calcFindWaterSurface(&waterSurface, &waterSurfaceNormal, this,
                                                    al::getTrans(this), sead::Vector3f::ey, 121.0f);
 
-        if (!foundFlat && !foundWater) {
-            reset(this);
-        } else {
-            al::updateMaterialCodePuddle(this, true);
-            al::updateMaterialCodeWater(this, false);
-
-            sead::Vector3f bestSurface;
+        sead::Policies<f32>::Vec3Base surface;
+        bool foundSurface;
+        if (foundFlat || foundWater) {
             if (foundFlat && foundWater) {
                 f32 distFlat = (flatSurface - al::getTrans(this)).length();
-                f32 distWater = (upDirSurface - al::getTrans(this)).length();
-                bestSurface = (distWater <= distFlat) ? upDirSurface : flatSurface;
+                f32 distWater = (waterSurface - al::getTrans(this)).length();
+                const sead::Vector3f* bestSurface =
+                    distFlat < distWater ? &waterSurface : &flatSurface;
+                surface = *bestSurface;
+            } else if (foundFlat) {
+                surface = flatSurface;
             } else {
-                bestSurface = foundFlat ? flatSurface : upDirSurface;
+                surface = waterSurface;
             }
+            foundSurface = true;
+        } else {
+            surface = sead::Vector3f::zero;
+            foundSurface = false;
+        }
 
-            mWaterSurfaceMtx.m[0][3] = bestSurface.x;
-            mWaterSurfaceMtx.m[1][3] = bestSurface.y;
-            mWaterSurfaceMtx.m[2][3] = bestSurface.z;
+        if (foundSurface) {
+            al::updateMaterialCodePuddle(this, true);
+            al::updateMaterialCodeWater(this, false);
+            mWaterSurfaceMtx.m[0][3] = surface.x;
+            mWaterSurfaceMtx.m[1][3] = surface.y;
+            mWaterSurfaceMtx.m[2][3] = surface.z;
+        } else {
+            startGetOff(this, &mPlayerPuppet, &_23c, mPlayerAnimator, mColliderCameraTarget,
+                        mTransCameraSubTarget);
+            reset(this);
         }
     }
 
     _23c--;
 
     // --- Acceleration State Animation ---
-    bool isAccelerating = (mPlayerPuppet) ? mAccelerationState->isAccelerating : false;
-    if (mIsAccelerating != isAccelerating) {
-        mIsAccelerating = isAccelerating;
-        const char* anim = mIsOnLight ? (isAccelerating ? "FrontOnTailOn" : "FrontOnTailOff") :
-                                        (isAccelerating ? "FrontOffTailOn" : "FrontOffTailOff");
+    bool wasAccelerating = mIsAccelerating;
+    mIsAccelerating = mPlayerPuppet && !mAccelerationState->isAccelerating;
+    if (wasAccelerating != mIsAccelerating) {
+        const char* anim = mIsOnLight ? (mIsAccelerating ? "FrontOnTailOn" : "FrontOnTailOff") :
+                                        (mIsAccelerating ? "FrontOffTailOn" : "FrontOffTailOff");
         al::startMclAnim(this, anim);
     }
 }
@@ -1744,7 +1763,7 @@ void Motorcycle::exeRideWaitJump() {
                            mTransCameraSubTarget))
         return;
 
-    updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, true);
+    updateSeRumble(mSeRumbleState, this, mPlayerPuppet, mPose.steerAngle, true);
     funV(this);
     funPY(this, mPlayerPuppet, mAccelerationState, &mPose.steerAngle);
     sead::Vector2f stick = {0.0f, 0.0f};
@@ -1844,7 +1863,7 @@ void Motorcycle::exeRideRunStart() {
 
     funQ(this, al::lerpValue(0.0f, 1.8f,
                              al::easeIn(al::normalize(mAccelerationState->accelRate, 0.0f, 5.0f))));
-    updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, false);
+    updateSeRumble(mSeRumbleState, this, mPlayerPuppet, mPose.steerAngle, false);
 
     if (funR(this, mPlayerPuppet))
         return;
@@ -1882,7 +1901,7 @@ void Motorcycle::exeRideRun() {
 
     funQ(this, al::lerpValue(0.0f, 1.8f,
                              al::easeIn(al::normalize(mAccelerationState->accelRate, 0.0f, 5.0f))));
-    updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, false);
+    updateSeRumble(mSeRumbleState, this, mPlayerPuppet, mPose.steerAngle, false);
     if (!mAccelerationState->isAccelerating)
         mHighSpeedCameraTimer = 0;
     else if (mHighSpeedCameraTimer++ > 13)
@@ -1920,7 +1939,7 @@ void Motorcycle::exeRideRunCollide() {
 
     funQ(this, al::lerpValue(0.0f, 1.8f,
                              al::easeIn(al::normalize(mAccelerationState->accelRate, 0.0f, 5.0f))));
-    updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, false);
+    updateSeRumble(mSeRumbleState, this, mPlayerPuppet, mPose.steerAngle, false);
 
     if (funR(this, mPlayerPuppet))
         return;
@@ -1954,7 +1973,7 @@ void Motorcycle::exeRideRunFall() {
     updateStick(this, &mPose.steerAngle, mPlayerPuppet, 12.5f, -7.5f, 0.1f);
 
     applyAirPhysics(this, mPlayerPuppet, al::isInWater(this) ? 1.0f : 2.0f);
-    updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, true);
+    updateSeRumble(mSeRumbleState, this, mPlayerPuppet, mPose.steerAngle, true);
     if (!funL(this) && (!rs::isCollidedWallVelocity(this, this) || !checkDashCollision(this))) {
         updateAirOrientation(this);
         if (!funO(this) && al::isInWater(this) && !mIsInWater) {
@@ -1978,7 +1997,7 @@ void Motorcycle::exeRideRunWheelie() {
 
     applyAirPhysics(this, mPlayerPuppet,
                     al::calcNerveEaseInValue(this, 30, 0.0f, al::isInWater(this) ? 1.0f : 2.0f));
-    updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, true);
+    updateSeRumble(mSeRumbleState, this, mPlayerPuppet, mPose.steerAngle, true);
     if (!funL(this) && (!rs::isCollidedWallVelocity(this, this) || !checkDashCollision(this))) {
         updateAirOrientation(this);
         if (!funO(this) && al::isInWater(this) && !mIsInWater) {
@@ -2008,7 +2027,7 @@ void Motorcycle::exeRideRunLand() {
 
     funQ(this, al::lerpValue(0.0f, 1.8f,
                              al::easeIn(al::normalize(mAccelerationState->accelRate, 0.0f, 5.0f))));
-    updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, al::isLessStep(this, 3));
+    updateSeRumble(mSeRumbleState, this, mPlayerPuppet, mPose.steerAngle, al::isLessStep(this, 3));
     if (funR(this, mPlayerPuppet))
         return;
 
@@ -2046,7 +2065,7 @@ void Motorcycle::exeRideRunJump() {
         return;
 
     updateStick(this, &mPose.steerAngle, mPlayerPuppet, 40.0f, -15.0f, 0.3f);
-    updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, 1);
+    updateSeRumble(mSeRumbleState, this, mPlayerPuppet, mPose.steerAngle, true);
     updateOrientation(this, mPose.steerAngle);
     funV(this);
     funPY(this, mPlayerPuppet, mAccelerationState, &mPose.steerAngle);
@@ -2135,7 +2154,7 @@ void Motorcycle::exeRideRunClash() {
         return;
 
     mPose.steerAngle = al::lerpValue(mPose.steerAngle, 0.0f, 0.025f);
-    updateSeRumble(mPose.steerAngle, mSeRumbleState, this, mPlayerPuppet, true);
+    updateSeRumble(mSeRumbleState, this, mPlayerPuppet, mPose.steerAngle, true);
     al::addVelocityY(this, -2.0f);
     al::scaleVelocityY(this, 0.95f);
     if (al::isActionEnd(this) && rs::isOnGround(this, this))
