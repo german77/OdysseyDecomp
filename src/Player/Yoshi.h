@@ -27,7 +27,7 @@ class YoshiStateNpc;
 
 class Yoshi : public al::LiveActor {
 public:
-    Yoshi(const char* actorName);
+    Yoshi(const char* name);
 
     void init(const al::ActorInitInfo& info) override;
     void initAfterPlacement() override;
@@ -66,3 +66,5 @@ private:
     al::HitSensor* mHitSensor = nullptr;
     sead::Matrix34f mLocalMtx = sead::Matrix34f::ident;
 };
+
+static_assert(sizeof(Yoshi) == 0x1b8);

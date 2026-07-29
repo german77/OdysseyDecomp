@@ -6,12 +6,16 @@
 class PlayerTrigger {
 public:
     enum ECollisionTrigger : u32 {
+        // used in Yoshi::sendCollisionMsg
+        ECollisionTrigger_val0 = 0,
         // used in PlayerStateHipDrop::isLandTrigger
         ECollisionTrigger_val1 = 1,
         // used in PlayerStateDamageLife::exeDead
         ECollisionTrigger_val6 = 6,
         // used in PlayerJudgeWallHitDown::judge
         ECollisionTrigger_val9 = 9,
+        // used in Yoshi::sendCollisionMsg
+        ECollisionTrigger_val10 = 10,
         // used in PlayerTrigger::isOnYoshiHackEnd
         ECollisionTrigger_val1024 = 1024,
     };

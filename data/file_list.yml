@@ -129730,81 +129730,81 @@ Player/Yoshi.o:
   - offset: 0x493f14
     size: 156
     label: _ZN5YoshiC2EPKc
-    status: NotDecompiled
+    status: Matching
   - offset: 0x493fb0
     size: 168
     label: _ZN5YoshiC1EPKc
-    status: NotDecompiled
+    status: Matching
   - offset: 0x494058
     size: 928
     label: _ZN5Yoshi4initERKN2al13ActorInitInfoE
-    status: NotDecompiled
+    status: Matching
   - offset: 0x4943f8
     size: 4
     label: _ZN5Yoshi18initAfterPlacementEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0x4943fc
     size: 588
     label: _ZN5Yoshi8movementEv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0x494648
     size: 72
     label: _ZN5Yoshi7controlEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0x494690
     size: 1768
     label: _ZN5Yoshi14updateColliderEv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0x494d78
     size: 88
     label: _ZN5Yoshi20updateCollisionShapeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0x494dd0
     size: 240
     label: _ZN5Yoshi16sendCollisionMsgEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0x494ec0
     size: 68
     label: _ZN5Yoshi9appearEggEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0x494f04
     size: 8
     label: _ZN5Yoshi22startFruitShineGetDemoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0x494f0c
     size: 64
     label: _ZN5Yoshi6exeEggEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0x494f4c
     size: 116
     label: _ZN5Yoshi6exeNpcEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0x494fc0
     size: 4
     label: _ZN5Yoshi7exeHackEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0x494fc4
     size: 152
     label: _ZN5Yoshi12attackSensorEPN2al9HitSensorES2_
-    status: NotDecompiled
+    status: Matching
   - offset: 0x49505c
     size: 752
     label: _ZN5Yoshi10receiveMsgEPKN2al9SensorMsgEPNS0_9HitSensorES5_
-    status: NotDecompiled
+    status: Matching
   - offset: 0x49534c
     size: 68
     label: _ZNK12_GLOBAL__N_111YoshiNrvEgg7executeEPN2al11NerveKeeperE
-    status: NotDecompiled
+    status: Matching
     guess: true
   - offset: 0x495390
     size: 120
     label: _ZNK12_GLOBAL__N_111YoshiNrvNpc7executeEPN2al11NerveKeeperE
-    status: NotDecompiled
+    status: Matching
     guess: true
   - offset: 0x495408
     size: 8
     label: _ZNK12_GLOBAL__N_112YoshiNrvHack7executeEPN2al11NerveKeeperE
-    status: NotDecompiled
+    status: Matching
     guess: true
 Player/YoshiActionTongueAttack.o:
   '.text':
