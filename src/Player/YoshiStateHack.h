@@ -46,10 +46,12 @@ public:
     void exeDemo();
     void exeDemoHackStart();
     void exeHack();
-    bool attackSensor(al::HitSensor*, al::HitSensor*);
-    bool receiveMsg(const al::SensorMsg*, al::HitSensor*, al::HitSensor*);
-    bool receiveMsgSetNerveState(const al::SensorMsg*, al::HitSensor*, al::HitSensor*);
-    bool receiveMsgEndState(bool*, const al::SensorMsg*, al::HitSensor*, al::HitSensor*);
+    bool attackSensor(al::HitSensor* self, al::HitSensor* other);
+    bool receiveMsg(const al::SensorMsg* message, al::HitSensor* other, al::HitSensor* self);
+    bool receiveMsgSetNerveState(const al::SensorMsg* message, al::HitSensor* other,
+                                 al::HitSensor* self);
+    bool receiveMsgEndState(bool*, const al::SensorMsg* message, al::HitSensor* other,
+                            al::HitSensor* self);
     void prepareEndHack();
     bool reactionCollidedCollisionCode();
 

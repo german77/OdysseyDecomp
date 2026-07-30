@@ -142,7 +142,7 @@ void Yoshi::movement() {
      else {
        pcVar7 = (char *)rs::getMaterialCodeGround(pIVar10);
      }
-     fVar14 = (float)(**(code **)(*(long *)pPVar2 + 0xc78))(pPVar2);
+     fVar14 = (**(code **)(*(long *)pPVar2 + 0xc78))(pPVar2);
      bVar4 = rs::isInPuddleHeight(pWVar12,pIVar1,fVar14);
      bVar5 = al::isInAreaObj(this,"WetArea");
      bVar8 = (bool)(bVar5 & (bVar4 ^ 0xff) & 1);
@@ -331,7 +331,7 @@ void Yoshi::updateCollider() {
                     f32 ndot = sead::Mathf::abs(normalVecH.dot(groundNormal));
                     f32 velAlongPull = lenH * ndot;
                     f32 limit = sead::Mathf::clampMax(velAlongPull, 40.0f);
-                    lengNV = sead::Mathf::clamp(lengNV, dotLimit, velAlongPull);
+                    lengNV = sead::Mathf::clamp(lengNV, dotLimit, limit);
 
                     f32 v53 = sead::Mathf::sqrt(sead::Mathf::max(0.0f, (lenH * lenH) - (lengNV * lengNV)));
                     al::verticalizeVec(&velocity, groundNormal, vecH);

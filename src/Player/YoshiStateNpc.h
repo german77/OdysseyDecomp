@@ -32,8 +32,9 @@ public:
     void exeHackEnd();
     bool tryGetLookAtPlayerPos(sead::Vector3f*) const;
     bool reactionCollidedCollisionCode();
-    bool receiveMsg(const al::SensorMsg*, al::HitSensor*, al::HitSensor*);
-    bool receiveMsgReturnEggAndInitPosition(const al::SensorMsg*, al::HitSensor*, al::HitSensor*);
+    bool receiveMsg(const al::SensorMsg* message, al::HitSensor* other, al::HitSensor* self);
+    bool receiveMsgReturnEggAndInitPosition(const al::SensorMsg* message, al::HitSensor* other,
+                                            al::HitSensor* self);
 
 private:
     PlayerConst* mPlayerConst;

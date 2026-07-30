@@ -170410,23 +170410,23 @@ Util/YoshiUtil.o:
   - offset: 0x5c0524
     size: 4
     label: _ZN2rs31isSensorTypeYoshiEnableSendPushEPKN2al9HitSensorE
-    status: NotDecompiled
+    status: Matching
   - offset: 0x5c0528
     size: 4
     label: _ZN2rs30isSensorTypeYoshiMsgReceivableEPKN2al9HitSensorE
-    status: NotDecompiled
+    status: Matching
   - offset: 0x5c052c
     size: 76
     label: _ZN2rs16isInPuddleHeightEPKN2al18WaterSurfaceFinderEPK11PlayerConst
-    status: NotDecompiled
+    status: Matching
   - offset: 0x5c0578
     size: 216
     label: _ZN2rs21tryCalcTonguePullPoseEPN4sead4QuatIfEEPKN2al9LiveActorEPK11YoshiTongue
-    status: NotDecompiled
+    status: Matching
   - offset: 0x5c0650
     size: 160
     label: _ZN2rs18findClingGroundPosEPN4sead7Vector3IfEEPKN2al9LiveActorERKS2_f
-    status: NotDecompiled
+    status: Matching
 NintendoSDK-NEX/RendezVous/Services/Jugem/DataStore/src/Client/DataStoreLogicServerClient.o:
   '.text':
   - offset: 0x5c06f0

@@ -70,7 +70,7 @@ bool isPlayerHitPointOne(const al::LiveActor*);
 bool isPlayerDeadStatus(const al::LiveActor*);
 bool isPlayerDeadWipeStart(const al::LiveActor*);
 bool isPlayerDeadEnableCoinAppear(const al::LiveActor*);
-void getPlayerDeadWipeInfo(const al::LiveActor*, const char**, int*);
+void getPlayerDeadWipeInfo(const al::LiveActor*, const char**, s32*);
 bool isPlayerDeadDrawForward(const al::LiveActor*);
 u32 getPlayerInputPort(const al::LiveActor*);
 const sead::Matrix34f& getPlayerViewMtx(const al::LiveActor*);
@@ -82,7 +82,7 @@ void changeDepthShadowMapSizeNormal(al::LiveActor*);
 void createPlayerStainDecorationPartsArray(sead::PtrArray<sead::SafeString>*, al::LiveActor*);
 void validatePlayerStain(al::LiveActor*, const sead::PtrArray<sead::SafeString>&);
 void invalidatePlayerStain(al::LiveActor*, const sead::PtrArray<sead::SafeString>&);
-void setupPlayerStain(al::LiveActor*, const sead::PtrArray<sead::SafeString>&, int,
+void setupPlayerStain(al::LiveActor*, const sead::PtrArray<sead::SafeString>&, s32,
                       const sead::Color4f&, f32, f32, f32, f32);
 
 }  // namespace PlayerFunction

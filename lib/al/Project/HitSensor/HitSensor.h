@@ -58,6 +58,8 @@ public:
 
     const char* getName() const { return mName; }
 
+    HitSensorType getType() const { return mSensorType; }
+
     void clearSensors() { mSensorCount = 0; }
 
     const sead::Vector3f& getFollowPosOffset() const { return mFollowPosOffset; }

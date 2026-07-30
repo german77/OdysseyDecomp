@@ -3,6 +3,7 @@
 #include <math/seadVector.h>
 
 #include "Library/HostIO/HioNode.h"
+
 #include "Player/IUsePlayerCeilingCheck.h"
 #include "Player/IUsePlayerCollision.h"
 #include "Player/IUsePlayerHeightCheck.h"
@@ -22,7 +23,7 @@ public:
     void tryChangeCollisionNormal();
     void updateCollider(const sead::Vector3f&);
     void updateHeightCheck(const sead::Vector3f&, const sead::Vector3f&);
-    void updateCeilingCheck(const sead::Vector3f&, const sead::Vector3f&, float);
+    void updateCeilingCheck(const sead::Vector3f&, const sead::Vector3f&, f32);
     void tryChangeCollisionTongueJump();
     bool isEnableStandUp() const override;
     bool isEnableHoldUp() const override;
