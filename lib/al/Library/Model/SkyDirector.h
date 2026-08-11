@@ -9,6 +9,7 @@
 
 namespace al {
 struct ActorInitInfo;
+class LiveActor;
 class SkyParam;
 class Sky;
 class ParamRequestInterp;
@@ -60,9 +61,10 @@ public:
 
 private:
     ParamRequestInterp* mParamRequestInterp;
-    void* _8[1];
-    sead::PtrArray<Sky> _10;
-    void* _20[2];
+    Sky* mActor = nullptr;
+    sead::PtrArray<Sky> mSkyArray;
+    bool mIsInitialized = false;
+    sead::Vector3f mRotateOffset = {0.0f, 0.0f, 0.0f};
     sead::FixedSafeString<64> _30;
 };
 
