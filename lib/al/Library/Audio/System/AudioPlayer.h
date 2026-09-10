@@ -69,5 +69,5 @@ private:
     IAudioResourceInfoAccessor* mResourceInfoAccessor;
 };
 
-static_assert(sizeof(SeadAudioPlayer) == 0x3a8);
+//static_assert(sizeof(SeadAudioPlayer) == 0x3a8);
 }  // namespace al

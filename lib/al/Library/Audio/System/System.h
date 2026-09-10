@@ -2,8 +2,10 @@
 
 #include <basis/seadTypes.h>
 #include <hostio/seadHostIONode.h>
-#include <nn/atk/SoundArchivePlayer.h>
-#include <nn/atk/SoundDataManager.h>
+#include <nn/atk/atk_SoundArchivePlayer.h>
+#include <nn/atk/atk_SoundDataManager.h>
+#include <nn/atk/atk_SoundStartable.h>
+#include <thread/seadCriticalSection.h>
 
 #include "Project/AlsdAudioPlayer.h"
 
@@ -14,10 +16,6 @@ class AudioInfoListCreateFunctorBase;
 
 namespace nn::atk {
 class SoundArchive;
-
-namespace SoundStartable {
-class StartInfo;
-}
 }  // namespace nn::atk
 
 namespace alsd {
@@ -59,8 +57,9 @@ public:
     void shutdownDataManagement();
     void pauseAll(s32);
     void unpauseAll(s32);
-    s32 detail_SetupSound(nn::atk::SoundHandle*, u32, bool, const char*,
-                          const nn::atk::SoundStartable::StartInfo*);
+    nn::atk::SoundStartable::StartResult
+    detail_SetupSound(nn::atk::SoundHandle*, u32, bool, const char*,
+                      const nn::atk::SoundStartable::StartInfo*) override;
     void createSoundHeap(u64, sead::Heap*);
     void setupDataManagement(u32, u32, u32, sead::Heap*, s32);
     void setupDataManagement(const DataManagementSetupParam&);
@@ -76,9 +75,20 @@ private:
     void setPauseAll_(s32, bool);
     bool setupDataManagementInner_(const nn::atk::SoundArchive&, u32, u32, u32, sead::Heap*, s32);
 
-    char filler_2f8[0x38];
-    AudioSoundDataMgrMulti* mAudioSoundDataMgrMulti;
-    char filler_338[0x58];
+    void* mPlayerBuffer = nullptr;
+    s32 mPlayerBufferSize = 0;
+    void* mStreamBuffer = nullptr;
+    s32 mStreamBufferSize = 0;
+    nn::audio::MemoryPoolType * mMemoryPool = nullptr;
+    s32 mMemoryPoolSize = 0;
+    void* mCacheBuffer = nullptr;
+    s32 mCacheSize = 0;
+    AudioSoundDataMgrMulti* mAudioSoundDataMgrMulti = nullptr;
+    AudioSoundHeapMulti* mAudioSoundHeapMulti = nullptr;
+    bool mIs340 = false;
+    bool mIs341 = false;
+    sead::CriticalSection mCriticalSection;
+    bool mIsMultithreaded = false;
 };
 
 static_assert(sizeof(AudioPlayerMulti) == 0x390);
@@ -101,7 +111,7 @@ private:
     bool setupManager_(sead::Heap*);
     bool tryGetDefaultSoundHeapAndCheckReady_(AudioSoundHeapMulti**) const;
 
-    char filler[0x20];
+    char filler[0x28];
 };
 
 static_assert(sizeof(AudioSoundDataMgrMulti) == 0x268);

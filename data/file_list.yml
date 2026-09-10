@@ -289950,12 +289950,12 @@ Project/Audio/System/AudioPlayer.o:
   - offset: 0xa3e42c
     size: 204
     label: _ZNK4alsd16AudioPlayerMulti27checkDerivedRuntimeTypeInfoEPKN4sead15RuntimeTypeInfo9InterfaceE
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xa3e4f8
     size: 92
     label: _ZNK4alsd16AudioPlayerMulti18getRuntimeTypeInfoEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xa3e554
     size: 36
@@ -289990,12 +289990,12 @@ Project/Audio/System/AudioPlayer.o:
   - offset: 0xa3e610
     size: 4
     label: _ZNK2nn3atk12SoundArchive15FileAccessBeginEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xa3e614
     size: 4
     label: _ZNK2nn3atk12SoundArchive13FileAccessEndEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xa3e618
     size: 8
@@ -290005,7 +290005,7 @@ Project/Audio/System/AudioPlayer.o:
   - offset: 0xa3e620
     size: 140
     label: _ZNK4sead15RuntimeTypeInfo6DeriveIN4alsd11AudioPlayerEE9isDerivedEPKNS0_9InterfaceE
-    status: NotDecompiled
+    status: Matching
     lazy: true
 Project/Audio/System/ResourceInfoAccessor.o:
   '.text':
@@ -290402,133 +290402,133 @@ Project/Audio/System/System.o:
     label:
     - _ZN4alsd16AudioPlayerMultiC1Ev
     - _ZN4alsd16AudioPlayerMultiC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa4086c
     size: 224
     label:
     - _ZN4alsd16AudioPlayerMultiD1Ev
     - _ZN4alsd16AudioPlayerMultiD2Ev
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa4094c
     size: 84
     label: _ZN4alsd16AudioPlayerMulti7stopAllEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa409a0
     size: 8
     label: _ZThn8_N4alsd16AudioPlayerMultiD1Ev
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa409a8
     size: 36
     label: _ZN4alsd16AudioPlayerMultiD0Ev
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa409cc
     size: 40
     label: _ZThn8_N4alsd16AudioPlayerMultiD0Ev
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa409f4
     size: 4
     label: _ZN4alsd16AudioPlayerMulti10initializeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa409f8
     size: 232
     label: _ZN4alsd16AudioPlayerMulti8finalizeEv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa40ae0
     size: 8
     label: _ZNK4alsd16AudioPlayerMulti12isNwEnabled_Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa40ae8
     size: 64
     label: _ZN4alsd16AudioPlayerMulti16destroySoundHeapEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa40b28
     size: 68
     label: _ZN4alsd16AudioPlayerMulti22shutdownDataManagementEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa40b6c
     size: 96
     label: _ZN4alsd16AudioPlayerMulti4calcEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa40bcc
     size: 36
     label: _ZN4alsd16AudioPlayerMulti10startSoundEPNS_11SoundHandleEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa40bf0
     size: 36
     label: _ZN4alsd16AudioPlayerMulti10startSoundEPNS_11SoundHandleEPKc
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa40c14
     size: 36
     label: _ZN4alsd16AudioPlayerMulti9holdSoundEPNS_11SoundHandleEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa40c38
     size: 36
     label: _ZN4alsd16AudioPlayerMulti9holdSoundEPNS_11SoundHandleEPKc
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa40c5c
     size: 36
     label: _ZNK4alsd16AudioPlayerMulti13getSoundCountEv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa40c80
     size: 56
     label: _ZNK4alsd16AudioPlayerMulti12getSoundNameEj
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa40cb8
     size: 60
     label: _ZNK4alsd16AudioPlayerMulti10getSoundIdEPKc
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa40cf4
     size: 108
     label: _ZN4alsd16AudioPlayerMulti8pauseAllEi
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa40d60
     size: 120
     label: _ZN4alsd16AudioPlayerMulti12setPauseAll_Eib
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa40dd8
     size: 104
     label: _ZN4alsd16AudioPlayerMulti10unpauseAllEi
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa40e40
     size: 32
     label: _ZN4alsd16AudioPlayerMulti17detail_SetupSoundEPN2nn3atk11SoundHandleEjbPKcPKNS2_14SoundStartable9StartInfoE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa40e60
     size: 28
     label: _ZThn8_N4alsd16AudioPlayerMulti17detail_SetupSoundEPN2nn3atk11SoundHandleEjbPKcPKNS2_14SoundStartable9StartInfoE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa40e7c
     size: 88
     label: _ZN4alsd16AudioPlayerMulti15createSoundHeapEmPN4sead4HeapE
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa40ed4
     size: 136
     label: _ZN4alsd16AudioPlayerMulti19setupDataManagementEjjjPN4sead4HeapEi
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa40f5c
     size: 384
     label: _ZN4alsd16AudioPlayerMulti25setupDataManagementInner_ERKN2nn3atk12SoundArchiveEjjjPN4sead4HeapEi
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa410dc
     size: 116
     label: _ZN4alsd16AudioPlayerMulti19setupDataManagementERKNS0_24DataManagementSetupParamE
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa41150
     size: 44
     label: _ZNK4alsd16AudioPlayerMulti36isPlayerBufferCrossingMemoryBoundaryEv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa4117c
     size: 44
     label: _ZNK4alsd16AudioPlayerMulti36isStreamBufferCrossingMemoryBoundaryEv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa411a8
     size: 4
     label: _ZN4alsd16AudioPlayerMulti10genMessageEPN4sead6hostio7ContextE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa411ac
     size: 4
     label: _ZN4alsd16AudioPlayerMulti19listenPropertyEventEPKN4sead6hostio13PropertyEventE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa411b0
     size: 116
     label:
@@ -290686,12 +290686,12 @@ Project/Audio/System/System.o:
   - offset: 0xa41fe8
     size: 8
     label: _ZNK2nn3atk14FsSoundArchive21detail_GetFileAddressEj
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xa41ff0
     size: 8
     label: _ZNK2nn3atk12SoundArchive7IsAddonEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xa41ff8
     size: 204
@@ -298289,33 +298289,33 @@ Project/Yaml/YamlWriter.o:
     label: _ZN2al19YamlWriterToConsoleD0Ev
     status: NotDecompiled
     lazy: true
-Unknown/AudioPlayer.o:
+Project/AlsdAudioPlayer.o:
   '.text':
   - offset: 0xa92f4c
     size: 8
     label: _ZN4alsd11AudioPlayer10startSoundEPNS_11SoundHandleEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa92f54
     size: 8
     label: _ZN4alsd11AudioPlayer10startSoundEPNS_11SoundHandleEPKc
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa92f5c
     size: 8
     label: _ZN4alsd11AudioPlayer9holdSoundEPNS_11SoundHandleEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa92f64
     size: 8
     label: _ZN4alsd11AudioPlayer9holdSoundEPNS_11SoundHandleEPKc
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa92f6c
     size: 112
     label: _ZNK4alsd11AudioPlayer27checkDerivedRuntimeTypeInfoEPKN4sead15RuntimeTypeInfo9InterfaceE
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xa92fdc
     size: 92
     label: _ZNK4alsd11AudioPlayer18getRuntimeTypeInfoEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xa93038
     size: 4
@@ -298330,32 +298330,32 @@ Unknown/AudioPlayer.o:
   - offset: 0xa93040
     size: 4
     label: _ZN4alsd11AudioPlayer10initializeEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xa93044
     size: 4
     label: _ZN4alsd11AudioPlayer8finalizeEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xa93048
     size: 4
     label: _ZN4alsd11AudioPlayer4calcEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xa9304c
     size: 8
     label: _ZNK4alsd11AudioPlayer13getSoundCountEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xa93054
     size: 8
     label: _ZNK4alsd11AudioPlayer12getSoundNameEj
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xa9305c
     size: 8
     label: _ZNK4alsd11AudioPlayer10getSoundIdEPKc
-    status: NotDecompiled
+    status: Matching
     lazy: true
 Unknown/GpuPerfAreaController.o:
   '.text':
@@ -298903,21 +298903,21 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk14FsSoundArchiveC1Ev
     - _ZN2nn3atk14FsSoundArchiveC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99250
     size: 152
     label:
     - _ZN2nn3atk14FsSoundArchiveD1Ev
     - _ZN2nn3atk14FsSoundArchiveD2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa992e8
     size: 64
     label: _ZN2nn3atk14FsSoundArchive5CloseEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99328
     size: 36
     label: _ZN2nn3atk14FsSoundArchiveD0Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9934c
     size: 440
     label: _ZN2nn3atk14FsSoundArchive4OpenEPKc
@@ -298925,35 +298925,35 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xa99504
     size: 124
     label: _ZN2nn3atk14FsSoundArchive14LoadFileHeaderEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99580
     size: 76
     label: _ZNK2nn3atk14FsSoundArchive10OpenStreamEPvmlm
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa995cc
     size: 172
     label: _ZNK2nn3atk14FsSoundArchive13OpenExtStreamEPvmPKcS2_m
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa99678
     size: 8
     label: _ZNK2nn3atk14FsSoundArchive34detail_GetRequiredStreamBufferSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99680
     size: 200
     label: _ZN2nn3atk14FsSoundArchive10LoadHeaderEPvm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99748
     size: 208
     label: _ZN2nn3atk14FsSoundArchive19LoadLabelStringDataEPvm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99818
     size: 104
     label: _ZNK2nn3atk14FsSoundArchive15FileAccessBeginEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99880
     size: 104
     label: _ZNK2nn3atk14FsSoundArchive13FileAccessEndEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa998e8
     size: 56
     label:
@@ -299020,149 +299020,149 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xa99dd4
     size: 32
     label: _ZN2nn3atk12SoundArchiveC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99df4
     size: 4
     label:
     - _ZN2nn3atk12SoundArchiveD1Ev
     - _ZN2nn3atk12SoundArchiveD2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99df8
     size: 4
     label: _ZN2nn3atk12SoundArchiveD0Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99dfc
     size: 16
     label: _ZNK2nn3atk12SoundArchive11IsAvailableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99e0c
     size: 44
     label: _ZN2nn3atk12SoundArchive10InitializeEPNS0_6detail22SoundArchiveFileReaderE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99e38
     size: 52
     label: _ZN2nn3atk12SoundArchive8FinalizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99e6c
     size: 8
     label: _ZNK2nn3atk12SoundArchive13GetSoundCountEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99e74
     size: 8
     label: _ZNK2nn3atk12SoundArchive14GetPlayerCountEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99e7c
     size: 8
     label: _ZNK2nn3atk12SoundArchive18GetSoundGroupCountEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99e84
     size: 8
     label: _ZNK2nn3atk12SoundArchive13GetGroupCountEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99e8c
     size: 8
     label: _ZNK2nn3atk12SoundArchive12GetBankCountEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99e94
     size: 8
     label: _ZNK2nn3atk12SoundArchive19GetWaveArchiveCountEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99e9c
     size: 8
     label: _ZNK2nn3atk12SoundArchive19detail_GetFileCountEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99ea4
     size: 88
     label: _ZNK2nn3atk12SoundArchive12GetItemLabelEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99efc
     size: 92
     label: _ZNK2nn3atk12SoundArchive9GetItemIdEPKc
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99f58
     size: 8
     label: _ZNK2nn3atk12SoundArchive13GetItemFileIdEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99f60
     size: 8
     label: _ZNK2nn3atk12SoundArchive21GetItemPrefetchFileIdEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99f68
     size: 88
     label: _ZNK2nn3atk12SoundArchive17GetSoundUserParamEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa99fc0
     size: 124
     label: _ZNK2nn3atk12SoundArchive18ReadSoundUserParamEPjji
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a03c
     size: 124
     label: _ZNK2nn3atk12SoundArchive12GetSoundTypeEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a0b8
     size: 116
     label: _ZNK2nn3atk12SoundArchive13ReadSoundInfoEPNS1_9SoundInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a12c
     size: 116
     label: _ZNK2nn3atk12SoundArchive21ReadSequenceSoundInfoEPNS1_17SequenceSoundInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a1a0
     size: 116
     label: _ZNK2nn3atk12SoundArchive19ReadStreamSoundInfoEPNS1_15StreamSoundInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a214
     size: 108
     label: _ZNK2nn3atk12SoundArchive27detail_ReadStreamSoundInfo2EjPNS1_16StreamSoundInfo2E
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a280
     size: 108
     label: _ZNK2nn3atk12SoundArchive24detail_ReadWaveSoundInfoEjPNS1_13WaveSoundInfoE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a2ec
     size: 8
     label: _ZNK2nn3atk12SoundArchive32detail_ReadAdvancedWaveSoundInfoEjPNS1_21AdvancedWaveSoundInfoE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a2f4
     size: 116
     label: _ZNK2nn3atk12SoundArchive14ReadPlayerInfoEPNS1_10PlayerInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a368
     size: 100
     label: _ZNK2nn3atk12SoundArchive26ReadSoundArchivePlayerInfoEPNS1_22SoundArchivePlayerInfoE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a3cc
     size: 116
     label: _ZNK2nn3atk12SoundArchive15ReadSound3DInfoEPNS1_11Sound3DInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a440
     size: 116
     label: _ZNK2nn3atk12SoundArchive12ReadBankInfoEPNS1_8BankInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a4b4
     size: 108
     label: _ZNK2nn3atk12SoundArchive19ReadWaveArchiveInfoEjPNS1_15WaveArchiveInfoE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a520
     size: 108
     label: _ZNK2nn3atk12SoundArchive25detail_ReadSoundGroupInfoEjPNS1_14SoundGroupInfoE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a58c
     size: 116
     label: _ZNK2nn3atk12SoundArchive13ReadGroupInfoEPNS1_9GroupInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a600
     size: 112
     label: _ZNK2nn3atk12SoundArchive19detail_ReadFileInfoEjPNS1_8FileInfoE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a670
     size: 8
     label: _ZNK2nn3atk12SoundArchive28detail_GetWaveArchiveIdTableEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a678
     size: 252
     label: _ZNK2nn3atk12SoundArchive21detail_OpenFileStreamEjPvmS2_m
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9a774
     size: 344
     label: _ZNK2nn3atk12SoundArchive17OpenExtStreamImplEPvmPKcS2_m
@@ -299170,19 +299170,19 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xa9a8cc
     size: 264
     label: _ZNK2nn3atk12SoundArchive30detail_GetExternalFileFullPathEPKcPcm
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xa9a9d4
     size: 200
     label: _ZN2nn3atk12SoundArchive19SetExternalFileRootEPKc
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9aa9c
     size: 364
     label: _ZNK2nn3atk12SoundArchive23ReadStreamSoundFilePathEPcmj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9ac08
     size: 8
     label: _ZNK2nn3atk12SoundArchive28detail_GetAttachedGroupTableEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xa9ac10
     size: 128
     label:
@@ -300209,29 +300209,29 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk6detail26AddonSoundArchiveContainerC1Ev
     - _ZN2nn3atk6detail26AddonSoundArchiveContainerC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa1ec4
     size: 12
     label:
     - _ZN2nn3atk6detail26AddonSoundArchiveContainerD1Ev
     - _ZN2nn3atk6detail26AddonSoundArchiveContainerD2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa1ed0
     size: 120
     label: _ZN2nn3atk6detail26AddonSoundArchiveContainer10InitializeEPKcPKNS0_17AddonSoundArchiveEPKNS0_16SoundDataManagerE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa1f48
     size: 16
     label: _ZN2nn3atk6detail26AddonSoundArchiveContainer8FinalizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa1f58
     size: 144
     label: _ZNK2nn3atk6detail26AddonSoundArchiveContainer10IsSameNameEPKc
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa1fe8
     size: 12
     label: _ZN2nn3atk6detail26AddonSoundArchiveContainer10SetAddTickERKNS_2os4TickE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa1ff4
     size: 24
     label:
@@ -300712,19 +300712,19 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk6detail15GroupFileReaderC1EPKv
     - _ZN2nn3atk6detail15GroupFileReaderC2EPKv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4808
     size: 100
     label: _ZNK2nn3atk6detail15GroupFileReader25ReadGroupItemLocationInfoEPNS1_21GroupItemLocationInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa486c
     size: 24
     label: _ZNK2nn3atk6detail15GroupFileReader19GetGroupItemExCountEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4884
     size: 76
     label: _ZNK2nn3atk6detail15GroupFileReader19ReadGroupItemInfoExEPNS1_9GroupFile15GroupItemInfoExEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa48d0
     size: 48
     label:
@@ -300772,267 +300772,267 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xaa4b54
     size: 52
     label: _ZNK2nn3atk6detail16SoundArchiveFile10FileHeader14GetReferenceByEt
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4b88
     size: 52
     label: _ZNK2nn3atk6detail16SoundArchiveFile10FileHeader18GetStringBlockSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4bbc
     size: 56
     label: _ZNK2nn3atk6detail16SoundArchiveFile10FileHeader16GetInfoBlockSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4bf4
     size: 56
     label: _ZNK2nn3atk6detail16SoundArchiveFile10FileHeader16GetFileBlockSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4c2c
     size: 52
     label: _ZNK2nn3atk6detail16SoundArchiveFile10FileHeader20GetStringBlockOffsetEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4c60
     size: 56
     label: _ZNK2nn3atk6detail16SoundArchiveFile10FileHeader18GetInfoBlockOffsetEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4c98
     size: 56
     label: _ZNK2nn3atk6detail16SoundArchiveFile10FileHeader18GetFileBlockOffsetEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4cd0
     size: 32
     label: _ZNK2nn3atk6detail16SoundArchiveFile15StringBlockBody10GetSectionENS3_8SectionsE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4cf0
     size: 56
     label: _ZNK2nn3atk6detail16SoundArchiveFile15StringBlockBody9GetStringEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4d28
     size: 284
     label: _ZNK2nn3atk6detail16SoundArchiveFile15StringBlockBody13GetItemIdImplENS3_8SectionsEPKc
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4e44
     size: 184
     label: _ZNK2nn3atk6detail16SoundArchiveFile12PatriciaTree13GetNodeDataByEPKcm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4efc
     size: 4
     label: _ZNK2nn3atk6detail16SoundArchiveFile15StringBlockBody8DumpTreeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4f00
     size: 68
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody12GetSoundInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4f44
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody26GetSoundInfoReferenceTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4f50
     size: 68
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody11GetBankInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4f94
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody25GetBankInfoReferenceTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4fa0
     size: 68
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody13GetPlayerInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4fe4
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody27GetPlayerInfoReferenceTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa4ff0
     size: 68
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody17GetSoundGroupInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5034
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody31GetSoundGroupInfoReferenceTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5040
     size: 68
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody12GetGroupInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5084
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody26GetGroupInfoReferenceTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5090
     size: 68
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody18GetWaveArchiveInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa50d4
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody32GetWaveArchiveInfoReferenceTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa50e0
     size: 48
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody11GetFileInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5110
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody25GetFileInfoReferenceTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa511c
     size: 492
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody13GetItemFileIdEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5308
     size: 116
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody21GetItemPrefetchFileIdEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa537c
     size: 48
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo12GetSoundTypeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa53ac
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo18GetStreamSoundInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa53b8
     size: 612
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody15GetItemStringIdEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa561c
     size: 24
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo11GetStringIdEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5634
     size: 24
     label: _ZNK2nn3atk6detail16SoundArchiveFile8BankInfo11GetStringIdEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa564c
     size: 24
     label: _ZNK2nn3atk6detail16SoundArchiveFile15WaveArchiveInfo11GetStringIdEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5664
     size: 24
     label: _ZNK2nn3atk6detail16SoundArchiveFile14SoundGroupInfo11GetStringIdEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa567c
     size: 24
     label: _ZNK2nn3atk6detail16SoundArchiveFile9GroupInfo11GetStringIdEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5694
     size: 24
     label: _ZNK2nn3atk6detail16SoundArchiveFile10PlayerInfo11GetStringIdEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa56ac
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile13InfoBlockBody25GetSoundArchivePlayerInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa56b8
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo16GetWaveSoundInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa56c4
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo24GetAdvancedWaveSoundInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa56d0
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo20GetSequenceSoundInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa56dc
     size: 108
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo14GetSound3DInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5748
     size: 36
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo10GetPanModeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa576c
     size: 36
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo11GetPanCurveEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5790
     size: 52
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo17GetSinglePlayTypeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa57c4
     size: 52
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo30GetSinglePlayEffectiveDurationEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa57f8
     size: 40
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo17GetPlayerPriorityEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5820
     size: 44
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo16GetActorPlayerIdEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa584c
     size: 92
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo12GetUserParamEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa58a8
     size: 112
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo13ReadUserParamEPji
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5918
     size: 104
     label: _ZNK2nn3atk6detail16SoundArchiveFile9SoundInfo13IsFrontBypassEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5980
     size: 32
     label: _ZNK2nn3atk6detail16SoundArchiveFile15StreamSoundInfo17GetTrackInfoTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa59a0
     size: 44
     label: _ZNK2nn3atk6detail16SoundArchiveFile15StreamSoundInfo23GetStreamSoundExtensionEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa59cc
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile15StreamSoundInfo12GetSendValueEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa59d8
     size: 24
     label: _ZNK2nn3atk6detail16SoundArchiveFile13WaveSoundInfo18GetChannelPriorityEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa59f0
     size: 28
     label: _ZNK2nn3atk6detail16SoundArchiveFile13WaveSoundInfo23GetIsReleasePriorityFixEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5a0c
     size: 12
     label: _ZNK2nn3atk6detail16SoundArchiveFile17SequenceSoundInfo14GetBankIdTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5a18
     size: 124
     label: _ZNK2nn3atk6detail16SoundArchiveFile17SequenceSoundInfo10GetBankIdsEPj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5a94
     size: 24
     label: _ZNK2nn3atk6detail16SoundArchiveFile17SequenceSoundInfo14GetStartOffsetEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5aac
     size: 32
     label: _ZNK2nn3atk6detail16SoundArchiveFile17SequenceSoundInfo18GetChannelPriorityEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5acc
     size: 44
     label: _ZNK2nn3atk6detail16SoundArchiveFile17SequenceSoundInfo20IsReleasePriorityFixEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5af8
     size: 32
     label: _ZNK2nn3atk6detail16SoundArchiveFile10PlayerInfo17GetPlayerHeapSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5b18
     size: 32
     label: _ZNK2nn3atk6detail16SoundArchiveFile15WaveArchiveInfo12GetWaveCountEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5b38
     size: 52
     label: _ZNK2nn3atk6detail16SoundArchiveFile8FileInfo19GetFileLocationTypeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5b6c
     size: 36
     label: _ZNK2nn3atk6detail16SoundArchiveFile8FileInfo19GetInternalFileInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5b90
     size: 36
     label: _ZNK2nn3atk6detail16SoundArchiveFile8FileInfo19GetExternalFileInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa5bb4
     size: 12
     label:
@@ -301426,127 +301426,127 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xaa8de8
     size: 48
     label: _ZNK2nn3atk6detail15WaveArchiveFile10FileHeader12GetInfoBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa8e18
     size: 40
     label: _ZNK2nn3atk6detail15WaveArchiveFile10FileHeader18GetInfoBlockOffsetEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa8e40
     size: 48
     label: _ZNK2nn3atk6detail15WaveArchiveFile10FileHeader12GetFileBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa8e70
     size: 40
     label: _ZNK2nn3atk6detail15WaveArchiveFile10FileHeader18GetFileBlockOffsetEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa8e98
     size: 40
     label: _ZNK2nn3atk6detail15WaveArchiveFile10FileHeader16GetInfoBlockSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa8ec0
     size: 32
     label: _ZNK2nn3atk6detail15WaveArchiveFile10FileHeader14GetReferenceByEt
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa8ee0
     size: 40
     label: _ZNK2nn3atk6detail15WaveArchiveFile10FileHeader16GetFileBlockSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa8f08
     size: 16
     label:
     - _ZN2nn3atk6detail21WaveArchiveFileReaderC1Ev
     - _ZN2nn3atk6detail21WaveArchiveFileReaderC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa8f18
     size: 188
     label:
     - _ZN2nn3atk6detail21WaveArchiveFileReaderC1EPKvb
     - _ZN2nn3atk6detail21WaveArchiveFileReaderC2EPKvb
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa8fd4
     size: 176
     label: _ZN2nn3atk6detail21WaveArchiveFileReader10InitializeEPKvb
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa9084
     size: 72
     label: _ZNK2nn3atk6detail21WaveArchiveFileReader22HasIndividualLoadTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa90cc
     size: 24
     label: _ZN2nn3atk6detail21WaveArchiveFileReader8FinalizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa90e4
     size: 48
     label: _ZN2nn3atk6detail21WaveArchiveFileReader19InitializeFileTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa9114
     size: 28
     label: _ZNK2nn3atk6detail21WaveArchiveFileReader16GetWaveFileCountEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa9130
     size: 116
     label: _ZNK2nn3atk6detail21WaveArchiveFileReader11GetWaveFileEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa91a4
     size: 36
     label: _ZNK2nn3atk6detail21WaveArchiveFileReader15GetWaveFileSizeEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa91c8
     size: 80
     label: _ZNK2nn3atk6detail21WaveArchiveFileReader29GetWaveFileOffsetFromFileHeadEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa9218
     size: 76
     label: _ZN2nn3atk6detail21WaveArchiveFileReader11SetWaveFileEjPKv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa9264
     size: 24
     label: _ZN2nn3atk6detail14WaveFileReader15GetSampleFormatEh
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa927c
     size: 228
     label:
     - _ZN2nn3atk6detail14WaveFileReaderC1EPKva
     - _ZN2nn3atk6detail14WaveFileReaderC2EPKva
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa9360
     size: 24
     label: _ZNK2nn3atk6detail14WaveFileReader23IsOriginalLoopAvailableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa9378
     size: 400
     label: _ZNK2nn3atk6detail14WaveFileReader12ReadWaveInfoEPNS1_8WaveInfoEPKv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xaa9508
     size: 16
     label: _ZNK2nn3atk6detail14WaveFileReader18GetWaveDataAddressEPKNS1_8WaveFile11ChannelInfoEPKv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa9518
     size: 72
     label: _ZN2nn3atk20Debug_SetWarningFlagENS0_16DebugWarningFlagEb
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa9560
     size: 52
     label: _ZN2nn3atk6detail20Debug_GetWarningFlagENS0_16DebugWarningFlagE
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xaa9594
     size: 24
     label: _ZN2nn3atk6detail38Debug_GetDebugWarningFlagFromSoundTypeENS1_14DebugSoundTypeE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa95ac
     size: 36
     label: _ZN2nn3atk6detail24Debug_GetSoundTypeStringENS1_14DebugSoundTypeE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa95d0
     size: 8
     label:
     - _ZN2nn3atk6detail14DspadpcmReaderC1Ev
     - _ZN2nn3atk6detail14DspadpcmReaderC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaa95d8
     size: 112
     label: _ZNK2nn3atk6detail14DspadpcmReader12ReadWaveInfoEPNS1_8WaveInfoE
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xaa9648
     size: 4
     label: _ZN2nn3atk20BiquadFilterCallbackD2Ev
@@ -301947,29 +301947,29 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk6detail14BankFileReaderC1Ev
     - _ZN2nn3atk6detail14BankFileReaderC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaad8ec
     size: 132
     label:
     - _ZN2nn3atk6detail14BankFileReaderC1EPKv
     - _ZN2nn3atk6detail14BankFileReaderC2EPKv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaad970
     size: 124
     label: _ZN2nn3atk6detail14BankFileReader10InitializeEPKv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaad9ec
     size: 20
     label: _ZN2nn3atk6detail14BankFileReader8FinalizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaada00
     size: 408
     label: _ZNK2nn3atk6detail14BankFileReader22ReadVelocityRegionInfoEPNS1_18VelocityRegionInfoEiii
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaadb98
     size: 40
     label: _ZNK2nn3atk6detail14BankFileReader14GetWaveIdTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaadbc0
     size: 76
     label:
@@ -302650,7 +302650,7 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xab27c4
     size: 152
     label: _ZN2nn3atk6detail6driver13SequenceTrackC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab285c
     size: 336
     label: _ZN2nn3atk6detail6driver13SequenceTrack9InitParamEv
@@ -302910,83 +302910,83 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xab47cc
     size: 64
     label: _ZNK2nn3atk6detail15StreamSoundFile10FileHeader14GetReferenceByEt
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab480c
     size: 64
     label: _ZNK2nn3atk6detail15StreamSoundFile10FileHeader12HasSeekBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab484c
     size: 64
     label: _ZNK2nn3atk6detail15StreamSoundFile10FileHeader14HasRegionBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab488c
     size: 24
     label: _ZNK2nn3atk6detail15StreamSoundFile10FileHeader16GetInfoBlockSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab48a4
     size: 28
     label: _ZNK2nn3atk6detail15StreamSoundFile10FileHeader16GetSeekBlockSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab48c0
     size: 28
     label: _ZNK2nn3atk6detail15StreamSoundFile10FileHeader16GetDataBlockSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab48dc
     size: 28
     label: _ZNK2nn3atk6detail15StreamSoundFile10FileHeader18GetRegionBlockSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab48f8
     size: 24
     label: _ZNK2nn3atk6detail15StreamSoundFile10FileHeader18GetInfoBlockOffsetEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4910
     size: 28
     label: _ZNK2nn3atk6detail15StreamSoundFile10FileHeader18GetSeekBlockOffsetEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab492c
     size: 28
     label: _ZNK2nn3atk6detail15StreamSoundFile10FileHeader18GetDataBlockOffsetEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4948
     size: 28
     label: _ZNK2nn3atk6detail15StreamSoundFile10FileHeader20GetRegionBlockOffsetEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4964
     size: 36
     label: _ZNK2nn3atk6detail15StreamSoundFile13InfoBlockBody18GetStreamSoundInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4988
     size: 32
     label: _ZNK2nn3atk6detail15StreamSoundFile13InfoBlockBody17GetTrackInfoTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab49a8
     size: 32
     label: _ZNK2nn3atk6detail15StreamSoundFile13InfoBlockBody19GetChannelInfoTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab49c8
     size: 68
     label: _ZNK2nn3atk6detail15StreamSoundFile14TrackInfoTable12GetTrackInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4a0c
     size: 68
     label: _ZNK2nn3atk6detail15StreamSoundFile16ChannelInfoTable14GetChannelInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4a50
     size: 32
     label: _ZNK2nn3atk6detail15StreamSoundFile11ChannelInfo22GetDspAdpcmChannelInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4a70
     size: 392
     label: _ZN2nn3atk6detail21StreamSoundFileLoader14LoadFileHeaderEPNS1_21StreamSoundFileReaderEPvm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4bf8
     size: 220
     label: _ZN2nn3atk6detail21StreamSoundFileLoader17ReadSeekBlockDataEPtS3_ii
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4cd4
     size: 172
     label: _ZNK2nn3atk6detail21StreamSoundFileLoader14ReadRegionInfoEPNS1_15StreamSoundFile10RegionInfoEj
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xab4d80
     size: 4
     label: _ZN2nn3atk6detail19IRegionInfoReadableD2Ev
@@ -303002,51 +303002,51 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk6detail21StreamSoundFileReaderC1Ev
     - _ZN2nn3atk6detail21StreamSoundFileReaderC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4d90
     size: 132
     label: _ZN2nn3atk6detail21StreamSoundFileReader10InitializeEPKv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xab4e14
     size: 68
     label: _ZN2nn3atk6detail21StreamSoundFileReader17IsValidFileHeaderEPKv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xab4e58
     size: 8
     label: _ZN2nn3atk6detail21StreamSoundFileReader8FinalizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4e60
     size: 20
     label: _ZNK2nn3atk6detail21StreamSoundFileReader20IsTrackInfoAvailableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4e74
     size: 24
     label: _ZNK2nn3atk6detail21StreamSoundFileReader23IsOriginalLoopAvailableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4e8c
     size: 20
     label: _ZN2nn3atk6detail21StreamSoundFileReader27IsOriginalLoopAvailableImplEPKNS1_15StreamSoundFile10FileHeaderE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4ea0
     size: 20
     label: _ZNK2nn3atk6detail21StreamSoundFileReader21IsCrc32CheckAvailableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4eb4
     size: 24
     label: _ZNK2nn3atk6detail21StreamSoundFileReader27IsRegionIndexCheckAvailableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4ecc
     size: 272
     label: _ZNK2nn3atk6detail21StreamSoundFileReader19ReadStreamSoundInfoEPNS1_15StreamSoundFile15StreamSoundInfoE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab4fdc
     size: 252
     label: _ZNK2nn3atk6detail21StreamSoundFileReader19ReadStreamTrackInfoEPNS2_9TrackInfoEi
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xab50d8
     size: 116
     label: _ZNK2nn3atk6detail21StreamSoundFileReader23ReadDspAdpcmChannelInfoEPNS0_13DspAdpcmParamEPNS1_17DspAdpcmLoopParamEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xab514c
     size: 3412
     label:
@@ -303386,13 +303386,13 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk6detail29StreamSoundPrefetchFileReaderC1Ev
     - _ZN2nn3atk6detail29StreamSoundPrefetchFileReaderC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaba350
     size: 28
     label:
     - _ZN2nn3atk6detail29StreamSoundPrefetchFileReaderD1Ev
     - _ZN2nn3atk6detail29StreamSoundPrefetchFileReaderD2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaba36c
     size: 16
     label: _ZN2nn3atk6detail29StreamSoundPrefetchFileReader8FinalizeEv
@@ -303400,15 +303400,15 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xaba37c
     size: 4
     label: _ZN2nn3atk6detail29StreamSoundPrefetchFileReaderD0Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaba380
     size: 236
     label: _ZN2nn3atk6detail29StreamSoundPrefetchFileReader10InitializeEPKv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xaba46c
     size: 68
     label: _ZNK2nn3atk6detail29StreamSoundPrefetchFileReader17IsValidFileHeaderEPKv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xaba4b0
     size: 84
     label: _ZNK2nn3atk6detail29StreamSoundPrefetchFileReader19GetRegionDataOffsetEv
@@ -303420,31 +303420,31 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xaba520
     size: 20
     label: _ZNK2nn3atk6detail29StreamSoundPrefetchFileReader19IsIncludeRegionInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaba534
     size: 24
     label: _ZNK2nn3atk6detail29StreamSoundPrefetchFileReader21IsCrc32CheckAvailableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaba54c
     size: 24
     label: _ZNK2nn3atk6detail29StreamSoundPrefetchFileReader27IsRegionIndexCheckAvailableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaba564
     size: 56
     label: _ZNK2nn3atk6detail29StreamSoundPrefetchFileReader19ReadStreamSoundInfoEPNS1_15StreamSoundFile15StreamSoundInfoE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaba59c
     size: 116
     label: _ZNK2nn3atk6detail29StreamSoundPrefetchFileReader23ReadDspAdpcmChannelInfoEPNS0_13DspAdpcmParamEPNS1_17DspAdpcmLoopParamEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaba610
     size: 72
     label: _ZNK2nn3atk6detail29StreamSoundPrefetchFileReader20ReadPrefetchDataInfoEPNS2_16PrefetchDataInfoEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaba658
     size: 84
     label: _ZNK2nn3atk6detail29StreamSoundPrefetchFileReader14ReadRegionInfoEPNS1_15StreamSoundFile10RegionInfoEj
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xaba6ac
     size: 80
     label:
@@ -303556,7 +303556,7 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xabb900
     size: 32
     label: _ZN2nn3atk6detail6driver13StreamChannel16AppendWaveBufferEPNS0_10WaveBufferEb
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabb920
     size: 20
     label:
@@ -303838,17 +303838,17 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xabde9c
     size: 80
     label: _ZN2nn3atk6detail4TaskC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabdeec
     size: 20
     label:
     - _ZN2nn3atk6detail4TaskD1Ev
     - _ZN2nn3atk6detail4TaskD2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabdf00
     size: 52
     label: _ZN2nn3atk6detail4TaskD0Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabdf34
     size: 176
     label: _ZN2nn3atk6detail11TaskManager11GetInstanceEv
@@ -303957,55 +303957,55 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk6detail10CurveAdshrC1Ev
     - _ZN2nn3atk6detail10CurveAdshrC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabeaa8
     size: 48
     label: _ZN2nn3atk6detail10CurveAdshr10InitializeEf
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabead8
     size: 20
     label: _ZN2nn3atk6detail10CurveAdshr9SetAttackEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabeaec
     size: 20
     label: _ZN2nn3atk6detail10CurveAdshr7SetHoldEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabeb00
     size: 120
     label: _ZN2nn3atk6detail10CurveAdshr8SetDecayEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabeb78
     size: 8
     label: _ZN2nn3atk6detail10CurveAdshr10SetSustainEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabeb80
     size: 120
     label: _ZN2nn3atk6detail10CurveAdshr10SetReleaseEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabebf8
     size: 20
     label: _ZN2nn3atk6detail10CurveAdshr5ResetEf
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabec0c
     size: 44
     label: _ZNK2nn3atk6detail10CurveAdshr8GetValueEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabec38
     size: 236
     label: _ZN2nn3atk6detail10CurveAdshr6UpdateEi
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xabed24
     size: 16
     label: _ZN2nn3atk6detail10CurveAdshr17CalcDecibelSquareEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabed34
     size: 108
     label: _ZN2nn3atk6detail10CurveAdshr11CalcReleaseEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabeda0
     size: 100
     label: _ZN2nn3atk6detail8CurveLfo20InitializeCurveTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabee04
     size: 60
     label: ''
@@ -304029,51 +304029,51 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xabeeb0
     size: 32
     label: _ZN2nn3atk6detail8CurveLfo17RegisterUserCurveEPFffEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabeed0
     size: 28
     label: _ZN2nn3atk6detail8CurveLfo19UnregisterUserCurveEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabeeec
     size: 28
     label: _ZN2nn3atk6detail13CurveLfoParam10InitializeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabef08
     size: 20
     label: _ZN2nn3atk6detail8CurveLfo5ResetEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabef1c
     size: 160
     label: _ZN2nn3atk6detail8CurveLfo6UpdateEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabefbc
     size: 156
     label: _ZNK2nn3atk6detail8CurveLfo8GetValueEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabf058
     size: 16
     label:
     - _ZN2nn3atk6detail9FrameHeapC1Ev
     - _ZN2nn3atk6detail9FrameHeapC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabf068
     size: 68
     label:
     - _ZN2nn3atk6detail9FrameHeapD1Ev
     - _ZN2nn3atk6detail9FrameHeapD2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabf0ac
     size: 68
     label: _ZN2nn3atk6detail9FrameHeap7DestroyEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabf0f0
     size: 216
     label: _ZN2nn3atk6detail9FrameHeap6CreateEPvm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabf1c8
     size: 112
     label: _ZN2nn3atk6detail9FrameHeap10NewSectionEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabf238
     size: 372
     label: _ZN2nn3atk6detail9FrameHeap12ClearSectionEv
@@ -304081,19 +304081,19 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xabf3ac
     size: 116
     label: _ZN2nn3atk6detail9FrameHeap5ClearEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabf420
     size: 144
     label: _ZN2nn3atk6detail9FrameHeap5AllocEmPFvPvmS3_ES3_PFvS3_ES3_
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabf4b0
     size: 32
     label: _ZN2nn3atk6detail9FrameHeap7Section11AppendBlockEPNS2_5BlockE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabf4d0
     size: 204
     label: _ZN2nn3atk6detail9FrameHeap9SaveStateEv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xabf59c
     size: 332
     label: _ZN2nn3atk6detail9FrameHeap15ProcessCallbackEi
@@ -304123,13 +304123,13 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk6detail9FrameHeap7SectionC1Ev
     - _ZN2nn3atk6detail9FrameHeap7SectionC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabfa00
     size: 176
     label:
     - _ZN2nn3atk6detail9FrameHeap7SectionD1Ev
     - _ZN2nn3atk6detail9FrameHeap7SectionD2Ev
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xabfab0
     size: 4
     label: _ZNK2nn3atk6detail9FrameHeap7Section4DumpERKNS0_16SoundDataManagerERKNS0_12SoundArchiveE
@@ -304139,174 +304139,174 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk6detail16MemoryFileStreamC1EPKvm
     - _ZN2nn3atk6detail16MemoryFileStreamC2EPKvm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabfacc
     size: 12
     label: _ZN2nn3atk6detail16MemoryFileStream5CloseEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabfad8
     size: 84
     label: _ZN2nn3atk6detail16MemoryFileStream4ReadEPvmPNS1_3fnd9FndResultE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabfb2c
     size: 76
     label: _ZN2nn3atk6detail16MemoryFileStream4SeekElNS1_3fnd6Stream10SeekOriginE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabfb78
     size: 4
     label: _ZN2nn3atk6detail3fnd6StreamD2Ev
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfb7c
     size: 4
     label: _ZN2nn3atk6detail16MemoryFileStreamD0Ev
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfb80
     size: 16
     label: _ZNK2nn3atk6detail16MemoryFileStream8IsOpenedEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfb90
     size: 8
     label: _ZN2nn3atk6detail16MemoryFileStream5WriteEPKvmPNS1_3fnd9FndResultE
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfb98
     size: 8
     label: _ZNK2nn3atk6detail16MemoryFileStream18GetCurrentPositionEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfba0
     size: 8
     label: _ZNK2nn3atk6detail16MemoryFileStream7GetSizeEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfba8
     size: 8
     label: _ZNK2nn3atk6detail16MemoryFileStream7CanReadEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfbb0
     size: 8
     label: _ZNK2nn3atk6detail16MemoryFileStream8CanWriteEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfbb8
     size: 8
     label: _ZNK2nn3atk6detail16MemoryFileStream7CanSeekEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfbc0
     size: 8
     label: _ZN2nn3atk6detail16MemoryFileStream4OpenEPKcNS1_3fnd10FileStream10AccessModeE
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfbc8
     size: 4
     label: _ZN2nn3atk6detail16MemoryFileStream5FlushEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfbcc
     size: 4
     label: _ZN2nn3atk6detail16MemoryFileStream11EnableCacheEPvm
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfbd0
     size: 4
     label: _ZN2nn3atk6detail16MemoryFileStream12DisableCacheEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfbd4
     size: 8
     label: _ZNK2nn3atk6detail16MemoryFileStream14IsCacheEnabledEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfbdc
     size: 8
     label: _ZNK2nn3atk6detail16MemoryFileStream20GetIoBufferAlignmentEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfbe4
     size: 8
     label: _ZNK2nn3atk6detail16MemoryFileStream17CanSetFsAccessLogEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfbec
     size: 8
     label: _ZN2nn3atk6detail16MemoryFileStream14SetFsAccessLogEPNS1_3fnd11FsAccessLogE
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfbf4
     size: 8
     label: _ZN2nn3atk6detail16MemoryFileStream16GetCachePositionEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfbfc
     size: 8
     label: _ZN2nn3atk6detail16MemoryFileStream15GetCachedLengthEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xabfc04
     size: 112
     label: _ZN2nn3atk6detail4Util11CalcLpfFreqEf
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabfc74
     size: 368
     label: _ZN2nn3atk6detail4Util29CalcLowPassFilterCoefficientsEiib
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xabfde4
     size: 88
     label: _ZN2nn3atk6detail4Util21FindLpfFreqTableIndexEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabfe3c
     size: 160
     label: _ZN2nn3atk6detail4Util12CalcPanRatioEfRKNS2_7PanInfoENS0_10OutputModeE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabfedc
     size: 88
     label: _ZN2nn3atk6detail4Util20CalcSurroundPanRatioEfRKNS2_7PanInfoE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xabff34
     size: 244
     label: _ZN2nn3atk6detail4Util14CalcPitchRatioEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac0028
     size: 64
     label: _ZN2nn3atk6detail4Util15CalcVolumeRatioEf
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac0068
     size: 40
     label: _ZN2nn3atk6detail4Util10CalcRandomEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac0090
     size: 136
     label: _ZN2nn3atk6detail4Util11GetWaveFileEjjRKNS0_12SoundArchiveERKNS0_18SoundArchivePlayerE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac0118
     size: 136
     label: _ZN2nn3atk6detail4Util11GetWaveFileEjjRKNS0_12SoundArchiveEPKNS1_21PlayerHeapDataManagerE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac01a0
     size: 288
     label: _ZN2nn3atk6detail4Util20GetWaveArchiveOfBankERNS1_12LoadItemInfoERbPKvRKNS0_12SoundArchiveERKNS1_18SoundArchiveLoaderE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac02c0
     size: 180
     label: _ZN2nn3atk6detail4Util22GetWaveFileOfWaveSoundEPKvjRKNS0_12SoundArchiveERKNS1_18SoundArchiveLoaderE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac0374
     size: 76
     label: _ZN2nn3atk6detail4Util15GetSampleByByteEmNS0_12SampleFormatE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac03c0
     size: 104
     label: _ZN2nn3atk6detail4Util15GetByteBySampleEmNS0_12SampleFormatE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac0428
     size: 8
     label: _ZN2nn3atk6detail4Util19IsValidMemoryForDspEPKvm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac0430
     size: 72
     label: _ZN2nn3atk6detail4Util13WarningLogger9LogBuffer3LogEiii
@@ -304336,17 +304336,17 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk6detail6driver7ChannelC1Ev
     - _ZN2nn3atk6detail6driver7ChannelC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac0684
     size: 36
     label:
     - _ZN2nn3atk6detail6driver7ChannelD1Ev
     - _ZN2nn3atk6detail6driver7ChannelD2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac06a8
     size: 312
     label: _ZN2nn3atk6detail6driver7Channel9InitParamEPFvPS3_NS3_21ChannelCallbackStatusEPvES6_
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xac07e0
     size: 1084
     label: _ZN2nn3atk6detail6driver7Channel6UpdateEb
@@ -304354,19 +304354,19 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xac0c1c
     size: 56
     label: _ZN2nn3atk6detail6driver7Channel4StopEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac0c54
     size: 52
     label: _ZNK2nn3atk6detail6driver7Channel13GetSweepValueEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac0c88
     size: 28
     label: _ZN2nn3atk6detail6driver7Channel11UpdateSweepEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac0ca4
     size: 172
     label: _ZN2nn3atk6detail6driver7Channel5StartERKNS1_8WaveInfoEil
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac0d50
     size: 580
     label: _ZN2nn3atk6detail6driver7Channel16AppendWaveBufferERKNS1_8WaveInfoEl
@@ -304374,43 +304374,43 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xac0f94
     size: 76
     label: _ZN2nn3atk6detail6driver7Channel7ReleaseEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac0fe0
     size: 84
     label: _ZN2nn3atk6detail6driver7Channel7NoteOffEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac1034
     size: 24
     label: _ZN2nn3atk6detail6driver7Channel13SetSweepParamEfib
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac104c
     size: 12
     label: _ZN2nn3atk6detail6driver7Channel15SetBiquadFilterEif
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac1058
     size: 104
     label: _ZNK2nn3atk6detail6driver7Channel23GetCurrentPlayingSampleEb
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac10c0
     size: 136
     label: _ZN2nn3atk6detail6driver7Channel17VoiceCallbackFuncEPNS2_10MultiVoiceENS4_19VoiceCallbackStatusEPv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac1148
     size: 48
     label: _ZN2nn3atk6detail6driver7Channel19CallChannelCallbackENS3_21ChannelCallbackStatusE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac1178
     size: 180
     label: _ZN2nn3atk6detail6driver7Channel12AllocChannelEiiPFvPS3_NS3_21ChannelCallbackStatusEPvES6_
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac122c
     size: 36
     label: _ZN2nn3atk6detail6driver7Channel11FreeChannelEPS3_
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac1250
     size: 8
     label: _ZN2nn3atk6detail6driver7Channel13DetachChannelEPS3_
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac1258
     size: 376
     label: _ZN2nn3atk6detail6driver7Channel8Disposer14InvalidateDataEPKvS6_
@@ -304463,7 +304463,7 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk6detail13LowLevelVoiceC1Ev
     - _ZN2nn3atk6detail13LowLevelVoiceC2Ev
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xac17f8
     size: 36
     label: _ZN2nn3atk6detail13LowLevelVoice10InitializeEv
@@ -304491,7 +304491,7 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xac18fc
     size: 40
     label: _ZN2nn3atk6detail13LowLevelVoice16AppendWaveBufferEPNS0_10WaveBufferE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac1924
     size: 276
     label: _ZN2nn3atk6detail13LowLevelVoice11UpdateStateENS0_10OutputModeE
@@ -305101,31 +305101,31 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk6detail19WaveSoundFileReaderC1EPKv
     - _ZN2nn3atk6detail19WaveSoundFileReaderC2EPKv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac62c4
     size: 28
     label: _ZNK2nn3atk6detail19WaveSoundFileReader17GetWaveSoundCountEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac62e0
     size: 32
     label: _ZNK2nn3atk6detail19WaveSoundFileReader16GetNoteInfoCountEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac6300
     size: 32
     label: _ZNK2nn3atk6detail19WaveSoundFileReader17GetTrackInfoCountEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac6320
     size: 212
     label: _ZNK2nn3atk6detail19WaveSoundFileReader17ReadWaveSoundInfoEPNS1_13WaveSoundInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac63f4
     size: 24
     label: _ZNK2nn3atk6detail19WaveSoundFileReader24IsFilterSupportedVersionEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac640c
     size: 208
     label: _ZNK2nn3atk6detail19WaveSoundFileReader12ReadNoteInfoEPNS1_17WaveSoundNoteInfoEjj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac64dc
     size: 128
     label:
@@ -305721,7 +305721,7 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xac9530
     size: 64
     label: _ZN2nn3atk6detail3fnd8HeapBase19FindListContainHeapEPS3_
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9570
     size: 104
     label: _ZN2nn3atk6detail3fnd8HeapBase15FindContainHeapEPNS_4util13IntrusiveListIS3_NS4_27IntrusiveListBaseNodeTraitsIS3_S3_EEEEPKv
@@ -305729,101 +305729,101 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xac95d8
     size: 24
     label: _ZN2nn3atk6detail3fnd8HeapBase15FindContainHeapEPKv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac95f0
     size: 84
     label: _ZN2nn3atk6detail3fnd8HeapBase14FindParentHeapEPKS3_
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9644
     size: 28
     label: _ZN2nn3atk6detail3fnd8HeapBase12SetFillValueENS3_8FillTypeEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9660
     size: 16
     label: _ZN2nn3atk6detail3fnd8HeapBase12GetFillValueENS3_8FillTypeE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9670
     size: 76
     label: _ZN2nn3atk6detail3fnd8HeapBase11GetHeapTypeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac96bc
     size: 136
     label: _ZN2nn3atk6detail3fnd8HeapBase10InitializeEjPvS4_t
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9744
     size: 8
     label: _ZN2nn3atk6detail3fnd8HeapBase13SetOptionFlagEt
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xac974c
     size: 32
     label: _ZN2nn3atk6detail3fnd8HeapBase15FillNoUseMemoryEPvm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac976c
     size: 104
     label: _ZN2nn3atk6detail3fnd8HeapBase8FinalizeEv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xac97d4
     size: 4
     label: _ZN2nn3atk6detail3fnd8HeapBase8LockHeapEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac97d8
     size: 4
     label: _ZN2nn3atk6detail3fnd8HeapBase10UnlockHeapEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac97dc
     size: 36
     label: _ZN2nn3atk6detail3fnd8HeapBase14FillFreeMemoryEPvm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9800
     size: 8
     label: _ZN2nn3atk6detail3fnd8HeapBase13GetOptionFlagEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9808
     size: 52
     label: _ZN2nn3atk6detail3fnd8HeapBase15FillAllocMemoryEPvm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac983c
     size: 120
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl4ReadEPvmPNS2_9FndResultE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac98b4
     size: 112
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl5WriteEPKvmPNS2_9FndResultE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9924
     size: 100
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl4SeekElNS2_6Stream10SeekOriginE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9988
     size: 12
     label: _ZNK2nn3atk6detail3fnd14FileStreamImpl7CanReadEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9994
     size: 12
     label: _ZNK2nn3atk6detail3fnd14FileStreamImpl8CanWriteEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac99a0
     size: 12
     label: _ZNK2nn3atk6detail3fnd14FileStreamImpl7CanSeekEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac99ac
     size: 144
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl11EnableCacheEPvm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9a3c
     size: 8
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl12DisableCacheEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9a44
     size: 12
     label: _ZNK2nn3atk6detail3fnd14FileStreamImpl17ValidateAlignmentEPKv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9a50
     size: 80
     label:
     - _ZN2nn3atk6detail3fnd14FileStreamImplC1Ev
     - _ZN2nn3atk6detail3fnd14FileStreamImplC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9aa0
     size: 152
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl4OpenEPKcNS2_10FileStream10AccessModeE
@@ -305831,35 +305831,35 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xac9b38
     size: 68
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl5CloseEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9b7c
     size: 60
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl5FlushEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9bb8
     size: 8
     label: _ZNK2nn3atk6detail3fnd14FileStreamImpl8IsOpenedEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9bc0
     size: 68
     label: _ZNK2nn3atk6detail3fnd14FileStreamImpl7GetSizeEv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xac9c04
     size: 8
     label: _ZNK2nn3atk6detail3fnd14FileStreamImpl20GetIoBufferAlignmentEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9c0c
     size: 136
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl10ReadDirectEPvmPNS2_9FndResultE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9c94
     size: 124
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl11WriteDirectEPKvmPNS2_9FndResultE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xac9d10
     size: 212
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl10SeekDirectElNS2_6Stream10SeekOriginE
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xac9de4
     size: 4
     label: _ZN2nn3atk6detail3fnd14FileStreamImplD2Ev
@@ -305903,154 +305903,154 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xac9ed8
     size: 4
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl12DirectStreamD0Ev
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xac9edc
     size: 4
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl12DirectStream5CloseEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xac9ee0
     size: 16
     label: _ZNK2nn3atk6detail3fnd14FileStreamImpl12DirectStream8IsOpenedEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xac9ef0
     size: 140
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl12DirectStream4ReadEPvmPNS2_9FndResultE
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xac9f7c
     size: 128
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl12DirectStream5WriteEPKvmPNS2_9FndResultE
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xac9ffc
     size: 216
     label: _ZN2nn3atk6detail3fnd14FileStreamImpl12DirectStream4SeekElNS2_6Stream10SeekOriginE
-    status: NotDecompiled
+    status: NonMatchingMajor
     lazy: true
   - offset: 0xaca0d4
     size: 12
     label: _ZNK2nn3atk6detail3fnd14FileStreamImpl12DirectStream18GetCurrentPositionEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xaca0e0
     size: 16
     label: _ZNK2nn3atk6detail3fnd14FileStreamImpl12DirectStream7GetSizeEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xaca0f0
     size: 16
     label: _ZNK2nn3atk6detail3fnd14FileStreamImpl12DirectStream7CanReadEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xaca100
     size: 16
     label: _ZNK2nn3atk6detail3fnd14FileStreamImpl12DirectStream8CanWriteEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xaca110
     size: 16
     label: _ZNK2nn3atk6detail3fnd14FileStreamImpl12DirectStream7CanSeekEv
-    status: NotDecompiled
+    status: Matching
     lazy: true
   - offset: 0xaca120
     size: 24
     label:
     - _ZN2nn3atk6detail3fnd15FileStreamProxyC1EPNS2_10FileStreamElm
     - _ZN2nn3atk6detail3fnd15FileStreamProxyC2EPNS2_10FileStreamElm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca138
     size: 24
     label:
     - _ZN2nn3atk6detail3fnd15FileStreamProxyD1Ev
     - _ZN2nn3atk6detail3fnd15FileStreamProxyD2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca150
     size: 4
     label: _ZN2nn3atk6detail3fnd15FileStreamProxyD0Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca154
     size: 36
     label: _ZN2nn3atk6detail3fnd15FileStreamProxy4OpenEPKcNS2_10FileStream10AccessModeE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca178
     size: 16
     label: _ZN2nn3atk6detail3fnd15FileStreamProxy5CloseEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca188
     size: 16
     label: _ZN2nn3atk6detail3fnd15FileStreamProxy5FlushEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca198
     size: 16
     label: _ZNK2nn3atk6detail3fnd15FileStreamProxy8IsOpenedEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca1a8
     size: 16
     label: _ZNK2nn3atk6detail3fnd15FileStreamProxy7CanReadEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca1b8
     size: 16
     label: _ZNK2nn3atk6detail3fnd15FileStreamProxy8CanWriteEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca1c8
     size: 16
     label: _ZNK2nn3atk6detail3fnd15FileStreamProxy7CanSeekEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca1d8
     size: 16
     label: _ZNK2nn3atk6detail3fnd15FileStreamProxy7GetSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca1e8
     size: 16
     label: _ZN2nn3atk6detail3fnd15FileStreamProxy4ReadEPvmPNS2_9FndResultE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca1f8
     size: 16
     label: _ZN2nn3atk6detail3fnd15FileStreamProxy5WriteEPKvmPNS2_9FndResultE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca208
     size: 168
     label: _ZN2nn3atk6detail3fnd15FileStreamProxy4SeekElNS2_6Stream10SeekOriginE
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xaca2b0
     size: 16
     label: _ZNK2nn3atk6detail3fnd15FileStreamProxy18GetCurrentPositionEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca2c0
     size: 16
     label: _ZN2nn3atk6detail3fnd15FileStreamProxy11EnableCacheEPvm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca2d0
     size: 16
     label: _ZN2nn3atk6detail3fnd15FileStreamProxy12DisableCacheEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca2e0
     size: 16
     label: _ZNK2nn3atk6detail3fnd15FileStreamProxy14IsCacheEnabledEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca2f0
     size: 16
     label: _ZNK2nn3atk6detail3fnd15FileStreamProxy20GetIoBufferAlignmentEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca300
     size: 16
     label: _ZNK2nn3atk6detail3fnd15FileStreamProxy17CanSetFsAccessLogEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca310
     size: 16
     label: _ZN2nn3atk6detail3fnd15FileStreamProxy14SetFsAccessLogEPNS2_11FsAccessLogE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca320
     size: 16
     label: _ZN2nn3atk6detail3fnd15FileStreamProxy16GetCachePositionEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca330
     size: 16
     label: _ZN2nn3atk6detail3fnd15FileStreamProxy15GetCachedLengthEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xaca340
     size: 40
     label:
@@ -306213,23 +306213,23 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk30AudioRendererPerformanceReaderC1Ev
     - _ZN2nn3atk30AudioRendererPerformanceReaderC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacb25c
     size: 40
     label: _ZN2nn3atk30AudioRendererPerformanceReader21GetRequiredMemorySizeEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacb284
     size: 160
     label: _ZN2nn3atk30AudioRendererPerformanceReader10InitializeEiPvm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacb324
     size: 68
     label: _ZN2nn3atk30AudioRendererPerformanceReader19ReadPerformanceInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacb368
     size: 116
     label: _ZN2nn3atk30AudioRendererPerformanceReader6RecordEPKvmNS_2os4TickE
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacb3dc
     size: 40
     label:
@@ -306724,15 +306724,15 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xace370
     size: 88
     label: _ZNK2nn3atk6detail9GroupFile10FileHeader12GetInfoBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xace3c8
     size: 88
     label: _ZNK2nn3atk6detail9GroupFile10FileHeader12GetFileBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xace420
     size: 88
     label: _ZNK2nn3atk6detail9GroupFile10FileHeader14GetInfoExBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xace478
     size: 92
     label:
@@ -306840,23 +306840,23 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xacf0f4
     size: 84
     label: _ZNK2nn3atk6detail8WaveFile10FileHeader12GetInfoBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacf148
     size: 88
     label: _ZNK2nn3atk6detail8WaveFile10FileHeader12GetDataBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacf1a0
     size: 40
     label: _ZNK2nn3atk6detail8WaveFile13InfoBlockBody14GetChannelInfoEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacf1c8
     size: 12
     label: _ZNK2nn3atk6detail8WaveFile11ChannelInfo17GetSamplesAddressEPKv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacf1d4
     size: 12
     label: _ZNK2nn3atk6detail8WaveFile11ChannelInfo15GetDspAdpcmInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacf1e0
     size: 76
     label: _ZNK2nn3atk6detail15BiquadFilterLpf15GetCoefficientsEPNS0_24BiquadFilterCoefficientsEif
@@ -306950,7 +306950,7 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xacf548
     size: 252
     label: _ZN2nn3atk6detail14DecodeDspAdpcmElRNS0_12AdpcmContextERKNS_5audio14AdpcmParameterEPKvmPs
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacf644
     size: 4
     label:
@@ -306974,63 +306974,63 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xacf804
     size: 88
     label: _ZNK2nn3atk6detail8BankFile10FileHeader12GetInfoBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacf85c
     size: 12
     label: _ZNK2nn3atk6detail8BankFile13InfoBlockBody14GetWaveIdTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacf868
     size: 12
     label: _ZNK2nn3atk6detail8BankFile13InfoBlockBody27GetInstrumentReferenceTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacf874
     size: 72
     label: _ZNK2nn3atk6detail8BankFile13InfoBlockBody13GetInstrumentEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacf8bc
     size: 232
     label: _ZNK2nn3atk6detail8BankFile10Instrument12GetKeyRegionEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacf9a4
     size: 232
     label: _ZNK2nn3atk6detail8BankFile9KeyRegion17GetVelocityRegionEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacfa8c
     size: 24
     label: _ZNK2nn3atk6detail8BankFile14VelocityRegion14GetOriginalKeyEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacfaa4
     size: 32
     label: _ZNK2nn3atk6detail8BankFile14VelocityRegion9GetVolumeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacfac4
     size: 40
     label: _ZNK2nn3atk6detail8BankFile14VelocityRegion6GetPanEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacfaec
     size: 48
     label: _ZNK2nn3atk6detail8BankFile14VelocityRegion8GetPitchEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacfb1c
     size: 68
     label: _ZNK2nn3atk6detail8BankFile14VelocityRegion15IsIgnoreNoteOffEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacfb60
     size: 60
     label: _ZNK2nn3atk6detail8BankFile14VelocityRegion11GetKeyGroupEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacfb9c
     size: 60
     label: _ZNK2nn3atk6detail8BankFile14VelocityRegion20GetInterpolationTypeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacfbd8
     size: 132
     label: _ZNK2nn3atk6detail8BankFile14VelocityRegion13GetAdshrCurveEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacfc5c
     size: 20
     label: _ZNK2nn3atk6detail8BankFile14VelocityRegion18GetRegionParameterEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xacfc70
     size: 1392
     label: _ZNK2nn3atk6detail6driver9MmlParser5ParseEPNS2_16MmlSequenceTrackEb
@@ -307113,35 +307113,35 @@ NintendoSDK/src/NintendoWare/atk.a:
     label:
     - _ZN2nn3atk6detail23SequenceSoundFileReaderC1EPKv
     - _ZN2nn3atk6detail23SequenceSoundFileReaderC2EPKv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad0f40
     size: 8
     label: _ZNK2nn3atk6detail23SequenceSoundFileReader15GetSequenceDataEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad0f48
     size: 8
     label: _ZNK2nn3atk6detail23SequenceSoundFileReader16GetOffsetByLabelEPKcPj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad0f50
     size: 8
     label: _ZNK2nn3atk6detail23SequenceSoundFileReader16GetLabelByOffsetEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad0f58
     size: 92
     label: _ZN2nn3atk6detail6driver16StreamBufferPool10InitializeEPvmi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad0fb4
     size: 16
     label: _ZN2nn3atk6detail6driver16StreamBufferPool8FinalizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad0fc4
     size: 252
     label: _ZN2nn3atk6detail6driver16StreamBufferPool5AllocEv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xad10c0
     size: 60
     label: _ZN2nn3atk6detail6driver16StreamBufferPool4FreeEPv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad10fc
     size: 160
     label: _ZN2nn3atk6detail20StreamDataInfoDetail18SetStreamSoundInfoERKNS1_15StreamSoundFile15StreamSoundInfoEb
@@ -307367,39 +307367,39 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xad3f0c
     size: 84
     label: _ZNK2nn3atk6detail23StreamSoundPrefetchFile10FileHeader12GetInfoBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad3f60
     size: 88
     label: _ZNK2nn3atk6detail23StreamSoundPrefetchFile10FileHeader14GetRegionBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad3fb8
     size: 88
     label: _ZNK2nn3atk6detail23StreamSoundPrefetchFile10FileHeader20GetPrefetchDataBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4010
     size: 72
     label: _ZNK2nn3atk6detail23StreamSoundPrefetchFile10FileHeader24GetPrefetchDataBlockSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4058
     size: 92
     label: _ZNK2nn3atk6detail23StreamSoundPrefetchFile10FileHeader14HasRegionBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad40b4
     size: 72
     label: _ZNK2nn3atk6detail23StreamSoundPrefetchFile10FileHeader18GetRegionBlockSizeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad40fc
     size: 72
     label: _ZNK2nn3atk6detail23StreamSoundPrefetchFile10FileHeader20GetRegionBlockOffsetEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4144
     size: 12
     label: _ZNK2nn3atk6detail23StreamSoundPrefetchFile12PrefetchData17GetPrefetchSampleEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4150
     size: 4
     label: _ZNK2nn3atk6detail23StreamSoundPrefetchFile14PrefetchSample16GetSampleAddressEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4154
     size: 176
     label: _ZN2nn3atk6detail8PoolImpl10CreateImplEPvmm
@@ -307407,43 +307407,43 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xad4204
     size: 164
     label: _ZN2nn3atk6detail8PoolImpl10CreateImplEPvmmm
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xad42a8
     size: 72
     label: _ZN2nn3atk6detail8PoolImpl11DestroyImplEv
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xad42f0
     size: 24
     label: _ZNK2nn3atk6detail8PoolImpl9CountImplEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4308
     size: 24
     label: _ZN2nn3atk6detail8PoolImpl9AllocImplEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4320
     size: 16
     label: _ZN2nn3atk6detail8PoolImpl8FreeImplEPv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4330
     size: 20
     label:
     - _ZN2nn3atk6detail16WavOutFileStreamC1Ev
     - _ZN2nn3atk6detail16WavOutFileStreamC2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4344
     size: 4
     label:
     - _ZN2nn3atk6detail16WavOutFileStreamD1Ev
     - _ZN2nn3atk6detail16WavOutFileStreamD2Ev
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4348
     size: 180
     label: _ZN2nn3atk6detail16WavOutFileStream4OpenERNS1_3fnd10FileStreamEim
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xad43fc
     size: 144
     label: _ZN2nn3atk6detail16WavOutFileStream11WriteHeaderEim
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xad448c
     size: 292
     label: _ZN2nn3atk6detail16WavOutFileStream5CloseEv
@@ -307479,111 +307479,111 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xad4b2c
     size: 8
     label: _ZN2nn3atk6detail16WavOutFileStream14SetCacheBufferEPcm
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4b34
     size: 88
     label: _ZNK2nn3atk6detail13WaveSoundFile10FileHeader12GetInfoBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4b8c
     size: 76
     label: _ZNK2nn3atk6detail13WaveSoundFile13InfoBlockBody16GetWaveSoundDataEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4bd8
     size: 12
     label: _ZNK2nn3atk6detail13WaveSoundFile13InfoBlockBody30GetWaveSoundDataReferenceTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4be4
     size: 12
     label: _ZNK2nn3atk6detail13WaveSoundFile13InfoBlockBody14GetWaveIdTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4bf0
     size: 12
     label: _ZNK2nn3atk6detail13WaveSoundFile13WaveSoundData16GetWaveSoundInfoEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4bfc
     size: 12
     label: _ZNK2nn3atk6detail13WaveSoundFile13WaveSoundData26GetTrackInfoReferenceTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4c08
     size: 12
     label: _ZNK2nn3atk6detail13WaveSoundFile13WaveSoundData25GetNoteInfoReferenceTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4c14
     size: 76
     label: _ZNK2nn3atk6detail13WaveSoundFile13WaveSoundData12GetTrackInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4c60
     size: 76
     label: _ZNK2nn3atk6detail13WaveSoundFile13WaveSoundData11GetNoteInfoEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4cac
     size: 24
     label: _ZNK2nn3atk6detail13WaveSoundFile13WaveSoundInfo6GetPanEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4cc4
     size: 28
     label: _ZNK2nn3atk6detail13WaveSoundFile13WaveSoundInfo14GetSurroundPanEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4ce0
     size: 32
     label: _ZNK2nn3atk6detail13WaveSoundFile13WaveSoundInfo8GetPitchEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4d00
     size: 296
     label: _ZNK2nn3atk6detail13WaveSoundFile13WaveSoundInfo12GetSendValueEPhS4_h
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xad4e28
     size: 128
     label: _ZNK2nn3atk6detail13WaveSoundFile13WaveSoundInfo13GetAdshrCurveEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4ea8
     size: 40
     label: _ZNK2nn3atk6detail13WaveSoundFile13WaveSoundInfo10GetLpfFreqEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4ed0
     size: 44
     label: _ZNK2nn3atk6detail13WaveSoundFile13WaveSoundInfo13GetBiquadTypeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4efc
     size: 44
     label: _ZNK2nn3atk6detail13WaveSoundFile13WaveSoundInfo14GetBiquadValueEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4f28
     size: 12
     label: _ZNK2nn3atk6detail13WaveSoundFile9TrackInfo26GetNoteEventReferenceTableEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4f34
     size: 76
     label: _ZNK2nn3atk6detail13WaveSoundFile9TrackInfo12GetNoteEventEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4f80
     size: 24
     label: _ZNK2nn3atk6detail13WaveSoundFile8NoteInfo14GetOriginalKeyEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4f98
     size: 32
     label: _ZNK2nn3atk6detail13WaveSoundFile8NoteInfo9GetVolumeEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4fb8
     size: 40
     label: _ZNK2nn3atk6detail13WaveSoundFile8NoteInfo6GetPanEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad4fe0
     size: 44
     label: _ZNK2nn3atk6detail13WaveSoundFile8NoteInfo14GetSurroundPanEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad500c
     size: 48
     label: _ZNK2nn3atk6detail13WaveSoundFile8NoteInfo8GetPitchEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad503c
     size: 344
     label: _ZNK2nn3atk6detail13WaveSoundFile8NoteInfo12GetSendValueEPhPS4_h
-    status: NotDecompiled
+    status: NonMatchingMajor
   - offset: 0xad5194
     size: 132
     label: _ZNK2nn3atk6detail13WaveSoundFile8NoteInfo13GetAdshrCurveEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad5218
     size: 68
     label:
@@ -307700,31 +307700,31 @@ NintendoSDK/src/NintendoWare/atk.a:
   - offset: 0xad58ec
     size: 84
     label: _ZNK2nn3atk6detail17SequenceSoundFile10FileHeader12GetDataBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad5940
     size: 88
     label: _ZNK2nn3atk6detail17SequenceSoundFile10FileHeader13GetLabelBlockEv
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad5998
     size: 36
     label: _ZNK2nn3atk6detail17SequenceSoundFile14LabelBlockBody12GetLabelInfoEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad59bc
     size: 44
     label: _ZNK2nn3atk6detail17SequenceSoundFile14LabelBlockBody8GetLabelEi
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad59e8
     size: 80
     label: _ZNK2nn3atk6detail17SequenceSoundFile14LabelBlockBody16GetLabelByOffsetEj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad5a38
     size: 28
     label: _ZNK2nn3atk6detail17SequenceSoundFile14LabelBlockBody9GetOffsetEiPj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad5a54
     size: 172
     label: _ZNK2nn3atk6detail17SequenceSoundFile14LabelBlockBody16GetOffsetByLabelEPKcPj
-    status: NotDecompiled
+    status: Matching
   - offset: 0xad5b00
     size: 4
     label: _ZNK2nn3atk6detail21AdvancedWaveSoundFile8GetBlockEv
